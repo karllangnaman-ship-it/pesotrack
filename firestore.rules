@@ -1,0 +1,81 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper Functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && (
+        request.auth.token.email_verified == true ||
+        request.auth.token.firebase.sign_in_provider == 'google.com'
+      );
+    }
+
+    function isVerifiedOwner(userId) {
+      return isOwner(userId) && isVerifiedUser();
+    }
+
+    // Default-deny catch-all for any document outside /users
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Isolated Per-User Workspace Scope
+    // Only the authenticated and email-verified owner can read and write to their own workspace documents
+    match /users/{userId} {
+      allow read, write: if isVerifiedOwner(userId);
+
+      // Financial Accounts Subcollection
+      match /accounts/{accountId} {
+        allow read, write: if isVerifiedOwner(userId);
+      }
+
+      // Transactions Subcollection
+      match /transactions/{transactionId} {
+        allow read, write: if isVerifiedOwner(userId);
+      }
+
+      // Bill Definitions Subcollection
+      match /bills/{billId} {
+        allow read, write: if isVerifiedOwner(userId);
+      }
+
+      // Monthly Bill Entries Subcollection
+      match /monthlyBillEntries/{entryId} {
+        allow read, write: if isVerifiedOwner(userId);
+      }
+
+      // Receivables Subcollection
+      match /receivables/{receivableId} {
+        allow read, write: if isVerifiedOwner(userId);
+      }
+
+      // Monthly Budgets Subcollection
+      match /budgets/{budgetId} {
+        allow read, write: if isVerifiedOwner(userId);
+      }
+
+      // Sync State & Health Check Subcollections
+      match /sync/{syncId} {
+        allow read, write: if isVerifiedOwner(userId);
+      }
+
+      match /sync_state/{syncId} {
+        allow read, write: if isVerifiedOwner(userId);
+      }
+
+      // User-scoped catch-all for any nested subcollections
+      match /{allSubcollections=**} {
+        allow read, write: if isVerifiedOwner(userId);
+      }
+    }
+  }
+}

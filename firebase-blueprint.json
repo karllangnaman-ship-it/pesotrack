@@ -1,0 +1,202 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile information and workspace metadata",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "The Firebase Auth UID of the user"
+        },
+        "email": {
+          "type": "string",
+          "description": "User email address"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "User display name"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Last updated timestamp"
+        }
+      },
+      "required": ["userId", "email"]
+    },
+    "FinancialAccount": {
+      "title": "FinancialAccount",
+      "description": "Financial account (Wallet, Savings, Credit, Loans)",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique account identifier" },
+        "userId": { "type": "string", "description": "Owner user UID" },
+        "name": { "type": "string", "description": "Account name", "maxLength": 100 },
+        "providerId": { "type": "string", "description": "Preset provider identifier", "maxLength": 50 },
+        "category": { "type": "string", "description": "Account category" },
+        "startingBalance": { "type": "number", "description": "Starting balance in PHP" },
+        "totalRepayment": { "type": "number", "description": "Total repayment for loans or credit" },
+        "description": { "type": "string", "description": "Optional notes or account description", "maxLength": 500 },
+        "customColor": { "type": "string", "description": "Custom hex color" },
+        "accountNumberMasked": { "type": "string", "description": "Masked account number", "maxLength": 30 },
+        "archived": { "type": "boolean", "description": "Whether account is archived" },
+        "createdAt": { "type": "string", "description": "Creation timestamp" },
+        "updatedAt": { "type": "string", "description": "Last modified timestamp" },
+        "isDeleted": { "type": "boolean", "description": "Tombstone flag for sync" }
+      },
+      "required": ["id", "userId", "name", "category"]
+    },
+    "TransactionRecord": {
+      "title": "TransactionRecord",
+      "description": "Financial transaction entry",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique transaction identifier" },
+        "userId": { "type": "string", "description": "Owner user UID" },
+        "type": { "type": "string", "description": "Transaction type" },
+        "amount": { "type": "number", "description": "Transaction amount in PHP" },
+        "accountId": { "type": "string", "description": "Source account ID" },
+        "destinationAccountId": { "type": "string", "description": "Destination account ID" },
+        "category": { "type": "string", "description": "Transaction category" },
+        "merchantOrTitle": { "type": "string", "description": "Title or payee", "maxLength": 200 },
+        "dateTime": { "type": "string", "description": "Transaction date and time ISO" },
+        "notes": { "type": "string", "description": "Optional notes", "maxLength": 500 },
+        "adjustmentSign": { "type": "string", "description": "Positive or negative adjustment" },
+        "interestPortion": { "type": "number", "description": "Interest portion of payment" },
+        "isStartingBalance": { "type": "boolean", "description": "Starting balance marker" },
+        "updatedAt": { "type": "string", "description": "Last modified timestamp" },
+        "isDeleted": { "type": "boolean", "description": "Tombstone flag for sync" }
+      },
+      "required": ["id", "userId", "type", "amount", "accountId", "category", "dateTime"]
+    },
+    "BillDefinition": {
+      "title": "BillDefinition",
+      "description": "Recurring bill schedule definition",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique bill identifier" },
+        "userId": { "type": "string", "description": "Owner user UID" },
+        "name": { "type": "string", "description": "Bill name", "maxLength": 100 },
+        "category": { "type": "string", "description": "Bill category" },
+        "customCategoryName": { "type": "string", "description": "Custom category name", "maxLength": 100 },
+        "type": { "type": "string", "description": "Bill type" },
+        "defaultAmount": { "type": "number", "description": "Default due amount" },
+        "dueDay": { "type": "number", "description": "Due day of month 1-31" },
+        "startMonth": { "type": "string", "description": "Start month YYYY-MM" },
+        "endMonth": { "type": "string", "description": "End month YYYY-MM" },
+        "frequency": { "type": "string", "description": "Bill recurrence" },
+        "notes": { "type": "string", "description": "Notes", "maxLength": 500 },
+        "reminderEnabled": { "type": "boolean", "description": "Reminder flag" },
+        "reminderDaysBefore": { "type": "number", "description": "Days before due date" },
+        "createdAt": { "type": "string", "description": "Creation timestamp" },
+        "updatedAt": { "type": "string", "description": "Last modified timestamp" },
+        "isDeleted": { "type": "boolean", "description": "Tombstone flag for sync" }
+      },
+      "required": ["id", "userId", "name", "category", "defaultAmount", "dueDay"]
+    },
+    "MonthlyBillEntry": {
+      "title": "MonthlyBillEntry",
+      "description": "Month-specific bill instance and payment records",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Entry ID formatted as billId_monthKey" },
+        "userId": { "type": "string", "description": "Owner user UID" },
+        "billId": { "type": "string", "description": "Parent bill ID" },
+        "monthKey": { "type": "string", "description": "Month YYYY-MM" },
+        "dueDay": { "type": "number", "description": "Due day override" },
+        "dueDate": { "type": "string", "description": "Due date YYYY-MM-DD" },
+        "estimatedAmount": { "type": "number", "description": "Estimated bill amount" },
+        "actualAmount": { "type": "number", "description": "Actual billed amount" },
+        "notes": { "type": "string", "description": "Monthly note", "maxLength": 500 },
+        "isPaidManually": { "type": "boolean", "description": "Manual paid flag" },
+        "updatedAt": { "type": "string", "description": "Last modified timestamp" },
+        "isDeleted": { "type": "boolean", "description": "Tombstone flag for sync" }
+      },
+      "required": ["id", "userId", "billId", "monthKey", "actualAmount"]
+    },
+    "ReceivableRecord": {
+      "title": "ReceivableRecord",
+      "description": "Money Owed to Me receivable record and loan terms",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique receivable identifier" },
+        "userId": { "type": "string", "description": "Owner user UID" },
+        "personName": { "type": "string", "description": "Borrower name", "maxLength": 100 },
+        "principal": { "type": "number", "description": "Principal amount lent in PHP" },
+        "termMonths": { "type": "number", "description": "Term in months" },
+        "collectionDueDay": { "type": "number", "description": "Day of month for collection" },
+        "scheduleStartDate": { "type": "string", "description": "Start date YYYY-MM-DD" },
+        "lentDate": { "type": "string", "description": "Lent date YYYY-MM-DD" },
+        "dueDate": { "type": "string", "description": "Final due date YYYY-MM-DD" },
+        "totalExpected": { "type": "number", "description": "Total expected return" },
+        "totalCollected": { "type": "number", "description": "Total amount collected" },
+        "remainingBalance": { "type": "number", "description": "Remaining unpaid balance" },
+        "contactInfo": { "type": "string", "description": "Contact info", "maxLength": 200 },
+        "notes": { "type": "string", "description": "Notes", "maxLength": 500 },
+        "updatedAt": { "type": "string", "description": "Last modified timestamp" },
+        "isDeleted": { "type": "boolean", "description": "Tombstone flag for sync" }
+      },
+      "required": ["id", "userId", "personName", "principal", "totalExpected", "remainingBalance"]
+    },
+    "MonthlyBudget": {
+      "title": "MonthlyBudget",
+      "description": "Monthly spending budget and category caps",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Month key YYYY-MM" },
+        "userId": { "type": "string", "description": "Owner user UID" },
+        "monthKey": { "type": "string", "description": "Month key YYYY-MM" },
+        "totalBudget": { "type": "number", "description": "Total monthly budget in PHP" },
+        "alertThresholdPercent": { "type": "number", "description": "Alert threshold percentage" },
+        "updatedAt": { "type": "string", "description": "Last modified timestamp" },
+        "isDeleted": { "type": "boolean", "description": "Tombstone flag for sync" }
+      },
+      "required": ["id", "userId", "monthKey", "totalBudget"]
+    },
+    "UserWorkspaceSync": {
+      "title": "UserWorkspaceSync",
+      "description": "Unified workspace snapshot and settings sync document",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Owner user UID" },
+        "version": { "type": "number", "description": "Data schema version" },
+        "updatedAt": { "type": "string", "description": "Last modified timestamp" }
+      },
+      "required": ["userId", "version", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User profile information"
+    },
+    "/users/{userId}/accounts/{accountId}": {
+      "schema": "FinancialAccount",
+      "description": "User financial accounts"
+    },
+    "/users/{userId}/transactions/{transactionId}": {
+      "schema": "TransactionRecord",
+      "description": "User transactions"
+    },
+    "/users/{userId}/bills/{billId}": {
+      "schema": "BillDefinition",
+      "description": "User recurring bill definitions"
+    },
+    "/users/{userId}/monthlyBillEntries/{entryId}": {
+      "schema": "MonthlyBillEntry",
+      "description": "User monthly bill entries"
+    },
+    "/users/{userId}/receivables/{receivableId}": {
+      "schema": "ReceivableRecord",
+      "description": "User receivables (Money Owed to Me)"
+    },
+    "/users/{userId}/budgets/{budgetId}": {
+      "schema": "MonthlyBudget",
+      "description": "User monthly budgets"
+    },
+    "/users/{userId}/sync/state": {
+      "schema": "UserWorkspaceSync",
+      "description": "User workspace sync snapshot"
+    }
+  }
+}
