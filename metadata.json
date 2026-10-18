@@ -1,0 +1,8 @@
+{
+  "name": "PesoTrack V4 with backend vercel \u0026 grocery \u0026 widget \u0026 remove vercel status",
+  "description": "A minimalist personal finance manager to track your net worth, manage budgets, and monitor transactions in Philippine pesos.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

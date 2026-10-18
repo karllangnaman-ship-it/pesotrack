@@ -1,0 +1,346 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *, .dark-theme, .dark-theme *));
+
+@layer base {
+  :root {
+    --theme-primary: #174F32;
+    --theme-primary-hover: #123E27;
+    --theme-primary-active: #0E2E1D;
+    --theme-accent: #83C95B;
+    --theme-accent-border: rgba(131, 201, 91, 0.4);
+    --theme-light-bg: #E8F3EC;
+    --theme-dark-bg: #1E382A;
+    --theme-ring: rgba(23, 79, 50, 0.35);
+
+    --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+    --color-forest: var(--theme-primary, #174F32);
+    --color-fresh: #4E9D39;
+    --color-warm-bg: #F6F4EE;
+    --color-surface: #FFFFFF;
+    --color-dark-bg: #0D1410;
+    --color-dark-surface: #15221B;
+    --color-text-main: #252923;
+    --color-text-muted: #777D75;
+    color-scheme: light;
+  }
+
+  /* ----------------------------------------------------
+     COORDINATED THEME COLORS (Data Attribute Selectors)
+     ---------------------------------------------------- */
+  html[data-theme-color="forest"] {
+    --theme-primary: #174F32;
+    --theme-primary-hover: #123E27;
+    --theme-primary-active: #0E2E1D;
+    --theme-accent: #83C95B;
+    --theme-accent-border: rgba(131, 201, 91, 0.4);
+    --theme-light-bg: #E8F3EC;
+    --theme-dark-bg: #1E382A;
+    --theme-ring: rgba(23, 79, 50, 0.35);
+  }
+
+  html[data-theme-color="ocean"] {
+    --theme-primary: #1D5BB5;
+    --theme-primary-hover: #17478E;
+    --theme-primary-active: #12376F;
+    --theme-accent: #60A5FA;
+    --theme-accent-border: rgba(96, 165, 250, 0.4);
+    --theme-light-bg: #EBF3FC;
+    --theme-dark-bg: #192D47;
+    --theme-ring: rgba(29, 91, 181, 0.35);
+  }
+
+  html[data-theme-color="purple"] {
+    --theme-primary: #7C3AED;
+    --theme-primary-hover: #6D28D9;
+    --theme-primary-active: #5B21B6;
+    --theme-accent: #C084FC;
+    --theme-accent-border: rgba(192, 132, 252, 0.4);
+    --theme-light-bg: #F3E8FF;
+    --theme-dark-bg: #2E1D45;
+    --theme-ring: rgba(124, 58, 237, 0.35);
+  }
+
+  html[data-theme-color="teal"] {
+    --theme-primary: #0D7B73;
+    --theme-primary-hover: #0F6862;
+    --theme-primary-active: #0E524D;
+    --theme-accent: #2DD4BF;
+    --theme-accent-border: rgba(45, 212, 191, 0.4);
+    --theme-light-bg: #E6F7F5;
+    --theme-dark-bg: #16312E;
+    --theme-ring: rgba(13, 123, 115, 0.35);
+  }
+
+  html[data-theme-color="sunset"] {
+    --theme-primary: #C2410C;
+    --theme-primary-hover: #9A3412;
+    --theme-primary-active: #7C2D12;
+    --theme-accent: #FB923C;
+    --theme-accent-border: rgba(251, 146, 60, 0.4);
+    --theme-light-bg: #FFF1EB;
+    --theme-dark-bg: #3A2017;
+    --theme-ring: rgba(194, 65, 12, 0.35);
+  }
+
+  html[data-theme-color="rose"] {
+    --theme-primary: #BE185D;
+    --theme-primary-hover: #9D174D;
+    --theme-primary-active: #831843;
+    --theme-accent: #F472B6;
+    --theme-accent-border: rgba(244, 114, 182, 0.4);
+    --theme-light-bg: #FDF2F8;
+    --theme-dark-bg: #3B1A2A;
+    --theme-ring: rgba(190, 24, 93, 0.35);
+  }
+
+  html[data-theme-color="crimson"] {
+    --theme-primary: #991B1B;
+    --theme-primary-hover: #7F1D1D;
+    --theme-primary-active: #651515;
+    --theme-accent: #F87171;
+    --theme-accent-border: rgba(248, 113, 113, 0.4);
+    --theme-light-bg: #FEF2F2;
+    --theme-dark-bg: #381818;
+    --theme-ring: rgba(153, 27, 27, 0.35);
+  }
+
+  html[data-theme-color="amber"] {
+    --theme-primary: #B45309;
+    --theme-primary-hover: #92400E;
+    --theme-primary-active: #78350F;
+    --theme-accent: #FBBF24;
+    --theme-accent-border: rgba(251, 191, 36, 0.4);
+    --theme-light-bg: #FFFBEB;
+    --theme-dark-bg: #392813;
+    --theme-ring: rgba(180, 83, 9, 0.35);
+  }
+
+  html[data-theme-color="monochrome"] {
+    --theme-primary: #262626;
+    --theme-primary-hover: #171717;
+    --theme-primary-active: #0A0A0A;
+    --theme-accent: #E5E5E5;
+    --theme-accent-border: rgba(229, 229, 229, 0.4);
+    --theme-light-bg: #F5F5F5;
+    --theme-dark-bg: #2A2A2A;
+    --theme-ring: rgba(38, 38, 38, 0.35);
+  }
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    font-family: var(--font-sans);
+    background-color: #F6F4EE;
+    color: #252923;
+    min-height: 100%;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: clip;
+    -webkit-text-size-adjust: 100%;
+    color-scheme: light;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: #F6F4EE;
+    color: #252923;
+    min-height: 100vh;
+    min-height: 100dvh;
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+    overflow-x: clip;
+    -webkit-tap-highlight-color: transparent;
+    color-scheme: light;
+  }
+
+  #root {
+    background-color: #F6F4EE;
+    min-height: 100vh;
+    min-height: 100dvh;
+    width: 100%;
+    max-width: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow-x: clip;
+  }
+
+  html.dark,
+  html.dark-theme,
+  body.dark,
+  body.dark-theme {
+    color-scheme: dark !important;
+  }
+
+  html.dark,
+  html.dark-theme,
+  body.dark,
+  body.dark-theme,
+  html.dark #root,
+  body.dark #root,
+  body.dark-theme #root {
+    background-color: #0D1410 !important;
+    color: #F3F4F1 !important;
+  }
+
+  /* Support dark-mode themed native date pickers and options across all browsers */
+  html.dark input[type="date"],
+  html.dark input[type="datetime-local"],
+  html.dark input[type="month"],
+  html.dark select,
+  body.dark input[type="date"],
+  body.dark input[type="datetime-local"],
+  body.dark input[type="month"],
+  body.dark select {
+    color-scheme: dark;
+  }
+
+  html.dark select option,
+  body.dark select option {
+    background-color: #15221B;
+    color: #F3F4F1;
+  }
+
+  html:not(.dark) select option,
+  body:not(.dark) select option {
+    background-color: #FFFFFF;
+    color: #252923;
+  }
+}
+
+/* =========================================================================
+   APPLICATION-WIDE THEME MORPHING (Dynamically matches the active theme)
+   ========================================================================= */
+
+/* Primary buttons, active tabs, header icons, and badges */
+.bg-\[\#174F32\],
+[data-theme-primary="bg"] {
+  background-color: var(--theme-primary) !important;
+}
+
+/* Hover states */
+.hover\:bg-\[\#123E27\]:hover,
+[data-theme-primary="hover"]:hover {
+  background-color: var(--theme-primary-hover) !important;
+}
+
+/* Text colors */
+.text-\[\#174F32\],
+[data-theme-primary="text"] {
+  color: var(--theme-primary) !important;
+}
+
+/* Borders */
+.border-\[\#174F32\],
+[data-theme-primary="border"] {
+  border-color: var(--theme-primary) !important;
+}
+
+/* Rings and focus outlines */
+.focus\:ring-\[\#174F32\]:focus,
+.focus\:ring-\[\#174F32\]\/20:focus {
+  --tw-ring-color: var(--theme-ring) !important;
+}
+
+/* Toggles & Form inputs */
+.peer:checked ~ .peer-checked\:bg-\[\#174F32\] {
+  background-color: var(--theme-primary) !important;
+}
+
+/* Dark mode accents and card tints */
+.dark .dark\:text-\[\#83C95B\],
+.dark .dark\:text-\[\#86EFAC\],
+.dark-theme .dark\:text-\[\#83C95B\],
+.dark-theme .dark\:text-\[\#86EFAC\] {
+  color: var(--theme-accent) !important;
+}
+
+.dark .dark\:bg-\[\#1E382A\],
+.dark .dark\:bg-\[\#1D3B2B\],
+.dark-theme .dark\:bg-\[\#1E382A\],
+.dark-theme .dark\:bg-\[\#1D3B2B\] {
+  background-color: var(--theme-dark-bg) !important;
+}
+
+.dark .dark\:border-\[\#83C95B\]\/40,
+.dark-theme .dark\:border-\[\#83C95B\]\/40 {
+  border-color: var(--theme-accent-border) !important;
+}
+
+.dark .peer:checked ~ .dark\:peer-checked\:bg-\[\#83C95B\] {
+  background-color: var(--theme-accent) !important;
+}
+
+.dark .dark\:bg-\[\#83C95B\] {
+  background-color: var(--theme-accent) !important;
+}
+
+/* Dashboard Summary Card Theme Gradient */
+.theme-card-gradient {
+  background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-primary-hover) 60%, var(--theme-primary-active) 100%) !important;
+}
+
+/* Native selection */
+::selection {
+  background-color: var(--theme-primary) !important;
+  color: #ffffff !important;
+}
+
+/* Native checkboxes and radios default accent */
+input[type="checkbox"].accent-\[\#174F32\],
+input[type="radio"].accent-\[\#174F32\] {
+  accent-color: var(--theme-primary);
+}
+.dark input[type="checkbox"].dark\:accent-\[\#83C95B\],
+.dark input[type="radio"].dark\:accent-\[\#83C95B\] {
+  accent-color: var(--theme-accent);
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Safe area padding utilities for mobile notches and bottom home indicators */
+.pb-safe {
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), 16px);
+}
+
+.pt-safe {
+  padding-top: max(env(safe-area-inset-top, 0px), 16px);
+}
+
+/* Prevent unwanted horizontal overflow */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Subtle sleek scrollbars */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.12);
+  border-radius: 9999px;
+}
+
+.dark ::-webkit-scrollbar-thumb,
+body.dark-theme ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.16);
+}
