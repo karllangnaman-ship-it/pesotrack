@@ -1,5 +1,9 @@
 {
+<<<<<<< HEAD
   "name": "PesoTrack V4 with backend vercel \u0026 grocery \u0026 widget \u0026 remove vercel status",
+=======
+  "name": "Remix main PesoTrack v2 online/offline v3",
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
   "description": "A minimalist personal finance manager to track your net worth, manage budgets, and monitor transactions in Philippine pesos.",
   "requestFramePermissions": [],
   "majorCapabilities": [

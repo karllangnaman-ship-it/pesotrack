@@ -7,12 +7,16 @@ import {
   Coins,
   Info,
   Plus,
+<<<<<<< HEAD
   Search,
+=======
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
   ShieldCheck,
   X,
 } from 'lucide-react';
 import { useFinance } from '../context/FinanceContext';
 import {
+<<<<<<< HEAD
   BankProvider,
   DIRECTORY_CATEGORIES,
   DirectoryCategoryId,
@@ -22,6 +26,8 @@ import {
   searchProviders,
 } from '../data/providerDirectory';
 import {
+=======
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
   AccountCategory,
   getProvidersByCategory,
   InterestRateType,
@@ -65,6 +71,7 @@ export const AddAccountModal: React.FC<AddAccountModalProps> = ({
   initialCategory = 'Wallet',
   editingAccount = null,
 }) => {
+<<<<<<< HEAD
   const { addAccount, updateAccount, reconciledAccounts } = useFinance();
 
   const [activeTab, setActiveTab] = useState<AccountCategory>(initialCategory);
@@ -72,6 +79,12 @@ export const AddAccountModal: React.FC<AddAccountModalProps> = ({
   const [selectedProvider, setSelectedProvider] = useState<BankProvider | null>(null);
   const [directoryCategory, setDirectoryCategory] = useState<DirectoryCategoryId | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
+=======
+  const { addAccount, updateAccount } = useFinance();
+
+  const [activeTab, setActiveTab] = useState<AccountCategory>(initialCategory);
+  const [selectedPreset, setSelectedPreset] = useState<ProviderPreset | null>(null);
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
   const [isCustomMode, setIsCustomMode] = useState(false);
 
   const [name, setName] = useState('');
@@ -344,6 +357,7 @@ export const AddAccountModal: React.FC<AddAccountModalProps> = ({
       setCustomLoanPayment('');
       setLoanDueDay('15');
       setRepaymentModel('amortized');
+<<<<<<< HEAD
       setSelectedProvider(null);
       setDirectoryCategory('all');
       setSearchQuery('');
@@ -394,6 +408,15 @@ export const AddAccountModal: React.FC<AddAccountModalProps> = ({
   const handleSelectPreset = (preset: ProviderPreset) => {
     setSelectedPreset(preset);
     setSelectedProvider(null);
+=======
+    }
+  }, [isOpen, initialCategory, editingAccount]);
+
+  if (!isOpen) return null;
+
+  const handleSelectPreset = (preset: ProviderPreset) => {
+    setSelectedPreset(preset);
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
     setIsCustomMode(false);
     setCategory(preset.category);
     setName(preset.shortName || preset.name);
@@ -404,6 +427,7 @@ export const AddAccountModal: React.FC<AddAccountModalProps> = ({
     }
   };
 
+<<<<<<< HEAD
   const handleStartCustom = (customName?: string) => {
     setIsCustomMode(true);
     setSelectedPreset(null);
@@ -412,6 +436,14 @@ export const AddAccountModal: React.FC<AddAccountModalProps> = ({
     setName(customName || '');
     setStartingBalance('');
     setCustomColor('#007DFE');
+=======
+  const handleStartCustom = () => {
+    setIsCustomMode(true);
+    setSelectedPreset(null);
+    setCategory(activeTab);
+    setName('');
+    setStartingBalance('');
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -519,7 +551,11 @@ export const AddAccountModal: React.FC<AddAccountModalProps> = ({
 
     const providerId = isCustomMode
       ? 'custom'
+<<<<<<< HEAD
       : selectedProvider?.id || selectedPreset?.id || editingAccount?.providerId || 'custom';
+=======
+      : selectedPreset?.id || editingAccount?.providerId || 'custom';
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
 
     const savingsGoal =
       category === 'Savings' && hasSavingsGoal
@@ -724,29 +760,46 @@ export const AddAccountModal: React.FC<AddAccountModalProps> = ({
     }
   };
 
+<<<<<<< HEAD
   const showFormStep = Boolean(editingAccount || selectedProvider || selectedPreset || isCustomMode);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-2 sm:p-4">
       <div className="bg-[#FAF9FB] dark:bg-neutral-900 w-full max-w-xl sm:max-w-2xl lg:max-w-3xl rounded-[24px] sm:rounded-[28px] flex flex-col max-h-[92vh] sm:max-h-[88vh] overflow-hidden shadow-2xl transition-all">
+=======
+  const showFormStep = Boolean(editingAccount || selectedPreset || isCustomMode);
+  const providersForTab = getProvidersByCategory(activeTab);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-2 sm:p-4">
+      <div className="bg-[#FAF9FB] dark:bg-neutral-900 w-full max-w-lg rounded-[24px] sm:rounded-[28px] flex flex-col max-h-[92vh] sm:max-h-[88vh] overflow-hidden shadow-2xl">
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
         {/* Top Header */}
         <div className="relative flex items-center justify-center px-4 sm:px-6 pt-5 sm:pt-6 pb-3 sm:pb-4 shrink-0 border-b border-black/[0.04] dark:border-white/[0.06]">
           {showFormStep && !editingAccount && (
             <button
               type="button"
               onClick={() => {
+<<<<<<< HEAD
                 setSelectedProvider(null);
+=======
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
                 setSelectedPreset(null);
                 setIsCustomMode(false);
                 setFormError(null);
               }}
+<<<<<<< HEAD
               aria-label="Back to directory"
+=======
+              aria-label="Back to providers"
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
               className="absolute left-3 sm:left-4 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full hover:bg-neutral-200/70 dark:hover:bg-neutral-800 transition-colors"
             >
               <ArrowLeft className="w-5 h-5 text-black dark:text-white" strokeWidth={2.5} />
             </button>
           )}
 
+<<<<<<< HEAD
           <h2 className="text-base sm:text-lg lg:text-[20px] font-bold tracking-tight text-black dark:text-white truncate max-w-[70%]">
             {editingAccount
               ? 'Edit Account'
@@ -755,6 +808,10 @@ export const AddAccountModal: React.FC<AddAccountModalProps> = ({
               : isCustomMode
               ? 'Configure Custom Account'
               : 'Select Bank or E-Wallet'}
+=======
+          <h2 className="text-lg sm:text-[21px] font-bold tracking-tight text-black dark:text-white">
+            {editingAccount ? 'Edit Account' : 'Add Account'}
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
           </h2>
 
           <button
@@ -768,6 +825,7 @@ export const AddAccountModal: React.FC<AddAccountModalProps> = ({
         </div>
 
         {!showFormStep ? (
+<<<<<<< HEAD
           /* STEP 1: COMPREHENSIVE DIRECTORY SELECTION */
           <div className="flex flex-col flex-1 overflow-hidden p-3.5 sm:p-5 gap-3 sm:gap-3.5">
             {/* Search Bar */}
@@ -933,6 +991,65 @@ export const AddAccountModal: React.FC<AddAccountModalProps> = ({
                   })}
                 </div>
               )}
+=======
+          /* STEP 1: PROVIDER SELECTION */
+          <div className="flex flex-col flex-1 overflow-hidden p-3.5 sm:p-5">
+            {/* Category Tabs */}
+            <div className="bg-[#E6E5EA] dark:bg-neutral-800 p-1 sm:p-1.5 rounded-[16px] sm:rounded-[18px] grid grid-cols-4 gap-1 mb-3.5 sm:mb-4 shrink-0">
+              {CATEGORIES.map((tab) => {
+                const isActive = activeTab === tab;
+                return (
+                  <button
+                    key={tab}
+                    type="button"
+                    onClick={() => setActiveTab(tab)}
+                    className={`py-2 sm:py-2.5 px-1 sm:px-2 rounded-[12px] sm:rounded-[14px] text-xs sm:text-[14px] font-medium transition-all text-center truncate ${
+                      isActive
+                        ? 'bg-white dark:bg-neutral-900 text-black dark:text-white font-semibold shadow-2xs'
+                        : 'text-neutral-700 dark:text-neutral-300 hover:text-black'
+                    }`}
+                  >
+                    {tab}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Provider List */}
+            <div className="flex-1 overflow-y-auto bg-[#EAE8ED] dark:bg-neutral-800/70 rounded-[14px] px-2.5 sm:px-4 py-1 divide-y divide-neutral-300/80 dark:divide-neutral-700/70">
+              {providersForTab.map((preset) => (
+                <button
+                  key={preset.id}
+                  type="button"
+                  onClick={() => handleSelectPreset(preset)}
+                  className="w-full flex items-center gap-3 sm:gap-4 py-3 sm:py-3.5 px-1.5 text-left hover:bg-black/5 dark:hover:bg-white/5 transition-colors rounded-lg group"
+                >
+                  <ProviderLogo providerId={preset.id} name={preset.name} size="lg" />
+                  <span className="text-sm sm:text-[15px] text-neutral-900 dark:text-neutral-100 font-normal min-w-0 flex-1 truncate">
+                    {preset.listLabel}
+                  </span>
+                </button>
+              ))}
+
+              {/* Custom Account Option */}
+              <button
+                type="button"
+                onClick={handleStartCustom}
+                className="w-full flex items-center gap-3 sm:gap-4 py-3.5 px-1.5 text-left hover:bg-black/5 dark:hover:bg-white/5 transition-colors rounded-lg"
+              >
+                <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-[12px] bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 flex items-center justify-center shrink-0">
+                  <Plus className="w-5 h-5 sm:w-6 sm:h-6" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm sm:text-base font-semibold text-neutral-900 dark:text-white truncate">
+                    Custom {activeTab} Account
+                  </div>
+                  <div className="text-[11px] sm:text-xs text-neutral-500 dark:text-neutral-400 truncate">
+                    Add custom bank, e-wallet, cooperative, or loan
+                  </div>
+                </div>
+              </button>
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
             </div>
           </div>
         ) : (
@@ -947,9 +1064,15 @@ export const AddAccountModal: React.FC<AddAccountModalProps> = ({
                 providerId={
                   isCustomMode
                     ? 'custom'
+<<<<<<< HEAD
                     : selectedProvider?.id || selectedPreset?.id || editingAccount?.providerId || 'custom'
                 }
                 name={name || selectedProvider?.name || selectedPreset?.name || 'Account'}
+=======
+                    : selectedPreset?.id || editingAccount?.providerId || 'custom'
+                }
+                name={name || selectedPreset?.name || 'Account'}
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
                 customColor={customColor}
                 size="lg"
               />
@@ -958,7 +1081,11 @@ export const AddAccountModal: React.FC<AddAccountModalProps> = ({
                   {category} Account
                 </div>
                 <div className="text-sm sm:text-base font-bold text-black dark:text-white truncate">
+<<<<<<< HEAD
                   {name || selectedProvider?.name || selectedPreset?.name || `Custom ${category}`}
+=======
+                  {name || selectedPreset?.name || `Custom ${category}`}
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
                 </div>
               </div>
             </div>

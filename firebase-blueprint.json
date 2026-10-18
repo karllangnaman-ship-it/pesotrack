@@ -163,6 +163,7 @@
         "updatedAt": { "type": "string", "description": "Last modified timestamp" }
       },
       "required": ["userId", "version", "updatedAt"]
+<<<<<<< HEAD
     },
     "GroceryItem": {
       "title": "GroceryItem",
@@ -202,6 +203,8 @@
         "createdAt": { "type": "string", "description": "Creation timestamp" }
       },
       "required": ["id", "name"]
+=======
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
     }
   },
   "firestore": {
@@ -233,6 +236,7 @@
       "schema": "MonthlyBudget",
       "description": "User monthly budgets"
     },
+<<<<<<< HEAD
     "/users/{userId}/groceries/{groceryId}": {
       "schema": "GroceryItem",
       "description": "User grocery items"
@@ -241,6 +245,8 @@
       "schema": "GroceryCategory",
       "description": "User custom grocery categories"
     },
+=======
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
     "/users/{userId}/sync/state": {
       "schema": "UserWorkspaceSync",
       "description": "User workspace sync snapshot"

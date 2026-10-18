@@ -152,6 +152,7 @@ export interface MonthlyBudget {
 }
 
 export type ThemeMode = 'light' | 'dark' | 'system';
+<<<<<<< HEAD
 export type ThemeColor =
   | 'forest'
   | 'ocean'
@@ -162,17 +163,25 @@ export type ThemeColor =
   | 'crimson'
   | 'amber'
   | 'monochrome';
+=======
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
 
 // ==========================================
 // Notification Settings Types (Offline Local)
 // ==========================================
 export interface NotificationSettings {
   enabled: boolean;
+<<<<<<< HEAD
   reminderTime: string; // "HH:mm" (e.g. "09:00") - Reminder Time 1 (preserved for backwards compatibility)
   reminderTimes: string[]; // [Reminder Time 1, Reminder Time 2, Reminder Time 3], e.g. ["09:00", "13:00", "19:00"]
   remindOnDueDate: boolean;
   remindDaysBeforeList: number[]; // e.g. [0, 3, 7] (1 is removed)
   remindEveryDay: boolean; // Daily reminder for upcoming obligations
+=======
+  reminderTime: string; // "HH:mm" (e.g. "09:00")
+  remindOnDueDate: boolean;
+  remindDaysBeforeList: number[]; // e.g. [0, 1, 3, 7]
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
   billsEnabled: boolean;
   creditEnabled: boolean;
   loanEnabled: boolean;
@@ -183,10 +192,15 @@ export interface NotificationSettings {
 export const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettings = {
   enabled: true,
   reminderTime: '09:00',
+<<<<<<< HEAD
   reminderTimes: ['09:00', '13:00', '19:00'],
   remindOnDueDate: true,
   remindDaysBeforeList: [0, 3],
   remindEveryDay: false,
+=======
+  remindOnDueDate: true,
+  remindDaysBeforeList: [0, 1],
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
   billsEnabled: true,
   creditEnabled: true,
   loanEnabled: true,
@@ -305,7 +319,10 @@ export interface UserSettings {
   hideBalances: boolean;
   darkMode: boolean; // Backwards compatible boolean
   themeMode?: ThemeMode; // 'light' | 'dark' | 'system'
+<<<<<<< HEAD
   themeColor?: ThemeColor; // Custom theme color preference ('forest' default)
+=======
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
   startOfMonthDay: number;
   budgetReminders: boolean;
   dueReminders: boolean;
@@ -431,6 +448,7 @@ export interface RecordReceivablePaymentInput {
   notes?: string;
 }
 
+<<<<<<< HEAD
 // ==========================================
 // Grocery List Types & Categories
 // ==========================================
@@ -507,6 +525,8 @@ export interface ConvertGroceriesToExpenseInput {
   description: string;
 }
 
+=======
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
 export interface PesoTrackState {
   version: number;
   accounts: FinancialAccount[];
@@ -521,14 +541,18 @@ export interface PesoTrackState {
     income: string[];
   };
   receivables?: ReceivableRecord[]; // Dedicated Money Owed to Me records
+<<<<<<< HEAD
   groceryItems?: GroceryItem[]; // Dedicated Grocery List items
   groceryCategories?: GroceryCategory[]; // Built-in and custom grocery categories
+=======
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
   settings: UserSettings;
   updatedAt: string;
 }
 
 export type ActiveTab =
   | 'home'
+<<<<<<< HEAD
   | 'bills'
   | 'calendar'
   | 'debt-planner'
@@ -537,6 +561,15 @@ export type ActiveTab =
   | 'accounts'
   | 'reports'
   | 'grocery-list'
+=======
+  | 'transactions'
+  | 'bills'
+  | 'calendar'
+  | 'debt-planner'
+  | 'budgets'
+  | 'accounts'
+  | 'reports'
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
   | 'settings';
 
 export const DEFAULT_EXPENSE_CATEGORIES: string[] = [

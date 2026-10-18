@@ -195,31 +195,52 @@ export const MonthlyBillsPage: React.FC<MonthlyBillsPageProps> = ({
   return (
     <div className="space-y-4 pb-12 w-full max-w-full min-w-0 overflow-hidden">
       {/* 1. Header Toolbar with Month Navigator & Add Bill */}
+<<<<<<< HEAD
       <div className="bg-white dark:bg-[#15221B] rounded-[24px] p-4 sm:p-5 shadow-[0_2px_12px_rgba(0,0,0,0.025)] border border-[#E5E1D8] dark:border-[#223528] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-lg sm:text-xl font-black text-[#252923] dark:text-white tracking-tight">
             Monthly Bills & Utilities
           </h1>
           <p className="text-xs text-[#777D75] dark:text-[#8FA095]">
+=======
+      <div className="bg-white dark:bg-neutral-900 rounded-[24px] p-4 sm:p-5 shadow-[0_2px_12px_rgba(0,0,0,0.025)] border border-black/[0.04] dark:border-white/[0.06] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h1 className="text-lg sm:text-xl font-bold text-black dark:text-white">
+            Monthly Bills & Utilities
+          </h1>
+          <p className="text-xs text-neutral-500 dark:text-neutral-400">
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
             Fixed and variable expenses tracked offline with local reminders
           </p>
         </div>
 
         {/* Month Navigator Controls */}
         <div className="flex items-center gap-2 self-start sm:self-auto">
+<<<<<<< HEAD
           <div className="flex items-center bg-[#E8E4DA] dark:bg-[#16241C] rounded-2xl p-1 shadow-2xs">
+=======
+          <div className="flex items-center bg-[#EFECEF] dark:bg-neutral-800 rounded-full p-1 border border-black/[0.04] dark:border-white/[0.06]">
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
             <button
               type="button"
               onClick={handlePrevMonth}
               aria-label="Previous month"
+<<<<<<< HEAD
               className="w-7 h-7 rounded-xl flex items-center justify-center hover:bg-white dark:hover:bg-[#1E2E23] text-[#61685D] dark:text-[#9EA59B] transition-colors"
+=======
+              className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-white dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300 transition-colors"
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
             <button
               type="button"
               onClick={handleTodayMonth}
+<<<<<<< HEAD
               className="px-2.5 py-1 text-xs font-extrabold text-[#252923] dark:text-white hover:opacity-80 transition-opacity"
+=======
+              className="px-2.5 py-1 text-xs font-bold text-black dark:text-white hover:opacity-80 transition-opacity"
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
             >
               {formatMonthLabel(currentMonthKey)}
             </button>
@@ -227,7 +248,11 @@ export const MonthlyBillsPage: React.FC<MonthlyBillsPageProps> = ({
               type="button"
               onClick={handleNextMonth}
               aria-label="Next month"
+<<<<<<< HEAD
               className="w-7 h-7 rounded-xl flex items-center justify-center hover:bg-white dark:hover:bg-[#1E2E23] text-[#61685D] dark:text-[#9EA59B] transition-colors"
+=======
+              className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-white dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300 transition-colors"
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
             >
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -236,7 +261,11 @@ export const MonthlyBillsPage: React.FC<MonthlyBillsPageProps> = ({
           <button
             type="button"
             onClick={() => setIsAddBillOpen(true)}
+<<<<<<< HEAD
             className="px-3.5 py-2 rounded-xl bg-[#174F32] hover:bg-[#123E27] text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors"
+=======
+            className="px-3.5 py-2 rounded-full bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 text-xs font-bold flex items-center gap-1.5 shadow-xs hover:opacity-90 transition-opacity"
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
           >
             <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
             <span>Add Bill</span>
@@ -246,6 +275,7 @@ export const MonthlyBillsPage: React.FC<MonthlyBillsPageProps> = ({
 
       {/* 2. Monthly Summary Cards Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
+<<<<<<< HEAD
         <div className="p-3.5 sm:p-4 rounded-[22px] bg-white dark:bg-[#15221B] border border-[#E5E1D8] dark:border-[#223528] shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
           <div className="text-[11px] sm:text-xs font-semibold text-[#777D75] dark:text-[#8FA095] truncate">
             Total Billed ({formatMonthLabel(currentMonthKey)})
@@ -254,10 +284,21 @@ export const MonthlyBillsPage: React.FC<MonthlyBillsPageProps> = ({
             {formatPeso(summaryMetrics.totalBilled, { hide })}
           </div>
           <div className="text-[10px] sm:text-[11px] text-[#777D75] mt-0.5">
+=======
+        <div className="p-3.5 sm:p-4 rounded-[20px] bg-white dark:bg-neutral-900 border border-black/[0.04] dark:border-white/[0.06] shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
+          <div className="text-[11px] sm:text-xs text-neutral-500 truncate">
+            Total Billed ({formatMonthLabel(currentMonthKey)})
+          </div>
+          <div className="text-base sm:text-lg font-bold tabular-nums text-black dark:text-white mt-1">
+            {formatPeso(summaryMetrics.totalBilled, { hide })}
+          </div>
+          <div className="text-[10px] sm:text-[11px] text-neutral-400 mt-0.5">
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
             {summaryMetrics.totalBillsCount} active bills
           </div>
         </div>
 
+<<<<<<< HEAD
         <div className="p-3.5 sm:p-4 rounded-[22px] bg-white dark:bg-[#15221B] border border-[#E5E1D8] dark:border-[#223528] shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
           <div className="text-[11px] sm:text-xs font-semibold text-[#777D75] dark:text-[#8FA095] truncate">
             Total Paid
@@ -266,10 +307,21 @@ export const MonthlyBillsPage: React.FC<MonthlyBillsPageProps> = ({
             {formatPeso(summaryMetrics.totalPaid, { hide })}
           </div>
           <div className="text-[10px] sm:text-[11px] text-[#777D75] mt-0.5">
+=======
+        <div className="p-3.5 sm:p-4 rounded-[20px] bg-white dark:bg-neutral-900 border border-black/[0.04] dark:border-white/[0.06] shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
+          <div className="text-[11px] sm:text-xs text-neutral-500 truncate">
+            Total Paid
+          </div>
+          <div className="text-base sm:text-lg font-bold tabular-nums text-[#2E9E6B] mt-1">
+            {formatPeso(summaryMetrics.totalPaid, { hide })}
+          </div>
+          <div className="text-[10px] sm:text-[11px] text-neutral-400 mt-0.5">
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
             {summaryMetrics.paidCount} of {summaryMetrics.totalBillsCount} fully paid
           </div>
         </div>
 
+<<<<<<< HEAD
         <div className="p-3.5 sm:p-4 rounded-[22px] bg-white dark:bg-[#15221B] border border-[#E5E1D8] dark:border-[#223528] shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
           <div className="text-[11px] sm:text-xs font-semibold text-[#777D75] dark:text-[#8FA095] truncate">
             Remaining to Pay
@@ -278,10 +330,21 @@ export const MonthlyBillsPage: React.FC<MonthlyBillsPageProps> = ({
             {formatPeso(summaryMetrics.totalRemaining, { hide })}
           </div>
           <div className="text-[10px] sm:text-[11px] text-[#777D75] mt-0.5">
+=======
+        <div className="p-3.5 sm:p-4 rounded-[20px] bg-white dark:bg-neutral-900 border border-black/[0.04] dark:border-white/[0.06] shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
+          <div className="text-[11px] sm:text-xs text-neutral-500 truncate">
+            Remaining to Pay
+          </div>
+          <div className="text-base sm:text-lg font-bold tabular-nums text-[#DC2626] mt-1">
+            {formatPeso(summaryMetrics.totalRemaining, { hide })}
+          </div>
+          <div className="text-[10px] sm:text-[11px] text-neutral-400 mt-0.5">
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
             Balance due
           </div>
         </div>
 
+<<<<<<< HEAD
         <div className="p-3.5 sm:p-4 rounded-[22px] bg-white dark:bg-[#15221B] border border-[#E5E1D8] dark:border-[#223528] shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
           <div className="text-[11px] sm:text-xs font-semibold text-[#777D75] dark:text-[#8FA095] truncate">
             Overdue Obligations
@@ -289,13 +352,26 @@ export const MonthlyBillsPage: React.FC<MonthlyBillsPageProps> = ({
           <div
             className={`text-base sm:text-lg font-black tabular-nums mt-1 ${
               summaryMetrics.overdueCount > 0 ? 'text-[#DC2626]' : 'text-[#777D75]'
+=======
+        <div className="p-3.5 sm:p-4 rounded-[20px] bg-white dark:bg-neutral-900 border border-black/[0.04] dark:border-white/[0.06] shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
+          <div className="text-[11px] sm:text-xs text-neutral-500 truncate">
+            Overdue Obligations
+          </div>
+          <div
+            className={`text-base sm:text-lg font-bold tabular-nums mt-1 ${
+              summaryMetrics.overdueCount > 0 ? 'text-[#DC2626]' : 'text-neutral-400'
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
             }`}
           >
             {summaryMetrics.overdueCount > 0
               ? formatPeso(summaryMetrics.overdueAmount, { hide })
               : 'None'}
           </div>
+<<<<<<< HEAD
           <div className="text-[10px] sm:text-[11px] text-[#777D75] mt-0.5">
+=======
+          <div className="text-[10px] sm:text-[11px] text-neutral-400 mt-0.5">
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
             {summaryMetrics.overdueCount} bills past due date
           </div>
         </div>
@@ -306,18 +382,30 @@ export const MonthlyBillsPage: React.FC<MonthlyBillsPageProps> = ({
         <div className="flex flex-col sm:flex-row sm:items-center gap-2">
           {/* Search Box */}
           <div className="relative flex-1">
+<<<<<<< HEAD
             <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#777D75] dark:text-[#8FA095]" />
+=======
+            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400" />
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search bills by name or category..."
+<<<<<<< HEAD
               className="w-full pl-9 pr-3.5 py-2.5 rounded-2xl bg-white dark:bg-[#15221B] border border-[#E5E1D8] dark:border-[#223528] text-xs sm:text-sm text-[#252923] dark:text-white placeholder:text-[#777D75] focus:outline-none focus:ring-2 focus:ring-[#174F32] dark:focus:ring-[#83C95B]"
+=======
+              className="w-full pl-9 pr-3.5 py-2 rounded-full bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 text-xs sm:text-sm text-black dark:text-white focus:outline-hidden"
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
             />
           </div>
 
           {/* Status Filter Buttons */}
+<<<<<<< HEAD
           <div className="bg-[#E8E4DA] dark:bg-[#16241C] p-1 rounded-2xl flex items-center gap-1 overflow-x-auto no-scrollbar shadow-2xs">
+=======
+          <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5">
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
             {(
               [
                 { id: 'all', label: 'All' },
@@ -331,10 +419,17 @@ export const MonthlyBillsPage: React.FC<MonthlyBillsPageProps> = ({
                 key={st.id}
                 type="button"
                 onClick={() => setStatusFilter(st.id)}
+<<<<<<< HEAD
                 className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
                   statusFilter === st.id
                     ? 'bg-[#174F32] text-white shadow-2xs'
                     : 'text-[#61685D] dark:text-[#9EA59B] hover:text-[#174F32] dark:hover:text-white'
+=======
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
+                  statusFilter === st.id
+                    ? 'bg-neutral-950 text-white dark:bg-white dark:text-neutral-950 shadow-xs'
+                    : 'bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-300 border border-neutral-200/80 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800'
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
                 }`}
               >
                 {st.label}
@@ -346,14 +441,23 @@ export const MonthlyBillsPage: React.FC<MonthlyBillsPageProps> = ({
 
       {/* 4. Bills Cards List */}
       {filteredBills.length === 0 ? (
+<<<<<<< HEAD
         <div className="p-8 text-center rounded-[24px] bg-white dark:bg-[#15221B] border border-[#E5E1D8] dark:border-[#223528] space-y-3">
           <p className="text-xs sm:text-sm text-[#777D75] dark:text-[#8FA095]">
+=======
+        <div className="p-8 text-center rounded-[24px] bg-white dark:bg-neutral-900 border border-black/[0.04] dark:border-white/[0.06] space-y-3">
+          <p className="text-xs sm:text-sm text-neutral-500">
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
             No bills match your active filters for {formatMonthLabel(currentMonthKey)}.
           </p>
           <button
             type="button"
             onClick={() => setIsAddBillOpen(true)}
+<<<<<<< HEAD
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#174F32] hover:bg-[#123E27] text-white text-xs font-bold shadow-xs transition-colors"
+=======
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 text-xs font-bold"
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Add Bill for this Month</span>
@@ -370,11 +474,16 @@ export const MonthlyBillsPage: React.FC<MonthlyBillsPageProps> = ({
             return (
               <div
                 key={item.bill.id}
+<<<<<<< HEAD
                 className="bg-white dark:bg-[#15221B] rounded-[24px] p-4 sm:p-5 shadow-[0_2px_12px_rgba(0,0,0,0.025)] border border-[#E5E1D8] dark:border-[#223528] flex flex-col justify-between space-y-3.5 hover:border-[#174F32]/30 dark:hover:border-[#83C95B]/30 transition-colors"
+=======
+                className="bg-white dark:bg-neutral-900 rounded-[22px] sm:rounded-[24px] p-4 sm:p-5 shadow-[0_2px_12px_rgba(0,0,0,0.025)] border border-black/[0.04] dark:border-white/[0.06] flex flex-col justify-between space-y-3.5 hover:border-black/10 dark:hover:border-white/10 transition-colors"
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
               >
                 {/* Top Row: Category icon, Name & Status Badge */}
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-2.5 min-w-0">
+<<<<<<< HEAD
                     <div className="w-9 h-9 rounded-xl bg-[#F6F4EE] dark:bg-[#1A2A20] text-[#174F32] dark:text-[#83C95B] border border-[#E5E1D8] dark:border-[#243A2C] flex items-center justify-center shrink-0">
                       {item.bill.category === 'Electricity' ? (
                         <Zap className="w-4 h-4 text-amber-500" />
@@ -382,10 +491,20 @@ export const MonthlyBillsPage: React.FC<MonthlyBillsPageProps> = ({
                         <Wifi className="w-4 h-4 text-emerald-600 dark:text-[#83C95B]" />
                       ) : (
                         <Calendar className="w-4 h-4 text-[#174F32] dark:text-[#83C95B]" />
+=======
+                    <div className="w-9 h-9 rounded-full bg-neutral-100 dark:bg-neutral-800 text-black dark:text-white flex items-center justify-center shrink-0">
+                      {item.bill.category === 'Electricity' ? (
+                        <Zap className="w-4 h-4 text-amber-500" />
+                      ) : item.bill.category === 'Wi-Fi / Internet' ? (
+                        <Wifi className="w-4 h-4 text-blue-500" />
+                      ) : (
+                        <Calendar className="w-4 h-4 text-neutral-500" />
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
                       )}
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5 flex-wrap">
+<<<<<<< HEAD
                         <span className="text-sm font-bold text-[#252923] dark:text-white truncate">
                           {item.displayName}
                         </span>
@@ -395,6 +514,17 @@ export const MonthlyBillsPage: React.FC<MonthlyBillsPageProps> = ({
                       </div>
                       <div className="text-[11px] text-[#777D75] dark:text-[#8FA095] mt-0.5 flex items-center gap-1">
                         <Clock className="w-3 h-3 text-[#777D75]" />
+=======
+                        <span className="text-sm font-bold text-black dark:text-white truncate">
+                          {item.displayName}
+                        </span>
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-500 uppercase tracking-wider">
+                          {item.bill.type}
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5 flex items-center gap-1">
+                        <Clock className="w-3 h-3 text-neutral-400" />
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
                         <span>
                           Due on {item.dueDateStr} (Day {item.dueDay})
                         </span>
@@ -406,12 +536,21 @@ export const MonthlyBillsPage: React.FC<MonthlyBillsPageProps> = ({
                   <span
                     className={`px-2.5 py-1 rounded-full text-[10px] sm:text-[11px] font-bold uppercase tracking-wider shrink-0 ${
                       item.status === 'paid'
+<<<<<<< HEAD
                         ? 'bg-emerald-500/15 text-[#16A34A] dark:text-[#83C95B]'
                         : item.status === 'overdue'
                         ? 'bg-red-500/15 text-[#DC2626]'
                         : item.status === 'partially_paid'
                         ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
                         : 'bg-[#E8E4DA] dark:bg-[#1E2E23] text-[#61685D] dark:text-[#9EA59B]'
+=======
+                        ? 'bg-emerald-500/10 text-[#2E9E6B]'
+                        : item.status === 'overdue'
+                        ? 'bg-red-500/10 text-[#DC2626]'
+                        : item.status === 'partially_paid'
+                        ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                        : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400'
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
                     }`}
                   >
                     {item.status === 'paid'
@@ -427,6 +566,7 @@ export const MonthlyBillsPage: React.FC<MonthlyBillsPageProps> = ({
                 {/* Amount Details */}
                 <div className="space-y-1.5">
                   <div className="flex items-baseline justify-between text-xs">
+<<<<<<< HEAD
                     <span className="text-[#777D75] dark:text-[#8FA095]">
                       Billed:{' '}
                       <strong className="text-[#252923] dark:text-white tabular-nums">
@@ -436,17 +576,36 @@ export const MonthlyBillsPage: React.FC<MonthlyBillsPageProps> = ({
                     <span className="text-xs tabular-nums text-[#777D75] dark:text-[#8FA095]">
                       Paid:{' '}
                       <strong className="text-[#16A34A] dark:text-[#83C95B]">
+=======
+                    <span className="text-neutral-500">
+                      Billed:{' '}
+                      <strong className="text-black dark:text-white tabular-nums">
+                        {formatPeso(item.billedAmount, { hide })}
+                      </strong>
+                    </span>
+                    <span className="text-xs tabular-nums text-neutral-500">
+                      Paid:{' '}
+                      <strong className="text-[#2E9E6B]">
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
                         {formatPeso(item.totalPaid, { hide })}
                       </strong>
                     </span>
                   </div>
 
                   {/* Progress Bar */}
+<<<<<<< HEAD
                   <div className="w-full h-2 bg-[#E8E4DA] dark:bg-[#1E2E23] rounded-full overflow-hidden">
                     <div
                       className={`h-full rounded-full transition-all duration-300 ${
                         item.status === 'paid'
                           ? 'bg-[#174F32] dark:bg-[#83C95B]'
+=======
+                  <div className="w-full h-2 bg-neutral-100 dark:bg-neutral-800 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-300 ${
+                        item.status === 'paid'
+                          ? 'bg-[#2E9E6B]'
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
                           : item.status === 'overdue'
                           ? 'bg-[#DC2626]'
                           : 'bg-amber-500'
@@ -456,7 +615,11 @@ export const MonthlyBillsPage: React.FC<MonthlyBillsPageProps> = ({
                   </div>
 
                   <div className="flex justify-between items-center text-[11px] pt-0.5">
+<<<<<<< HEAD
                     <span className="text-[#777D75] dark:text-[#8FA095]">
+=======
+                    <span className="text-neutral-400">
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
                       {item.paymentsCount > 0
                         ? `${item.paymentsCount} recorded payment${item.paymentsCount > 1 ? 's' : ''}`
                         : 'No payments recorded'}
@@ -470,11 +633,19 @@ export const MonthlyBillsPage: React.FC<MonthlyBillsPageProps> = ({
                 </div>
 
                 {/* Bottom Actions */}
+<<<<<<< HEAD
                 <div className="flex items-center gap-2 pt-2 border-t border-[#E5E1D8] dark:border-[#223528]">
                   <button
                     type="button"
                     onClick={() => setSelectedBillForDetail(item.bill)}
                     className="flex-1 py-2 rounded-xl border border-[#E5E1D8] dark:border-[#243A2C] text-xs font-bold text-[#252923] dark:text-white hover:bg-[#F6F4EE] dark:hover:bg-[#1A2A20] transition-colors text-center"
+=======
+                <div className="flex items-center gap-2 pt-1 border-t border-neutral-100 dark:border-neutral-800">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedBillForDetail(item.bill)}
+                    className="flex-1 py-2 rounded-full border border-neutral-200 dark:border-neutral-700 text-xs font-semibold text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors text-center"
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
                   >
                     View Details
                   </button>
@@ -483,7 +654,11 @@ export const MonthlyBillsPage: React.FC<MonthlyBillsPageProps> = ({
                     <button
                       type="button"
                       onClick={() => setSelectedBillForPayment(item.bill)}
+<<<<<<< HEAD
                       className="flex-1 py-2 rounded-xl bg-[#174F32] hover:bg-[#123E27] text-white text-xs font-bold shadow-xs transition-colors flex items-center justify-center gap-1"
+=======
+                      className="flex-1 py-2 rounded-full bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 text-xs font-bold hover:opacity-90 transition-opacity flex items-center justify-center gap-1"
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
                     >
                       <DollarSign className="w-3.5 h-3.5" />
                       <span>Record Payment</span>

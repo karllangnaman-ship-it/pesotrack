@@ -1,5 +1,9 @@
 <!doctype html>
+<<<<<<< HEAD
 <html lang="en-PH" class="bg-[#F6F4EE]">
+=======
+<html lang="en-PH" class="bg-[#F3F0F5]">
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
@@ -9,7 +13,11 @@
     <meta property="og:description" content="A minimalist personal finance manager to track your net worth, manage budgets, and monitor transactions in Philippine pesos." />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
+<<<<<<< HEAD
     <meta name="theme-color" content="#F6F4EE" />
+=======
+    <meta name="theme-color" content="#F3F0F5" />
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -52,11 +60,17 @@
         try {
           var s = localStorage.getItem('pesotrack_state_v1');
           var isDark = false;
+<<<<<<< HEAD
           var tc = 'forest';
           if (s) {
             var p = JSON.parse(s);
             if (p && p.settings) {
               if (p.settings.themeColor) tc = p.settings.themeColor;
+=======
+          if (s) {
+            var p = JSON.parse(s);
+            if (p && p.settings) {
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
               var tm = p.settings.themeMode;
               if (tm === 'dark') isDark = true;
               else if (tm === 'light') isDark = false;
@@ -68,28 +82,43 @@
             }
           } else {
             isDark = !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+<<<<<<< HEAD
             var savedTc = localStorage.getItem('pesotrack_theme_color');
             if (savedTc) tc = savedTc;
           }
           if (tc) {
             document.documentElement.setAttribute('data-theme-color', tc);
+=======
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
           }
           if (isDark) {
             document.documentElement.classList.add('dark', 'dark-theme');
             document.documentElement.style.colorScheme = 'dark';
             var meta = document.querySelector('meta[name="theme-color"]');
+<<<<<<< HEAD
             if (meta) meta.setAttribute('content', '#0D1410');
+=======
+            if (meta) meta.setAttribute('content', '#0E0F14');
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
           } else {
             document.documentElement.classList.remove('dark', 'dark-theme');
             document.documentElement.style.colorScheme = 'light';
             var meta = document.querySelector('meta[name="theme-color"]');
+<<<<<<< HEAD
             if (meta) meta.setAttribute('content', '#F6F4EE');
+=======
+            if (meta) meta.setAttribute('content', '#F3F0F5');
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
           }
         } catch (e) {}
       })();
     </script>
   </head>
+<<<<<<< HEAD
   <body class="bg-[#F6F4EE] text-[#252923] antialiased selection:bg-[#174F32] selection:text-white m-0 p-0">
+=======
+  <body class="bg-[#F3F0F5] text-neutral-950 antialiased selection:bg-neutral-900 selection:text-white m-0 p-0">
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

@@ -287,6 +287,7 @@ export const BillCalendarPage: React.FC = () => {
   return (
     <div className="space-y-4 pb-12 w-full max-w-full min-w-0 overflow-hidden">
       {/* 1. Header & Month Navigator */}
+<<<<<<< HEAD
       <div className="bg-white dark:bg-[#15221B] rounded-[24px] p-4 sm:p-5 shadow-[0_2px_12px_rgba(0,0,0,0.025)] border border-[#E5E1D8] dark:border-[#223528] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-lg sm:text-xl font-black text-[#252923] dark:text-white flex items-center gap-2">
@@ -294,6 +295,15 @@ export const BillCalendarPage: React.FC = () => {
             <span>Bill & Debt Calendar</span>
           </h1>
           <p className="text-xs text-[#777D75] dark:text-[#8FA095]">
+=======
+      <div className="bg-white dark:bg-[#12131A] rounded-[24px] p-4 sm:p-5 shadow-[0_2px_12px_rgba(0,0,0,0.025)] border border-black/[0.04] dark:border-white/[0.06] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h1 className="text-lg sm:text-xl font-bold text-black dark:text-white flex items-center gap-2">
+            <Calendar className="w-5 h-5 text-neutral-800 dark:text-neutral-200" />
+            <span>Bill & Debt Calendar</span>
+          </h1>
+          <p className="text-xs text-neutral-500 dark:text-neutral-400">
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
             Unified schedule of bills, credit cards, loans, and collections
           </p>
         </div>
@@ -301,19 +311,31 @@ export const BillCalendarPage: React.FC = () => {
         {/* View Switcher & Month Navigation Controls */}
         <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
           {/* Month Jump Controls */}
+<<<<<<< HEAD
           <div className="flex items-center bg-[#E8E4DA] dark:bg-[#16241C] rounded-2xl p-1 shadow-2xs">
+=======
+          <div className="flex items-center bg-[#EFECEF] dark:bg-neutral-800/80 rounded-full p-1 border border-black/[0.04] dark:border-white/[0.06]">
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
             <button
               type="button"
               onClick={handlePrevMonth}
               aria-label="Previous month"
+<<<<<<< HEAD
               className="w-7 h-7 rounded-xl flex items-center justify-center hover:bg-white dark:hover:bg-[#1E2E23] text-[#61685D] dark:text-[#9EA59B] transition-colors"
+=======
+              className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-white dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300 transition-colors"
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
             <button
               type="button"
               onClick={handleToday}
+<<<<<<< HEAD
               className="px-2.5 py-1 text-xs font-extrabold text-[#252923] dark:text-white hover:opacity-80 transition-opacity whitespace-nowrap"
+=======
+              className="px-2.5 py-1 text-xs font-bold text-black dark:text-white hover:opacity-80 transition-opacity whitespace-nowrap"
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
             >
               {formatMonthLabel(currentMonthKey)}
             </button>
@@ -321,14 +343,22 @@ export const BillCalendarPage: React.FC = () => {
               type="button"
               onClick={handleNextMonth}
               aria-label="Next month"
+<<<<<<< HEAD
               className="w-7 h-7 rounded-xl flex items-center justify-center hover:bg-white dark:hover:bg-[#1E2E23] text-[#61685D] dark:text-[#9EA59B] transition-colors"
+=======
+              className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-white dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300 transition-colors"
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
             >
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>
 
           {/* View Mode Switcher: Month, Week, Agenda */}
+<<<<<<< HEAD
           <div className="flex items-center bg-[#E8E4DA] dark:bg-[#16241C] rounded-2xl p-1 shadow-2xs">
+=======
+          <div className="flex items-center bg-[#EFECEF] dark:bg-neutral-800/80 rounded-full p-1 border border-black/[0.04] dark:border-white/[0.06]">
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
             {(
               [
                 { id: 'month', label: 'Month' },
@@ -340,10 +370,17 @@ export const BillCalendarPage: React.FC = () => {
                 key={v.id}
                 type="button"
                 onClick={() => setViewMode(v.id)}
+<<<<<<< HEAD
                 className={`px-3 py-1 rounded-xl text-xs font-bold transition-all ${
                   viewMode === v.id
                     ? 'bg-[#174F32] text-white shadow-2xs'
                     : 'text-[#61685D] dark:text-[#9EA59B] hover:text-[#174F32] dark:hover:text-white'
+=======
+                className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${
+                  viewMode === v.id
+                    ? 'bg-white dark:bg-neutral-900 text-black dark:text-white shadow-2xs'
+                    : 'text-neutral-500 hover:text-black dark:hover:text-white'
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
                 }`}
               >
                 {v.label}
@@ -355,6 +392,7 @@ export const BillCalendarPage: React.FC = () => {
 
       {/* 2. Responsive Calendar KPI Summary Cards (2 cols on mobile/tablet, 4 on desktop) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3.5">
+<<<<<<< HEAD
         <div className="p-3.5 sm:p-4 rounded-[22px] bg-white dark:bg-[#15221B] border border-[#E5E1D8] dark:border-[#223528] shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
           <div className="text-[11px] font-semibold text-[#777D75] dark:text-[#8FA095] truncate">
             Total Bills Due
@@ -363,10 +401,21 @@ export const BillCalendarPage: React.FC = () => {
             {formatPeso(metrics.totalBillsDue, { hide })}
           </div>
           <div className="text-[10px] text-[#777D75] mt-1 truncate">
+=======
+        <div className="p-3.5 sm:p-4 rounded-[20px] bg-white dark:bg-[#12131A] border border-black/[0.04] dark:border-white/[0.06] shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
+          <div className="text-[11px] font-semibold text-neutral-500 dark:text-neutral-400 truncate">
+            Total Bills Due
+          </div>
+          <div className="text-base sm:text-lg font-bold tabular-nums text-black dark:text-white mt-0.5">
+            {formatPeso(metrics.totalBillsDue, { hide })}
+          </div>
+          <div className="text-[10px] text-neutral-400 mt-1 truncate">
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
             Paid: {formatPeso(metrics.totalBillsPaid, { hide })}
           </div>
         </div>
 
+<<<<<<< HEAD
         <div className="p-3.5 sm:p-4 rounded-[22px] bg-white dark:bg-[#15221B] border border-[#E5E1D8] dark:border-[#223528] shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
           <div className="text-[11px] font-semibold text-[#777D75] dark:text-[#8FA095] truncate">
             Credit & Loan Dues
@@ -375,10 +424,21 @@ export const BillCalendarPage: React.FC = () => {
             {formatPeso(metrics.upcomingCreditAndLoans, { hide })}
           </div>
           <div className="text-[10px] text-[#777D75] mt-1 truncate">
+=======
+        <div className="p-3.5 sm:p-4 rounded-[20px] bg-white dark:bg-[#12131A] border border-black/[0.04] dark:border-white/[0.06] shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
+          <div className="text-[11px] font-semibold text-neutral-500 dark:text-neutral-400 truncate">
+            Credit & Loan Dues
+          </div>
+          <div className="text-base sm:text-lg font-bold tabular-nums text-indigo-600 dark:text-indigo-400 mt-0.5">
+            {formatPeso(metrics.upcomingCreditAndLoans, { hide })}
+          </div>
+          <div className="text-[10px] text-neutral-400 mt-1 truncate">
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
             Active credit cards & loans
           </div>
         </div>
 
+<<<<<<< HEAD
         <div className="p-3.5 sm:p-4 rounded-[22px] bg-white dark:bg-[#15221B] border border-[#E5E1D8] dark:border-[#223528] shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
           <div className="text-[11px] font-semibold text-[#777D75] dark:text-[#8FA095] truncate">
             Overdue Payments
@@ -386,17 +446,31 @@ export const BillCalendarPage: React.FC = () => {
           <div
             className={`text-base sm:text-lg font-black tabular-nums mt-0.5 ${
               metrics.overdueCount > 0 ? 'text-[#DC2626]' : 'text-[#777D75]'
+=======
+        <div className="p-3.5 sm:p-4 rounded-[20px] bg-white dark:bg-[#12131A] border border-black/[0.04] dark:border-white/[0.06] shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
+          <div className="text-[11px] font-semibold text-neutral-500 dark:text-neutral-400 truncate">
+            Overdue Payments
+          </div>
+          <div
+            className={`text-base sm:text-lg font-bold tabular-nums mt-0.5 ${
+              metrics.overdueCount > 0 ? 'text-[#DC2626]' : 'text-neutral-400'
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
             }`}
           >
             {metrics.overdueCount > 0
               ? formatPeso(metrics.overdueAmount, { hide })
               : 'None'}
           </div>
+<<<<<<< HEAD
           <div className="text-[10px] text-[#777D75] mt-1 truncate">
+=======
+          <div className="text-[10px] text-neutral-400 mt-1 truncate">
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
             {metrics.overdueCount} {metrics.overdueCount === 1 ? 'obligation' : 'obligations'} past due
           </div>
         </div>
 
+<<<<<<< HEAD
         <div className="p-3.5 sm:p-4 rounded-[22px] bg-white dark:bg-[#15221B] border border-[#E5E1D8] dark:border-[#223528] shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
           <div className="text-[11px] font-semibold text-[#777D75] dark:text-[#8FA095] truncate">
             Expected Collections
@@ -405,6 +479,16 @@ export const BillCalendarPage: React.FC = () => {
             {formatPeso(metrics.expectedCollections, { hide })}
           </div>
           <div className="text-[10px] text-[#777D75] mt-1 truncate">
+=======
+        <div className="p-3.5 sm:p-4 rounded-[20px] bg-white dark:bg-[#12131A] border border-black/[0.04] dark:border-white/[0.06] shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
+          <div className="text-[11px] font-semibold text-neutral-500 dark:text-neutral-400 truncate">
+            Expected Collections
+          </div>
+          <div className="text-base sm:text-lg font-bold tabular-nums text-[#2E9E6B] mt-0.5">
+            {formatPeso(metrics.expectedCollections, { hide })}
+          </div>
+          <div className="text-[10px] text-neutral-400 mt-1 truncate">
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
             Collected: {formatPeso(metrics.collectedAmount, { hide })}
           </div>
         </div>
@@ -413,7 +497,11 @@ export const BillCalendarPage: React.FC = () => {
       {/* 3. Category & Status Filter Pills */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
         {/* Type Filter Buttons */}
+<<<<<<< HEAD
         <div className="bg-[#E8E4DA] dark:bg-[#16241C] p-1 rounded-2xl flex items-center gap-1 overflow-x-auto no-scrollbar shadow-2xs">
+=======
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
           {(
             [
               { id: 'all', label: 'All Items' },
@@ -427,10 +515,17 @@ export const BillCalendarPage: React.FC = () => {
               key={t.id}
               type="button"
               onClick={() => setTypeFilter(t.id)}
+<<<<<<< HEAD
               className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
                 typeFilter === t.id
                   ? 'bg-[#174F32] text-white shadow-2xs'
                   : 'text-[#61685D] dark:text-[#9EA59B] hover:text-[#174F32] dark:hover:text-white'
+=======
+              className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
+                typeFilter === t.id
+                  ? 'bg-neutral-950 text-white dark:bg-white dark:text-neutral-950 shadow-xs'
+                  : 'bg-white dark:bg-[#12131A] text-neutral-600 dark:text-neutral-300 border border-neutral-200/80 dark:border-white/[0.06] hover:bg-neutral-50 dark:hover:bg-neutral-800'
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
               }`}
             >
               {t.label}
@@ -452,10 +547,17 @@ export const BillCalendarPage: React.FC = () => {
               key={s.id}
               type="button"
               onClick={() => setStatusFilter(s.id)}
+<<<<<<< HEAD
               className={`px-3 py-1 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
                 statusFilter === s.id
                   ? 'bg-[#174F32] text-white dark:bg-[#83C95B] dark:text-[#174F32] shadow-2xs'
                   : 'bg-white dark:bg-[#15221B] text-[#61685D] dark:text-[#9EA59B] border border-[#E5E1D8] dark:border-[#223528]'
+=======
+              className={`px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
+                statusFilter === s.id
+                  ? 'bg-neutral-800 text-white dark:bg-neutral-200 dark:text-neutral-900 font-bold'
+                  : 'text-neutral-500 hover:text-black dark:hover:text-white'
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
               }`}
             >
               {s.label}
@@ -466,7 +568,11 @@ export const BillCalendarPage: React.FC = () => {
             <button
               type="button"
               onClick={() => setSelectedDayNumber(null)}
+<<<<<<< HEAD
               className="px-2.5 py-1 rounded-xl text-xs font-bold bg-amber-500/15 text-amber-700 dark:text-amber-300 whitespace-nowrap"
+=======
+              className="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-700 dark:text-amber-300 whitespace-nowrap"
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
             >
               Day {selectedDayNumber} ✕
             </button>
@@ -476,9 +582,15 @@ export const BillCalendarPage: React.FC = () => {
 
       {/* 4. VIEW: MONTH VIEW GRID */}
       {viewMode === 'month' && (
+<<<<<<< HEAD
         <div className="bg-white dark:bg-[#15221B] rounded-[24px] p-3 sm:p-5 shadow-[0_2px_12px_rgba(0,0,0,0.025)] border border-[#E5E1D8] dark:border-[#223528] overflow-hidden">
           {/* Weekday Labels Header */}
           <div className="grid grid-cols-7 gap-1 text-center font-bold text-xs text-[#777D75] dark:text-[#8FA095] pb-2 border-b border-[#E5E1D8] dark:border-[#223528]">
+=======
+        <div className="bg-white dark:bg-[#12131A] rounded-[24px] p-3 sm:p-5 shadow-[0_2px_12px_rgba(0,0,0,0.025)] border border-black/[0.04] dark:border-white/[0.06] overflow-hidden">
+          {/* Weekday Labels Header */}
+          <div className="grid grid-cols-7 gap-1 text-center font-bold text-xs text-neutral-400 pb-2 border-b border-neutral-100 dark:border-neutral-800">
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
             <span>Sun</span>
             <span>Mon</span>
             <span>Tue</span>
@@ -514,10 +626,17 @@ export const BillCalendarPage: React.FC = () => {
                   }}
                   className={`h-14 sm:h-20 lg:h-24 p-1 sm:p-1.5 rounded-xl sm:rounded-2xl flex flex-col justify-between text-left transition-all relative ${
                     isSelected
+<<<<<<< HEAD
                       ? 'bg-[#174F32] text-white shadow-md ring-2 ring-[#174F32] dark:ring-[#83C95B]'
                       : cell.isToday
                       ? 'bg-[#E8E4DA] dark:bg-[#1E2E23] font-bold text-[#252923] dark:text-white'
                       : 'hover:bg-[#F6F4EE] dark:hover:bg-[#1A2A20] text-[#252923] dark:text-white'
+=======
+                      ? 'bg-neutral-950 text-white dark:bg-white dark:text-neutral-950 shadow-md ring-2 ring-neutral-950 dark:ring-white'
+                      : cell.isToday
+                      ? 'bg-neutral-100 dark:bg-neutral-800/80 font-bold text-black dark:text-white'
+                      : 'hover:bg-neutral-50 dark:hover:bg-neutral-800/40 text-neutral-800 dark:text-neutral-200'
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
                   }`}
                 >
                   <div className="flex items-center justify-between w-full">
@@ -586,6 +705,7 @@ export const BillCalendarPage: React.FC = () => {
 
       {/* 5. VIEW: WEEK VIEW */}
       {viewMode === 'week' && (
+<<<<<<< HEAD
         <div className="bg-white dark:bg-[#15221B] rounded-[24px] p-3 sm:p-5 shadow-[0_2px_12px_rgba(0,0,0,0.025)] border border-[#E5E1D8] dark:border-[#223528] space-y-4 overflow-hidden">
           {/* Week Header Navigation */}
           <div className="flex items-center justify-between pb-3 border-b border-[#E5E1D8] dark:border-[#223528]">
@@ -594,6 +714,16 @@ export const BillCalendarPage: React.FC = () => {
                 Week Range
               </span>
               <div className="text-sm sm:text-base font-black text-[#252923] dark:text-white">
+=======
+        <div className="bg-white dark:bg-[#12131A] rounded-[24px] p-3 sm:p-5 shadow-[0_2px_12px_rgba(0,0,0,0.025)] border border-black/[0.04] dark:border-white/[0.06] space-y-4 overflow-hidden">
+          {/* Week Header Navigation */}
+          <div className="flex items-center justify-between pb-3 border-b border-black/[0.05] dark:border-white/[0.06]">
+            <div>
+              <span className="text-xs font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                Week Range
+              </span>
+              <div className="text-sm sm:text-base font-extrabold text-black dark:text-white">
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
                 {weekData.startLabel} – {weekData.endLabel}
               </div>
             </div>
@@ -603,14 +733,22 @@ export const BillCalendarPage: React.FC = () => {
                 type="button"
                 onClick={handlePrevWeek}
                 aria-label="Previous week"
+<<<<<<< HEAD
                 className="w-8 h-8 rounded-xl flex items-center justify-center bg-[#F6F4EE] dark:bg-[#1A2A20] hover:bg-[#E8E4DA] dark:hover:bg-[#223528] text-[#252923] dark:text-white transition-colors"
+=======
+                className="w-8 h-8 rounded-full flex items-center justify-center bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 transition-colors"
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
               <button
                 type="button"
                 onClick={() => setWeekReferenceDate(new Date())}
+<<<<<<< HEAD
                 className="px-3 py-1.5 text-xs font-bold rounded-xl bg-[#F6F4EE] dark:bg-[#1A2A20] text-[#252923] dark:text-white hover:bg-[#E8E4DA] dark:hover:bg-[#223528] transition-colors"
+=======
+                className="px-3 py-1.5 text-xs font-bold rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
               >
                 This Week
               </button>
@@ -618,7 +756,11 @@ export const BillCalendarPage: React.FC = () => {
                 type="button"
                 onClick={handleNextWeek}
                 aria-label="Next week"
+<<<<<<< HEAD
                 className="w-8 h-8 rounded-xl flex items-center justify-center bg-[#F6F4EE] dark:bg-[#1A2A20] hover:bg-[#E8E4DA] dark:hover:bg-[#223528] text-[#252923] dark:text-white transition-colors"
+=======
+                className="w-8 h-8 rounded-full flex items-center justify-center bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 transition-colors"
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
@@ -632,12 +774,21 @@ export const BillCalendarPage: React.FC = () => {
                 key={day.dateStr}
                 className={`flex flex-col min-h-[220px] rounded-2xl p-2.5 border transition-all ${
                   day.isToday
+<<<<<<< HEAD
                     ? 'bg-[#F6F4EE]/80 dark:bg-[#1A2A20]/60 border-[#174F32]/40 dark:border-[#83C95B]/40'
                     : 'bg-white dark:bg-[#15221B] border-[#E5E1D8] dark:border-[#223528]'
                 }`}
               >
                 {/* Day Header */}
                 <div className="flex items-center justify-between pb-2 border-b border-[#E5E1D8] dark:border-[#223528]">
+=======
+                    ? 'bg-neutral-50/80 dark:bg-neutral-800/40 border-neutral-300 dark:border-neutral-700'
+                    : 'bg-white dark:bg-neutral-900/60 border-neutral-100 dark:border-neutral-800/80'
+                }`}
+              >
+                {/* Day Header */}
+                <div className="flex items-center justify-between pb-2 border-b border-black/[0.04] dark:border-white/[0.04]">
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
                   <div>
                     <span className="text-[10px] font-bold uppercase text-neutral-400">
                       {day.dayName}
@@ -820,7 +971,11 @@ export const BillCalendarPage: React.FC = () => {
         </div>
 
         {filteredEvents.length === 0 ? (
+<<<<<<< HEAD
           <div className="p-8 rounded-[24px] bg-white dark:bg-[#15221B] border border-[#E5E1D8] dark:border-[#223528] text-center text-xs sm:text-sm text-[#777D75] dark:text-[#8FA095]">
+=======
+          <div className="p-8 rounded-[24px] bg-white dark:bg-[#12131A] border border-black/[0.04] dark:border-white/[0.06] text-center text-xs sm:text-sm text-neutral-500">
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
             No scheduled bills, debt payments, or collections found for this selection.
           </div>
         ) : (
@@ -829,15 +984,24 @@ export const BillCalendarPage: React.FC = () => {
               <div
                 key={ev.id}
                 onClick={() => handleEventClick(ev)}
+<<<<<<< HEAD
                 className="bg-white dark:bg-[#15221B] rounded-[22px] p-3.5 sm:p-4 shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-[#E5E1D8] dark:border-[#223528] flex items-center justify-between gap-3 hover:border-[#174F32]/30 dark:hover:border-[#83C95B]/30 cursor-pointer transition-all active:scale-[0.99]"
               >
                 {/* Left: Icon & Title */}
                 <div className="flex items-center gap-3 min-w-0 flex-1">
                   <div className="w-10 h-10 rounded-2xl bg-[#F6F4EE] dark:bg-[#1A2A20] border border-[#E5E1D8] dark:border-[#243A2C] text-[#174F32] dark:text-[#83C95B] flex items-center justify-center shrink-0">
+=======
+                className="bg-white dark:bg-[#12131A] rounded-[20px] p-3.5 sm:p-4 shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-black/[0.04] dark:border-white/[0.06] flex items-center justify-between gap-3 hover:border-black/10 dark:hover:border-white/10 cursor-pointer transition-all active:scale-[0.99]"
+              >
+                {/* Left: Icon & Title */}
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <div className="w-10 h-10 rounded-2xl bg-neutral-100 dark:bg-neutral-800 text-black dark:text-white flex items-center justify-center shrink-0">
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
                     {ev.eventType === 'bill' ? (
                       ev.category === 'Electricity' ? (
                         <Zap className="w-5 h-5 text-amber-500" />
                       ) : (
+<<<<<<< HEAD
                         <Receipt className="w-5 h-5 text-[#174F32] dark:text-[#83C95B]" />
                       )
                     ) : ev.eventType === 'credit' ? (
@@ -846,11 +1010,22 @@ export const BillCalendarPage: React.FC = () => {
                       <Landmark className="w-5 h-5 text-[#174F32] dark:text-[#83C95B]" />
                     ) : (
                       <HandCoins className="w-5 h-5 text-[#16A34A] dark:text-[#83C95B]" />
+=======
+                        <Receipt className="w-5 h-5 text-neutral-500" />
+                      )
+                    ) : ev.eventType === 'credit' ? (
+                      <CreditCard className="w-5 h-5 text-blue-500" />
+                    ) : ev.eventType === 'loan' ? (
+                      <Landmark className="w-5 h-5 text-indigo-500" />
+                    ) : (
+                      <HandCoins className="w-5 h-5 text-emerald-500" />
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
                     )}
                   </div>
 
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5 flex-wrap">
+<<<<<<< HEAD
                       <span className="text-sm font-bold text-[#252923] dark:text-white truncate">
                         {ev.title}
                       </span>
@@ -859,6 +1034,16 @@ export const BillCalendarPage: React.FC = () => {
                       </span>
                     </div>
                     <div className="text-[11px] text-[#777D75] dark:text-[#8FA095] mt-0.5 flex items-center gap-1 truncate">
+=======
+                      <span className="text-sm font-bold text-black dark:text-white truncate">
+                        {ev.title}
+                      </span>
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-500 uppercase tracking-wider">
+                        {ev.category}
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-neutral-400 mt-0.5 flex items-center gap-1 truncate">
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
                       <Clock className="w-3 h-3 shrink-0" />
                       <span>Due {ev.dueDate}</span>
                       {ev.notes && <span className="truncate">• {ev.notes}</span>}
@@ -869,12 +1054,21 @@ export const BillCalendarPage: React.FC = () => {
                 {/* Right: Amount & Status Badge */}
                 <div className="text-right shrink-0">
                   <div
+<<<<<<< HEAD
                     className={`text-sm sm:text-base font-extrabold tabular-nums ${
                       ev.isCollection
                         ? 'text-[#16A34A] dark:text-[#83C95B]'
                         : ev.status === 'paid'
                         ? 'text-[#777D75] line-through'
                         : 'text-[#252923] dark:text-white'
+=======
+                    className={`text-sm sm:text-base font-bold tabular-nums ${
+                      ev.isCollection
+                        ? 'text-[#2E9E6B]'
+                        : ev.status === 'paid'
+                        ? 'text-neutral-400 dark:text-neutral-500 line-through'
+                        : 'text-black dark:text-white'
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
                     }`}
                   >
                     {ev.isCollection ? '+' : ''}
@@ -885,12 +1079,21 @@ export const BillCalendarPage: React.FC = () => {
                     <span
                       className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                         ev.status === 'paid'
+<<<<<<< HEAD
                           ? 'bg-emerald-500/15 text-[#16A34A] dark:text-[#83C95B]'
                           : ev.status === 'overdue'
                           ? 'bg-red-500/15 text-[#DC2626]'
                           : ev.status === 'partially_paid'
                           ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
                           : 'bg-[#E8E4DA] dark:bg-[#1E2E23] text-[#61685D] dark:text-[#9EA59B]'
+=======
+                          ? 'bg-emerald-500/10 text-[#2E9E6B]'
+                          : ev.status === 'overdue'
+                          ? 'bg-red-500/10 text-[#DC2626]'
+                          : ev.status === 'partially_paid'
+                          ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                          : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400'
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
                       }`}
                     >
                       {ev.status === 'paid'

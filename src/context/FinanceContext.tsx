@@ -3,22 +3,35 @@ import {
   AccountCategory,
   AccountPaymentRecord,
   AddBillInput,
+<<<<<<< HEAD
   AddGroceryItemInput,
   AddReceivableInput,
   BillCategory,
   BillDefinition,
   BillPaymentRecord,
   ConvertGroceriesToExpenseInput,
+=======
+  BillCategory,
+  BillDefinition,
+  BillPaymentRecord,
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
   CreditAccountInfo,
   CreditPurchaseOrDrawdown,
   DEFAULT_BILL_CATEGORIES,
   DEFAULT_EXPENSE_CATEGORIES,
+<<<<<<< HEAD
   DEFAULT_GROCERY_CATEGORIES,
   DEFAULT_INCOME_CATEGORIES,
   DEFAULT_NOTIFICATION_SETTINGS,
   FinancialAccount,
   GroceryCategory,
   GroceryItem,
+=======
+  DEFAULT_INCOME_CATEGORIES,
+  DEFAULT_NOTIFICATION_SETTINGS,
+  FinancialAccount,
+  AddReceivableInput,
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
   LoanAccountInfo,
   MonthlyBillEntry,
   MonthlyBudget,
@@ -37,7 +50,10 @@ import {
   UserSettings,
 } from '../types/finance';
 import { fromCentavos, getMonthKey, toCentavos } from '../utils/currency';
+<<<<<<< HEAD
 import { calculateEstimatedItemTotal, DEFAULT_GROCERY_ITEMS } from '../utils/groceryEngine';
+=======
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
 import {
   calculateAccountBalance,
   calculateNetWorthSummary,
@@ -54,7 +70,10 @@ import { applyThemeToDom, resolveIsDarkMode } from '../utils/theme';
 import { initCapacitorApp } from '../utils/capacitorApp';
 import {
   reconcileAllLocalReminders,
+<<<<<<< HEAD
   sanitizeNotificationSettings,
+=======
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
   sendImmediateTestNotification,
 } from '../utils/notificationService';
 import {
@@ -89,11 +108,14 @@ import {
 } from '../utils/firestoreRulesHelper';
 import { AuthModal } from '../components/AuthModal';
 import { FirstTimeMigrationModal } from '../components/FirstTimeMigrationModal';
+<<<<<<< HEAD
 import {
   computeWidgetMetrics,
   syncWidgetFinancialData,
   clearNativeWidgetData,
 } from '../services/widgetBridgeService';
+=======
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
 
 const GUEST_STORAGE_KEY = 'pesotrack_state_v1';
 const LOCAL_STORAGE_KEY = GUEST_STORAGE_KEY;
@@ -325,6 +347,7 @@ interface FinanceContextValue {
     message?: string;
   }>;
   getLocalSafetyBackupInfo: () => { state: PesoTrackState; createdAt: string } | null;
+<<<<<<< HEAD
   // Grocery List Management
   groceryItems: GroceryItem[];
   groceryCategories: GroceryCategory[];
@@ -342,6 +365,8 @@ interface FinanceContextValue {
     transaction?: TransactionRecord;
     message?: string;
   };
+=======
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
 }
 
 const FinanceContext = createContext<FinanceContextValue | undefined>(undefined);
@@ -392,6 +417,7 @@ function validateAndSanitizeState(raw: unknown): PesoTrackState | null {
           : fallback.customCategories?.income || DEFAULT_INCOME_CATEGORIES,
     },
     receivables: Array.isArray(candidate.receivables) ? candidate.receivables : [],
+<<<<<<< HEAD
     groceryItems: Array.isArray(candidate.groceryItems)
       ? candidate.groceryItems
       : fallback.groceryItems || DEFAULT_GROCERY_ITEMS,
@@ -399,12 +425,15 @@ function validateAndSanitizeState(raw: unknown): PesoTrackState | null {
       Array.isArray(candidate.groceryCategories) && candidate.groceryCategories.length > 0
         ? candidate.groceryCategories
         : fallback.groceryCategories || DEFAULT_GROCERY_CATEGORIES,
+=======
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
     settings: {
       ...fallback.settings,
       ...(candidate.settings || {}),
       themeMode:
         candidate.settings?.themeMode ||
         (candidate.settings?.darkMode ? 'dark' : 'system'),
+<<<<<<< HEAD
       themeColor:
         candidate.settings?.themeColor &&
         ['forest', 'ocean', 'purple', 'teal', 'sunset', 'rose', 'crimson', 'amber', 'monochrome'].includes(
@@ -416,6 +445,12 @@ function validateAndSanitizeState(raw: unknown): PesoTrackState | null {
         ...(fallback.settings.notificationSettings || DEFAULT_NOTIFICATION_SETTINGS),
         ...(candidate.settings?.notificationSettings || {}),
       }),
+=======
+      notificationSettings: {
+        ...(fallback.settings.notificationSettings || DEFAULT_NOTIFICATION_SETTINGS),
+        ...(candidate.settings?.notificationSettings || {}),
+      },
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
     },
     updatedAt: candidate.updatedAt || new Date().toISOString(),
   };
@@ -488,6 +523,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
     } catch (e) {
       console.error('Failed saving to localStorage:', e);
     }
+<<<<<<< HEAD
 
     // Synchronize native Android home-screen widgets with live data
     try {
@@ -500,6 +536,8 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
     } catch (err) {
       console.warn('[FinanceContext] Widget update error:', err);
     }
+=======
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
   }, [state, currentUser]);
 
   // Helper to enqueue a mutation for offline sync and flush when online
@@ -923,7 +961,10 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
       setState(createInitialPesoTrackState());
     }
     await logoutUser();
+<<<<<<< HEAD
     await clearNativeWidgetData();
+=======
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
     showToast('Signed out of cloud account. Switched to local vault.', 'info');
   };
 
@@ -1196,9 +1237,15 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Apply theme to DOM and native Capacitor status bar
   useEffect(() => {
+<<<<<<< HEAD
     applyThemeToDom(isDarkMode, state.settings.themeColor);
     initCapacitorApp(isDarkMode);
   }, [isDarkMode, state.settings.themeColor]);
+=======
+    applyThemeToDom(isDarkMode);
+    initCapacitorApp(isDarkMode);
+  }, [isDarkMode]);
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
 
   const reconciledAccounts = useMemo(
     () => reconcileAllAccounts(state.accounts, state.transactions),
@@ -1230,7 +1277,11 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
     [state.customBillNames]
   );
   const notificationSettings = useMemo(
+<<<<<<< HEAD
     () => sanitizeNotificationSettings(state.settings.notificationSettings),
+=======
+    () => state.settings.notificationSettings || DEFAULT_NOTIFICATION_SETTINGS,
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
     [state.settings.notificationSettings]
   );
 
@@ -2609,6 +2660,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const updateSettings = (updates: Partial<UserSettings>) => {
+<<<<<<< HEAD
     if (updates.themeColor) {
       applyThemeToDom(isDarkMode, updates.themeColor);
     }
@@ -2629,6 +2681,16 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
         updatedAt: new Date().toISOString(),
       };
     });
+=======
+    setState((prev) => ({
+      ...prev,
+      settings: {
+        ...prev.settings,
+        ...updates,
+      },
+      updatedAt: new Date().toISOString(),
+    }));
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
     showToast('Settings updated', 'success');
   };
 
@@ -3611,11 +3673,19 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
       ...prev,
       settings: {
         ...prev.settings,
+<<<<<<< HEAD
         notificationSettings: sanitizeNotificationSettings({
           ...(prev.settings.notificationSettings ||
             DEFAULT_NOTIFICATION_SETTINGS),
           ...updates,
         }),
+=======
+        notificationSettings: {
+          ...(prev.settings.notificationSettings ||
+            DEFAULT_NOTIFICATION_SETTINGS),
+          ...updates,
+        },
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
       },
       updatedAt: new Date().toISOString(),
     }));
@@ -3778,6 +3848,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
     showToast('All accounts, transactions, and bills cleared', 'info');
   };
 
+<<<<<<< HEAD
   // ==========================================
   // Grocery List Feature Implementation
   // ==========================================
@@ -4242,6 +4313,8 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
     return { success: true, transaction: tx };
   };
 
+=======
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
   return (
     <FinanceContext.Provider
       value={{
@@ -4329,6 +4402,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
         restoreFromCloudVault,
         getCloudBackupOverview,
         getLocalSafetyBackupInfo,
+<<<<<<< HEAD
         // Grocery List Provider Exports
         groceryItems,
         groceryCategories,
@@ -4342,6 +4416,8 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
         updateGroceryCategory,
         deleteGroceryCategory,
         convertGroceriesToExpense,
+=======
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
       }}
     >
       {children}

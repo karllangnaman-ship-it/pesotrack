@@ -72,6 +72,7 @@ service cloud.firestore {
         allow read, write: if isVerifiedOwner(userId);
       }
 
+<<<<<<< HEAD
       // Grocery Items Subcollection
       match /groceries/{groceryId} {
         allow read, write: if isVerifiedOwner(userId);
@@ -82,6 +83,8 @@ service cloud.firestore {
         allow read, write: if isVerifiedOwner(userId);
       }
 
+=======
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
       // User-scoped catch-all for any nested subcollections
       match /{allSubcollections=**} {
         allow read, write: if isVerifiedOwner(userId);

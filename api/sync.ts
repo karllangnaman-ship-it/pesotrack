@@ -58,11 +58,15 @@ export default async function handler(req: any, res: any) {
         if (!item.entityId || !item.entityType) continue;
 
         const collectionName =
+<<<<<<< HEAD
           item.entityType === 'sync_state'
             ? 'sync'
             : item.entityType === 'grocery_categories'
             ? 'groceryCategories'
             : item.entityType;
+=======
+          item.entityType === 'sync_state' ? 'sync' : item.entityType;
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
 
         // CRITICAL: Strictly isolate path to users/{uid}/... derived from verified token
         const docRef = firestore
@@ -224,6 +228,7 @@ export default async function handler(req: any, res: any) {
         }
       }
 
+<<<<<<< HEAD
       // 7. Grocery Items
       if (Array.isArray(fullState.groceryItems)) {
         for (const item of fullState.groceryItems) {
@@ -263,6 +268,9 @@ export default async function handler(req: any, res: any) {
       }
 
       // 9. Workspace Settings & Sync State
+=======
+      // 7. Workspace Settings & Sync State
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
       const syncDocRef = firestore
         .collection('users')
         .doc(uid)

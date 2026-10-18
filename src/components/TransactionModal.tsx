@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowRightLeft, Trash2, X } from 'lucide-react';
+<<<<<<< HEAD
 import { ProviderLogo } from './ProviderLogo';
+=======
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
 import { useFinance } from '../context/FinanceContext';
 import {
   EXPENSE_CATEGORIES,
@@ -19,8 +22,11 @@ interface TransactionModalProps {
   initialType?: TransactionType;
   initialAccountId?: string;
   initialDestinationAccountId?: string;
+<<<<<<< HEAD
   initialAmount?: number | string;
   initialCategory?: string;
+=======
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
   editingTransaction?: TransactionRecord | null;
 }
 
@@ -37,8 +43,11 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
   initialType = 'expense',
   initialAccountId,
   initialDestinationAccountId,
+<<<<<<< HEAD
   initialAmount,
   initialCategory,
+=======
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
   editingTransaction = null,
 }) => {
   const {
@@ -55,7 +64,11 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
   const [amount, setAmount] = useState('');
   const [accountId, setAccountId] = useState('');
   const [destinationAccountId, setDestinationAccountId] = useState('');
+<<<<<<< HEAD
   const [category, setCategory] = useState<string>(initialCategory || EXPENSE_CATEGORIES[0]);
+=======
+  const [category, setCategory] = useState<string>(EXPENSE_CATEGORIES[0]);
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
   const [merchantOrTitle, setMerchantOrTitle] = useState('');
   const [dateTime, setDateTime] = useState(toLocalDatetimeInputValue());
   const [notes, setNotes] = useState('');
@@ -80,7 +93,11 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
       setAdjustmentSign(editingTransaction.adjustmentSign || 'positive');
     } else {
       setType(initialType);
+<<<<<<< HEAD
       setAmount(initialAmount ? String(initialAmount) : '');
+=======
+      setAmount('');
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
       const defaultSource =
         initialAccountId || activeAccounts[0]?.id || reconciledAccounts[0]?.id || '';
       setAccountId(defaultSource);
@@ -91,9 +108,13 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
         '';
       setDestinationAccountId(defaultDest);
 
+<<<<<<< HEAD
       if (initialCategory) {
         setCategory(initialCategory);
       } else if (initialType === 'income') {
+=======
+      if (initialType === 'income') {
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
         setCategory(INCOME_CATEGORIES[0]);
       } else if (initialType === 'transfer') {
         const destAcc = reconciledAccounts.find((a) => a.id === defaultDest);
@@ -116,8 +137,11 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
     initialType,
     initialAccountId,
     initialDestinationAccountId,
+<<<<<<< HEAD
     initialAmount,
     initialCategory,
+=======
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
     editingTransaction,
   ]);
 
@@ -210,19 +234,32 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-2 sm:p-4">
+<<<<<<< HEAD
       <div className="bg-[#FAF9F5] dark:bg-[#15221B] w-full max-w-lg rounded-[24px] sm:rounded-[28px] flex flex-col max-h-[92vh] sm:max-h-[88vh] overflow-hidden shadow-2xl border border-[#E5E1D8] dark:border-[#223528]">
         {/* Header */}
         <div className="relative flex items-center justify-center px-4 sm:px-6 pt-5 sm:pt-6 pb-3 sm:pb-4 shrink-0 border-b border-[#E5E1D8] dark:border-[#223528]">
           <h2 className="text-lg sm:text-[20px] font-bold text-[#252923] dark:text-[#E8EFE9]">
+=======
+      <div className="bg-[#FAF9FB] dark:bg-neutral-900 w-full max-w-lg rounded-[24px] sm:rounded-[28px] flex flex-col max-h-[92vh] sm:max-h-[88vh] overflow-hidden shadow-2xl">
+        {/* Header */}
+        <div className="relative flex items-center justify-center px-4 sm:px-6 pt-5 sm:pt-6 pb-3 sm:pb-4 shrink-0 border-b border-black/[0.04] dark:border-white/[0.06]">
+          <h2 className="text-lg sm:text-[20px] font-bold text-black dark:text-white">
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
             {editingTransaction ? 'Edit Transaction' : 'Add Transaction'}
           </h2>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close"
+<<<<<<< HEAD
             className="absolute right-3 sm:right-4 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full hover:bg-[#EAE6DD] dark:hover:bg-[#1D2D24] transition-colors cursor-pointer"
           >
             <X className="w-5 h-5 sm:w-6 sm:h-6 text-[#252923] dark:text-[#E8EFE9]" strokeWidth={2.5} />
+=======
+            className="absolute right-3 sm:right-4 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full hover:bg-neutral-200/70 dark:hover:bg-neutral-800 transition-colors"
+          >
+            <X className="w-5 h-5 sm:w-6 sm:h-6 text-black dark:text-white" strokeWidth={2.5} />
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
           </button>
         </div>
 
@@ -232,7 +269,11 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
           className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3.5 sm:space-y-4"
         >
           {/* Transaction Type Tabs */}
+<<<<<<< HEAD
           <div className="bg-[#EAE6DD] dark:bg-[#1D2D24] p-1 sm:p-1.5 rounded-[16px] sm:rounded-[18px] grid grid-cols-4 gap-1">
+=======
+          <div className="bg-[#E6E5EA] dark:bg-neutral-800 p-1 sm:p-1.5 rounded-[16px] sm:rounded-[18px] grid grid-cols-4 gap-1">
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
             {TX_TYPES.map((t) => {
               const active = type === t.id;
               return (
@@ -240,10 +281,17 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                   key={t.id}
                   type="button"
                   onClick={() => handleTypeChange(t.id)}
+<<<<<<< HEAD
                   className={`py-2 px-1 rounded-[12px] sm:rounded-[13px] text-xs sm:text-[13px] font-bold transition-all text-center truncate cursor-pointer ${
                     active
                       ? 'bg-[#174F32] text-white dark:bg-[#83C95B] dark:text-[#0C1510] shadow-2xs'
                       : 'text-[#777D75] dark:text-[#8FA095] hover:text-[#252923] dark:hover:text-[#E8EFE9]'
+=======
+                  className={`py-2 px-1 rounded-[12px] sm:rounded-[13px] text-xs sm:text-[13px] font-medium transition-all text-center truncate ${
+                    active
+                      ? 'bg-white dark:bg-neutral-900 text-black dark:text-white font-semibold shadow-2xs'
+                      : 'text-neutral-600 dark:text-neutral-400 hover:text-black'
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
                   }`}
                 >
                   {t.label}
@@ -259,12 +307,18 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
           )}
 
           {/* Amount Card */}
+<<<<<<< HEAD
           <div className="bg-white dark:bg-[#1D2D24] rounded-[20px] sm:rounded-[22px] p-3.5 sm:p-4 border border-[#E5E1D8] dark:border-[#223528]">
             <label className="block text-[11px] sm:text-xs font-semibold text-[#777D75] dark:text-[#8FA095] mb-1">
+=======
+          <div className="bg-white dark:bg-neutral-800 rounded-[20px] sm:rounded-[22px] p-3.5 sm:p-4 border border-neutral-200/70 dark:border-neutral-700">
+            <label className="block text-[11px] sm:text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-1">
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
               Amount (PHP)
             </label>
             <div className="flex items-center gap-2">
               <span
+<<<<<<< HEAD
                 className={`text-2xl sm:text-3xl font-extrabold ${
                   type === 'income' ||
                   (type === 'adjustment' && adjustmentSign === 'positive')
@@ -273,6 +327,16 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                       (type === 'adjustment' && adjustmentSign === 'negative')
                     ? 'text-[#DC2626]'
                     : 'text-[#252923] dark:text-[#E8EFE9]'
+=======
+                className={`text-2xl sm:text-3xl font-bold ${
+                  type === 'income' ||
+                  (type === 'adjustment' && adjustmentSign === 'positive')
+                    ? 'text-[#2E9E6B]'
+                    : type === 'expense' ||
+                      (type === 'adjustment' && adjustmentSign === 'negative')
+                    ? 'text-[#DC2626]'
+                    : 'text-black dark:text-white'
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
                 }`}
               >
                 ₱
@@ -286,7 +350,11 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder="0.00"
+<<<<<<< HEAD
                 className="w-full text-2xl sm:text-3xl font-extrabold text-[#252923] dark:text-[#E8EFE9] bg-transparent focus:outline-none tabular-nums"
+=======
+                className="w-full text-2xl sm:text-3xl font-bold text-black dark:text-white bg-transparent focus:outline-none tabular-nums"
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
               />
             </div>
           </div>
@@ -325,6 +393,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
               <label className="block text-xs font-semibold text-neutral-600 dark:text-neutral-300 mb-1">
                 {type === 'transfer' ? 'From Source Account *' : 'Account *'}
               </label>
+<<<<<<< HEAD
               <div className="flex items-center gap-2">
                 {selectedSourceAcc && (
                   <ProviderLogo
@@ -349,6 +418,22 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                   ))}
                 </select>
               </div>
+=======
+              <select
+                value={accountId}
+                onChange={(e) => setAccountId(e.target.value)}
+                className="w-full px-3.5 py-2.5 sm:py-3 rounded-xl bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-xs sm:text-sm font-semibold text-black dark:text-white focus:outline-none focus:ring-2 focus:ring-neutral-900 dark:focus:ring-white"
+              >
+                {reconciledAccounts.map((acc) => (
+                  <option key={acc.id} value={acc.id}>
+                    {acc.name} ({acc.category}) —{' '}
+                    {formatPeso(acc.currentBalance, {
+                      hide: state.settings.hideBalances,
+                    })}
+                  </option>
+                ))}
+              </select>
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
             </div>
 
             {type === 'transfer' && (
@@ -359,6 +444,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                   </label>
                   <ArrowRightLeft className="w-3.5 h-3.5 text-neutral-400" />
                 </div>
+<<<<<<< HEAD
                 <div className="flex items-center gap-2">
                   {selectedDestAcc && (
                     <ProviderLogo
@@ -398,6 +484,37 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                       ))}
                   </select>
                 </div>
+=======
+                <select
+                  value={destinationAccountId}
+                  onChange={(e) => {
+                    const nextDestId = e.target.value;
+                    setDestinationAccountId(nextDestId);
+                    const dest = reconciledAccounts.find(
+                      (a) => a.id === nextDestId
+                    );
+                    if (dest?.category === 'Credit') setCategory('Credit Payment');
+                    else if (dest?.category === 'Loans') setCategory('Loan Payment');
+                    else if (dest?.category === 'Savings')
+                      setCategory('Savings Contribution');
+                    else setCategory('Transfer');
+                  }}
+                  className="w-full px-3.5 py-2.5 sm:py-3 rounded-xl bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-xs sm:text-sm font-semibold text-black dark:text-white focus:outline-none focus:ring-2 focus:ring-neutral-900 dark:focus:ring-white"
+                >
+                  <option value="">Select destination account...</option>
+                  {reconciledAccounts
+                    .filter((acc) => acc.id !== accountId)
+                    .map((acc) => (
+                      <option key={acc.id} value={acc.id}>
+                        {acc.name} ({acc.category}) —{' '}
+                        {acc.isLiability ? 'Owed: ' : ''}
+                        {formatPeso(acc.currentBalance, {
+                          hide: state.settings.hideBalances,
+                        })}
+                      </option>
+                    ))}
+                </select>
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
 
                 {selectedSourceAcc && selectedDestAcc && (
                   <div className="mt-2 p-2.5 rounded-xl bg-neutral-100 dark:bg-neutral-800/70 text-[11px] sm:text-xs text-neutral-600 dark:text-neutral-300">
@@ -478,14 +595,22 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                 required
                 value={dateTime}
                 onChange={(e) => setDateTime(e.target.value)}
+<<<<<<< HEAD
                 className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-[#1D2D24] border border-[#E5E1D8] dark:border-[#223528] text-xs sm:text-sm text-[#252923] dark:text-[#E8EFE9] focus:outline-none focus:ring-2 focus:ring-[#174F32]"
+=======
+                className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-xs sm:text-sm text-black dark:text-white focus:outline-none focus:ring-2 focus:ring-neutral-900 dark:focus:ring-white"
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
               />
             </div>
           </div>
 
           {/* Optional Notes */}
           <div>
+<<<<<<< HEAD
             <label className="block text-xs font-semibold text-[#777D75] dark:text-[#8FA095] mb-1">
+=======
+            <label className="block text-xs font-semibold text-neutral-600 dark:text-neutral-300 mb-1">
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
               Notes (Optional)
             </label>
             <input
@@ -493,7 +618,11 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Reference, receipt info, memo..."
+<<<<<<< HEAD
               className="w-full px-3.5 py-2 rounded-xl bg-white dark:bg-[#1D2D24] border border-[#E5E1D8] dark:border-[#223528] text-xs sm:text-sm text-[#252923] dark:text-[#E8EFE9] focus:outline-none focus:ring-2 focus:ring-[#174F32]"
+=======
+              className="w-full px-3.5 py-2 rounded-xl bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-xs sm:text-sm text-black dark:text-white focus:outline-none focus:ring-2 focus:ring-neutral-900 dark:focus:ring-white"
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
             />
           </div>
 
@@ -507,7 +636,11 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                   onClose();
                 }}
                 aria-label="Delete transaction"
+<<<<<<< HEAD
                 className="w-full sm:w-auto p-3 rounded-2xl bg-red-50 dark:bg-red-950/60 text-red-600 hover:bg-red-100 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+=======
+                className="w-full sm:w-auto p-3 rounded-2xl bg-red-50 dark:bg-red-950/60 text-red-600 hover:bg-red-100 transition-colors flex items-center justify-center gap-1.5"
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
               >
                 <Trash2 className="w-4 h-4" />
                 <span className="sm:hidden text-xs font-bold">Delete Transaction</span>
@@ -516,13 +649,21 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
             <button
               type="button"
               onClick={onClose}
+<<<<<<< HEAD
               className="w-full sm:flex-1 py-3 px-4 rounded-2xl bg-[#EAE6DD] dark:bg-[#1D2D24] text-xs sm:text-sm font-semibold text-[#777D75] dark:text-[#8FA095] hover:bg-[#DDD8CD] transition-colors cursor-pointer"
+=======
+              className="w-full sm:flex-1 py-3 px-4 rounded-2xl bg-neutral-200/80 dark:bg-neutral-800 text-xs sm:text-sm font-semibold text-neutral-800 dark:text-neutral-200 hover:bg-neutral-300/80 transition-colors"
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
             >
               Cancel
             </button>
             <button
               type="submit"
+<<<<<<< HEAD
               className="w-full sm:flex-1 py-3 px-4 rounded-2xl bg-[#174F32] hover:bg-[#123E27] dark:bg-[#83C95B] dark:text-[#0C1510] text-xs sm:text-sm font-bold text-white transition-colors cursor-pointer shadow-xs"
+=======
+              className="w-full sm:flex-1 py-3 px-4 rounded-2xl bg-neutral-950 dark:bg-white text-xs sm:text-sm font-semibold text-white dark:text-neutral-950 hover:bg-neutral-800 transition-colors"
+>>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
             >
               {editingTransaction ? 'Update' : 'Save Transaction'}
             </button>
