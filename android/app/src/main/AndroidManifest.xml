@@ -23,15 +23,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-<<<<<<< HEAD
             <!-- Intent Filter for Widget Action Taps -->
             <intent-filter>
                 <action android:name="com.pesotrack.app.ACTION_WIDGET_CLICK" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
 
-=======
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
         </activity>
 
         <provider
@@ -43,7 +40,6 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
-<<<<<<< HEAD
 
         <!-- ============================================================= -->
         <!-- Native Android Home-Screen Widgets Providers                  -->
@@ -93,8 +89,6 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/widget_quick_expense_info" />
         </receiver>
-=======
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
     </application>
 
     <!-- Permissions -->

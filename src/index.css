@@ -4,7 +4,6 @@
 
 @layer base {
   :root {
-<<<<<<< HEAD
     --theme-primary: #174F32;
     --theme-primary-hover: #123E27;
     --theme-primary-active: #0E2E1D;
@@ -129,13 +128,6 @@
     --theme-ring: rgba(38, 38, 38, 0.35);
   }
 
-=======
-    --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    --font-mono: 'JetBrains Mono', monospace;
-    color-scheme: light;
-  }
-
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
   *,
   *::before,
   *::after {
@@ -144,13 +136,8 @@
 
   html {
     font-family: var(--font-sans);
-<<<<<<< HEAD
     background-color: #F6F4EE;
     color: #252923;
-=======
-    background-color: #F3F0F5;
-    color: #0A0A0A;
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
     min-height: 100%;
     width: 100%;
     max-width: 100%;
@@ -161,13 +148,8 @@
 
   body {
     font-family: var(--font-sans);
-<<<<<<< HEAD
     background-color: #F6F4EE;
     color: #252923;
-=======
-    background-color: #F3F0F5;
-    color: #0A0A0A;
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
     min-height: 100vh;
     min-height: 100dvh;
     width: 100%;
@@ -180,11 +162,7 @@
   }
 
   #root {
-<<<<<<< HEAD
     background-color: #F6F4EE;
-=======
-    background-color: #F3F0F5;
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
     min-height: 100vh;
     min-height: 100dvh;
     width: 100%;
@@ -208,13 +186,8 @@
   html.dark #root,
   body.dark #root,
   body.dark-theme #root {
-<<<<<<< HEAD
     background-color: #0D1410 !important;
     color: #F3F4F1 !important;
-=======
-    background-color: #0E0F14 !important;
-    color: #F5F5F7 !important;
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
   }
 
   /* Support dark-mode themed native date pickers and options across all browsers */
@@ -231,19 +204,13 @@
 
   html.dark select option,
   body.dark select option {
-<<<<<<< HEAD
     background-color: #15221B;
     color: #F3F4F1;
-=======
-    background-color: #1A1B22;
-    color: #F5F5F7;
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
   }
 
   html:not(.dark) select option,
   body:not(.dark) select option {
     background-color: #FFFFFF;
-<<<<<<< HEAD
     color: #252923;
   }
 }
@@ -336,12 +303,6 @@ input[type="radio"].accent-\[\#174F32\] {
   accent-color: var(--theme-accent);
 }
 
-=======
-    color: #0A0A0A;
-  }
-}
-
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }

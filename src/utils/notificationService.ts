@@ -228,7 +228,6 @@ export async function sendImmediateTestNotification(): Promise<{
 }
 
 /**
-<<<<<<< HEAD
  * Sanitizes and normalizes notification settings, ensuring:
  * - 3 valid reminder times exist (defaulting to 09:00, 13:00, 19:00)
  * - "1 Day Before" (1) is completely removed from remindDaysBeforeList
@@ -370,8 +369,6 @@ export function getEligibleTargetDates(
 }
 
 /**
-=======
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
  * Reconciles and schedules all active obligations and collections
  * based on user settings and saved data.
  * Purely local, offline, and idempotent.
@@ -381,21 +378,7 @@ export async function reconcileAllLocalReminders(
   reconciledAccounts: ReconciledAccount[],
   receivables: ReceivableRecord[]
 ): Promise<number> {
-<<<<<<< HEAD
   const settings = sanitizeNotificationSettings(state.settings.notificationSettings);
-=======
-  const settings: NotificationSettings = state.settings.notificationSettings || {
-    enabled: true,
-    reminderTime: '09:00',
-    remindOnDueDate: true,
-    remindDaysBeforeList: [0, 1],
-    billsEnabled: true,
-    creditEnabled: true,
-    loanEnabled: true,
-    receivablesEnabled: true,
-    overdueEnabled: true,
-  };
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
 
   if (!settings.enabled) {
     if (Capacitor.isNativePlatform()) {
@@ -415,18 +398,12 @@ export async function reconcileAllLocalReminders(
   const currentYear = now.getFullYear();
   const currentMonthNum = now.getMonth() + 1;
   const currentMonthKey = `${currentYear}-${String(currentMonthNum).padStart(2, '0')}`;
-<<<<<<< HEAD
 
-=======
-  
-  // Also check next month for upcoming scheduled reminders
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
   const nextMonthDate = new Date(currentYear, currentMonthNum, 1);
   const nextMonthKey = `${nextMonthDate.getFullYear()}-${String(nextMonthDate.getMonth() + 1).padStart(2, '0')}`;
   const targetMonths = [currentMonthKey, nextMonthKey];
 
   const remindersToSchedule: ScheduledReminderItem[] = [];
-<<<<<<< HEAD
   const scheduledKeys = new Set<string>();
 
   const activeReminderTimes = Array.from(new Set(settings.reminderTimes));
@@ -478,11 +455,6 @@ export async function reconcileAllLocalReminders(
       }
     }
   };
-=======
-  const reminderDays = settings.remindDaysBeforeList && settings.remindDaysBeforeList.length > 0
-    ? settings.remindDaysBeforeList
-    : (settings.remindOnDueDate ? [0] : [1]);
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
 
   // 1. BILLS REMINDERS
   if (settings.billsEnabled && state.bills && state.bills.length > 0) {
@@ -492,15 +464,11 @@ export async function reconcileAllLocalReminders(
       for (const mKey of targetMonths) {
         const entryKey = `${bill.id}_${mKey}`;
         const entry: MonthlyBillEntry | undefined = state.monthlyBillEntries?.[entryKey];
-<<<<<<< HEAD
         const isPaid =
           entry?.isPaidManually ||
           (entry?.payments &&
             entry.payments.reduce((s, p) => s + p.amount, 0) >=
               (entry?.actualAmount ?? bill.defaultAmount));
-=======
-        const isPaid = entry?.isPaidManually || (entry?.payments && entry.payments.reduce((s, p) => s + p.amount, 0) >= (entry?.actualAmount ?? bill.defaultAmount));
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
         if (isPaid) continue; // Already paid, no notification
 
         const dueDay = entry?.dueDay ?? bill.dueDay;
@@ -510,7 +478,6 @@ export async function reconcileAllLocalReminders(
         const dueDateStr = `${mKey}-${String(validDueDay).padStart(2, '0')}`;
         const amount = entry?.actualAmount ?? bill.defaultAmount;
 
-<<<<<<< HEAD
         const billName =
           bill.category === 'Other' && bill.customCategoryName
             ? bill.customCategoryName
@@ -525,40 +492,15 @@ export async function reconcileAllLocalReminders(
           () => `📅 Bill Due: ${billName}`,
           (timeLabel) => `${billName} bill of ${formatPeso(amount)} is due ${timeLabel} (${dueDateStr}).`
         );
-=======
-        const billName = bill.category === 'Other' && bill.customCategoryName
-          ? bill.customCategoryName
-          : bill.name;
-
-        for (const daysBefore of reminderDays) {
-          const scheduleAt = calculateReminderDate(dueDateStr, settings.reminderTime, daysBefore);
-          if (scheduleAt && scheduleAt > now) {
-            const timeLabel = daysBefore === 0 ? 'today' : `in ${daysBefore} ${daysBefore === 1 ? 'day' : 'days'}`;
-            remindersToSchedule.push({
-              id: createNotificationId(`bill_${bill.id}_${dueDateStr}_${daysBefore}`),
-              title: `📅 Bill Due: ${billName}`,
-              body: `${billName} bill of ${formatPeso(amount)} is due ${timeLabel} (${dueDateStr}).`,
-              scheduleAt,
-              extra: { type: 'bill', billId: bill.id, dueDate: dueDateStr },
-            });
-          }
-        }
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
       }
     }
   }
 
-<<<<<<< HEAD
   // 2. CREDIT CARD REMINDERS
   if (settings.creditEnabled) {
     const creditAccounts = reconciledAccounts.filter(
       (a) => !a.archived && a.category === 'Credit' && a.currentBalance > 0
     );
-=======
-  // 2. CREDIT CARD & REVOLVING CREDIT REMINDERS
-  if (settings.creditEnabled) {
-    const creditAccounts = reconciledAccounts.filter((a) => !a.archived && a.category === 'Credit' && a.currentBalance > 0);
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
     for (const acc of creditAccounts) {
       const dueDay = acc.creditInfo?.dueDay;
       if (!dueDay) continue;
@@ -569,7 +511,6 @@ export async function reconcileAllLocalReminders(
         const validDueDay = Math.min(dueDay, daysInMonth);
         const dueDateStr = `${mKey}-${String(validDueDay).padStart(2, '0')}`;
 
-<<<<<<< HEAD
         scheduleItemReminders(
           'credit',
           acc.id,
@@ -579,39 +520,19 @@ export async function reconcileAllLocalReminders(
           () => `💳 Credit Payment Due: ${acc.name}`,
           (timeLabel) => `Payment for ${acc.name} (${formatPeso(acc.currentBalance)}) is due ${timeLabel} (${dueDateStr}).`
         );
-=======
-        for (const daysBefore of reminderDays) {
-          const scheduleAt = calculateReminderDate(dueDateStr, settings.reminderTime, daysBefore);
-          if (scheduleAt && scheduleAt > now) {
-            const timeLabel = daysBefore === 0 ? 'today' : `in ${daysBefore} ${daysBefore === 1 ? 'day' : 'days'}`;
-            remindersToSchedule.push({
-              id: createNotificationId(`credit_${acc.id}_${dueDateStr}_${daysBefore}`),
-              title: `💳 Credit Payment Due: ${acc.name}`,
-              body: `Payment for ${acc.name} (${formatPeso(acc.currentBalance)}) is due ${timeLabel} (${dueDateStr}).`,
-              scheduleAt,
-              extra: { type: 'credit', accountId: acc.id, dueDate: dueDateStr },
-            });
-          }
-        }
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
       }
     }
   }
 
   // 3. LOAN INSTALLMENT REMINDERS
   if (settings.loanEnabled) {
-<<<<<<< HEAD
     const loanAccounts = reconciledAccounts.filter(
       (a) => !a.archived && a.category === 'Loans' && a.currentBalance > 0
     );
-=======
-    const loanAccounts = reconciledAccounts.filter((a) => !a.archived && a.category === 'Loans' && a.currentBalance > 0);
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
     for (const acc of loanAccounts) {
       const dueDay = acc.loanInfo?.dueDay;
       if (!dueDay) continue;
 
-<<<<<<< HEAD
       const monthlyInstallment =
         acc.loanInfo?.monthlyInstallmentEstimate ||
         acc.loanInfo?.customMonthlyPayment ||
@@ -620,9 +541,6 @@ export async function reconcileAllLocalReminders(
         monthlyInstallment > 0
           ? formatPeso(monthlyInstallment)
           : formatPeso(acc.currentBalance);
-=======
-      const monthlyInstallment = acc.loanInfo?.monthlyInstallmentEstimate || (acc.loanInfo?.customMonthlyPayment) || 0;
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
 
       for (const mKey of targetMonths) {
         const [y, m] = mKey.split('-').map(Number);
@@ -630,7 +548,6 @@ export async function reconcileAllLocalReminders(
         const validDueDay = Math.min(dueDay, daysInMonth);
         const dueDateStr = `${mKey}-${String(validDueDay).padStart(2, '0')}`;
 
-<<<<<<< HEAD
         scheduleItemReminders(
           'loan',
           acc.id,
@@ -640,22 +557,6 @@ export async function reconcileAllLocalReminders(
           () => `🏦 Loan Installment Due: ${acc.name}`,
           (timeLabel) => `Monthly installment of ${amountText} for ${acc.name} is due ${timeLabel} (${dueDateStr}).`
         );
-=======
-        for (const daysBefore of reminderDays) {
-          const scheduleAt = calculateReminderDate(dueDateStr, settings.reminderTime, daysBefore);
-          if (scheduleAt && scheduleAt > now) {
-            const timeLabel = daysBefore === 0 ? 'today' : `in ${daysBefore} ${daysBefore === 1 ? 'day' : 'days'}`;
-            const amountText = monthlyInstallment > 0 ? formatPeso(monthlyInstallment) : formatPeso(acc.currentBalance);
-            remindersToSchedule.push({
-              id: createNotificationId(`loan_${acc.id}_${dueDateStr}_${daysBefore}`),
-              title: `🏦 Loan Installment Due: ${acc.name}`,
-              body: `Monthly installment of ${amountText} for ${acc.name} is due ${timeLabel} (${dueDateStr}).`,
-              scheduleAt,
-              extra: { type: 'loan', accountId: acc.id, dueDate: dueDateStr },
-            });
-          }
-        }
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
       }
     }
   }
@@ -681,7 +582,6 @@ export async function reconcileAllLocalReminders(
 
       if (!dueDateStr) continue;
 
-<<<<<<< HEAD
       scheduleItemReminders(
         'receivable',
         r.id,
@@ -691,21 +591,6 @@ export async function reconcileAllLocalReminders(
         () => `💰 Expected Collection: ${r.personName}`,
         (timeLabel) => `${r.personName} is scheduled to pay you ${formatPeso(amountDue)} ${timeLabel} (${dueDateStr}).`
       );
-=======
-      for (const daysBefore of reminderDays) {
-        const scheduleAt = calculateReminderDate(dueDateStr, settings.reminderTime, daysBefore);
-        if (scheduleAt && scheduleAt > now) {
-          const timeLabel = daysBefore === 0 ? 'today' : `in ${daysBefore} ${daysBefore === 1 ? 'day' : 'days'}`;
-          remindersToSchedule.push({
-            id: createNotificationId(`receivable_${r.id}_${dueDateStr}_${daysBefore}`),
-            title: `💰 Expected Collection: ${r.personName}`,
-            body: `${r.personName} is scheduled to pay you ${formatPeso(amountDue)} ${timeLabel} (${dueDateStr}).`,
-            scheduleAt,
-            extra: { type: 'receivable', receivableId: r.id, dueDate: dueDateStr },
-          });
-        }
-      }
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
     }
   }
 
@@ -720,7 +605,6 @@ export async function reconcileAllLocalReminders(
         await LocalNotifications.cancel({ notifications: pending.notifications });
       }
 
-<<<<<<< HEAD
       // Prioritize the soonest upcoming reminders (up to 60 notifications)
       const batch = remindersToSchedule
         .sort((a, b) => a.scheduleAt.getTime() - b.scheduleAt.getTime())
@@ -734,18 +618,6 @@ export async function reconcileAllLocalReminders(
           sound: 'beep.wav',
           extra: item.extra,
         }));
-=======
-      // Limit to 50 local notifications (Android system limit per app is 500, 50 is fast and reliable)
-      const batch = remindersToSchedule.slice(0, 50).map((item) => ({
-        id: item.id,
-        title: item.title,
-        body: item.body,
-        schedule: { at: item.scheduleAt, allowWhileIdle: true },
-        channelId: NOTIFICATION_CHANNEL_ID,
-        sound: 'beep.wav',
-        extra: item.extra,
-      }));
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
 
       if (batch.length > 0) {
         await LocalNotifications.schedule({ notifications: batch });

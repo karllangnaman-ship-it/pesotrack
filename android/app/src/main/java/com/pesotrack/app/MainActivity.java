@@ -1,9 +1,6 @@
 package com.pesotrack.app;
 
-<<<<<<< HEAD
 import android.content.Intent;
-=======
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
 import android.graphics.Color;
 import android.os.Bundle;
 import android.view.Window;
@@ -14,18 +11,12 @@ import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 import com.getcapacitor.BridgeActivity;
-<<<<<<< HEAD
 import com.pesotrack.app.plugins.PesoTrackWidgetPlugin;
-=======
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
 
 public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
-<<<<<<< HEAD
         registerPlugin(PesoTrackWidgetPlugin.class);
-=======
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
         super.onCreate(savedInstanceState);
 
         // Keep status bar and navigation bar visible with dark background matching PesoTrack theme (#0E0F14)
@@ -52,7 +43,6 @@ public class MainActivity extends BridgeActivity {
             view.setPadding(insets.left, insets.top, insets.right, insets.bottom);
             return WindowInsetsCompat.CONSUMED;
         });
-<<<<<<< HEAD
 
         // Capture any incoming widget action from intent
         PesoTrackWidgetPlugin.onAppIntentReceived(this, getIntent());
@@ -66,7 +56,3 @@ public class MainActivity extends BridgeActivity {
     }
 }
 
-=======
-    }
-}
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce

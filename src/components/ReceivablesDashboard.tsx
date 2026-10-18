@@ -162,7 +162,6 @@ export const ReceivablesDashboard: React.FC<ReceivablesDashboardProps> = ({
   return (
     <div className="space-y-4 pb-12 w-full max-w-full min-w-0">
       {/* Top Banner / Summary Header */}
-<<<<<<< HEAD
       <div className="bg-white dark:bg-[#15221B] rounded-[24px] p-4.5 sm:p-6 shadow-[0_2px_12px_rgba(0,0,0,0.025)] border border-[#E5E1D8] dark:border-[#223528] w-full max-w-full min-w-0">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
@@ -178,23 +177,6 @@ export const ReceivablesDashboard: React.FC<ReceivablesDashboardProps> = ({
               {formatPeso(receivablesSummary.totalOutstanding, { hide })}
             </div>
             <p className="text-[11px] sm:text-xs text-[#777D75] dark:text-[#8FA095] mt-1">
-=======
-      <div className="bg-white dark:bg-[#121318] rounded-[22px] sm:rounded-[24px] p-4.5 sm:p-6 shadow-[0_2px_12px_rgba(0,0,0,0.025)] border border-black/[0.04] dark:border-white/[0.08] w-full max-w-full min-w-0">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs sm:text-sm font-semibold text-neutral-500 dark:text-neutral-400">
-                Money Owed to Me
-              </span>
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold bg-[#10B981]/15 text-[#10B981]">
-                Receivables
-              </span>
-            </div>
-            <div className="text-2xl sm:text-[32px] md:text-[36px] font-extrabold tracking-tight text-black dark:text-white tabular-nums mt-0.5">
-              {formatPeso(receivablesSummary.totalOutstanding, { hide })}
-            </div>
-            <p className="text-[11px] sm:text-xs text-neutral-500 dark:text-neutral-400 mt-1">
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
               Independent ledger of money lent to others with no lending limits & separate collection schedules
             </p>
           </div>
@@ -202,11 +184,7 @@ export const ReceivablesDashboard: React.FC<ReceivablesDashboardProps> = ({
           <button
             type="button"
             onClick={() => handleOpenAdd()}
-<<<<<<< HEAD
             className="self-start sm:self-center px-4 py-2.5 rounded-xl bg-[#174F32] hover:bg-[#123E27] text-white text-xs sm:text-sm font-bold flex items-center gap-1.5 shadow-xs transition-colors shrink-0"
-=======
-            className="self-start sm:self-center px-4 py-2.5 rounded-full bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 text-xs sm:text-sm font-bold flex items-center gap-1.5 shadow-xs hover:opacity-90 transition-opacity shrink-0"
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
           >
             <Plus className="w-4 h-4 stroke-[2.5]" />
             <span>Lend Money</span>
@@ -214,56 +192,32 @@ export const ReceivablesDashboard: React.FC<ReceivablesDashboardProps> = ({
         </div>
 
         {/* 4 Stats Cards Grid */}
-<<<<<<< HEAD
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 mt-4 pt-3.5 border-t border-[#E5E1D8] dark:border-[#223528] text-xs">
           <div className="p-2.5 sm:p-3 rounded-xl bg-[#F6F4EE] dark:bg-[#1A2A20] border border-[#E5E1D8] dark:border-[#243A2C]">
             <div className="text-[#777D75] dark:text-[#8FA095] text-[11px]">Total Principal Lent</div>
             <div className="font-bold text-[#252923] dark:text-white tabular-nums mt-0.5 truncate">
-=======
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 mt-4 pt-3.5 border-t border-neutral-100 dark:border-neutral-800 text-xs">
-          <div className="p-2.5 sm:p-3 rounded-xl bg-[#F6F5F8] dark:bg-[#191A20] border border-black/[0.02] dark:border-white/5">
-            <div className="text-neutral-500 dark:text-neutral-400 text-[11px]">Total Principal Lent</div>
-            <div className="font-bold text-black dark:text-white tabular-nums mt-0.5 truncate">
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
               {formatPeso(receivablesSummary.totalPrincipalLent, { hide, compact: true })}
             </div>
           </div>
 
-<<<<<<< HEAD
           <div className="p-2.5 sm:p-3 rounded-xl bg-[#F6F4EE] dark:bg-[#1A2A20] border border-[#E5E1D8] dark:border-[#243A2C]">
             <div className="text-[#777D75] dark:text-[#8FA095] text-[11px]">Amount Collected</div>
             <div className="font-bold text-[#16A34A] dark:text-[#83C95B] tabular-nums mt-0.5 truncate">
-=======
-          <div className="p-2.5 sm:p-3 rounded-xl bg-[#F6F5F8] dark:bg-[#191A20] border border-black/[0.02] dark:border-white/5">
-            <div className="text-neutral-500 dark:text-neutral-400 text-[11px]">Amount Collected</div>
-            <div className="font-bold text-[#10B981] tabular-nums mt-0.5 truncate">
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
               {formatPeso(receivablesSummary.totalCollected, { hide, compact: true })}
             </div>
           </div>
 
-<<<<<<< HEAD
           <div className="p-2.5 sm:p-3 rounded-xl bg-[#F6F4EE] dark:bg-[#1A2A20] border border-[#E5E1D8] dark:border-[#243A2C]">
             <div className="text-[#777D75] dark:text-[#8FA095] text-[11px]">Overdue Amount</div>
-=======
-          <div className="p-2.5 sm:p-3 rounded-xl bg-[#F6F5F8] dark:bg-[#191A20] border border-black/[0.02] dark:border-white/5">
-            <div className="text-neutral-500 dark:text-neutral-400 text-[11px]">Overdue Amount</div>
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
             <div className="font-bold text-[#DC2626] tabular-nums mt-0.5 truncate">
               {formatPeso(receivablesSummary.overdueAmount, { hide, compact: true })}
               {receivablesSummary.overdueCount > 0 && ` (${receivablesSummary.overdueCount})`}
             </div>
           </div>
 
-<<<<<<< HEAD
           <div className="p-2.5 sm:p-3 rounded-xl bg-[#F6F4EE] dark:bg-[#1A2A20] border border-[#E5E1D8] dark:border-[#243A2C]">
             <div className="text-[#777D75] dark:text-[#8FA095] text-[11px]">People Owing Me</div>
             <div className="font-bold text-[#252923] dark:text-white tabular-nums mt-0.5 truncate">
-=======
-          <div className="p-2.5 sm:p-3 rounded-xl bg-[#F6F5F8] dark:bg-[#191A20] border border-black/[0.02] dark:border-white/5">
-            <div className="text-neutral-500 dark:text-neutral-400 text-[11px]">People Owing Me</div>
-            <div className="font-bold text-black dark:text-white tabular-nums mt-0.5 truncate">
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
               {receivablesSummary.debtorsCount} {receivablesSummary.debtorsCount === 1 ? 'person' : 'people'}
             </div>
           </div>
@@ -272,7 +226,6 @@ export const ReceivablesDashboard: React.FC<ReceivablesDashboardProps> = ({
 
       {/* Monthly Collection Summary Card */}
       {monthlyCollectionData.length > 0 && (
-<<<<<<< HEAD
         <div className="bg-white dark:bg-[#15221B] rounded-[24px] p-4.5 sm:p-5 shadow-[0_2px_12px_rgba(0,0,0,0.025)] border border-[#E5E1D8] dark:border-[#223528] space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -282,17 +235,6 @@ export const ReceivablesDashboard: React.FC<ReceivablesDashboardProps> = ({
               </h3>
             </div>
             <span className="text-[11px] text-[#777D75] dark:text-[#8FA095]">
-=======
-        <div className="bg-white dark:bg-[#121318] rounded-[22px] sm:rounded-[24px] p-4.5 sm:p-5 shadow-[0_2px_12px_rgba(0,0,0,0.025)] border border-black/[0.04] dark:border-white/[0.08] space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-[#10B981]" />
-              <h3 className="text-xs sm:text-sm font-bold text-black dark:text-white">
-                Monthly Collection Summary
-              </h3>
-            </div>
-            <span className="text-[11px] text-neutral-400">
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
               Expected vs Actual Collected
             </span>
           </div>
@@ -309,7 +251,6 @@ export const ReceivablesDashboard: React.FC<ReceivablesDashboardProps> = ({
               return (
                 <div
                   key={item.monthKey}
-<<<<<<< HEAD
                   className="p-2.5 sm:p-3 rounded-xl bg-[#F6F4EE] dark:bg-[#1A2A20] border border-[#E5E1D8] dark:border-[#243A2C] flex flex-col justify-between space-y-1.5"
                 >
                   <div className="font-bold text-[#252923] dark:text-white text-[11px] sm:text-xs">
@@ -327,25 +268,6 @@ export const ReceivablesDashboard: React.FC<ReceivablesDashboardProps> = ({
                     <div
                       className={`h-full rounded-full ${
                         percent >= 100 ? 'bg-[#4E9D39]' : 'bg-blue-500'
-=======
-                  className="p-2.5 sm:p-3 rounded-xl bg-[#F6F5F8] dark:bg-[#191A20] border border-black/[0.02] dark:border-white/5 flex flex-col justify-between space-y-1.5"
-                >
-                  <div className="font-bold text-black dark:text-white text-[11px] sm:text-xs">
-                    {formatMonthLabel(item.monthKey)}
-                  </div>
-                  <div className="space-y-0.5 tabular-nums text-[11px]">
-                    <div className="text-neutral-500">
-                      Exp: <span className="text-black dark:text-white font-medium">{formatPeso(item.expected, { compact: true })}</span>
-                    </div>
-                    <div className="text-[#10B981] font-bold">
-                      Col: {formatPeso(item.collected, { compact: true })} ({percent}%)
-                    </div>
-                  </div>
-                  <div className="w-full h-1.5 bg-neutral-200 dark:bg-neutral-800 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full ${
-                        percent >= 100 ? 'bg-[#10B981]' : 'bg-blue-500'
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
                       }`}
                       style={{ width: `${percent}%` }}
                     />
@@ -359,23 +281,14 @@ export const ReceivablesDashboard: React.FC<ReceivablesDashboardProps> = ({
 
       {/* View Switcher: Individual Loans vs By Borrower */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-<<<<<<< HEAD
         <div className="inline-flex items-center p-1 rounded-2xl bg-[#E8E4DA] dark:bg-[#16241C] shadow-2xs self-start text-xs font-bold">
-=======
-        <div className="inline-flex items-center p-1 rounded-2xl bg-white dark:bg-[#191A20] border border-black/[0.04] dark:border-white/[0.08] shadow-2xs self-start text-xs font-bold">
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
           <button
             type="button"
             onClick={() => setViewMode('records')}
             className={`px-3.5 py-1.5 rounded-xl transition-all ${
               viewMode === 'records'
-<<<<<<< HEAD
                 ? 'bg-[#174F32] text-white shadow-xs'
                 : 'text-[#61685D] dark:text-[#9EA59B] hover:text-[#174F32] dark:hover:text-white'
-=======
-                ? 'bg-neutral-950 text-white dark:bg-white dark:text-neutral-950 shadow-xs'
-                : 'text-neutral-500 hover:text-black dark:hover:text-white'
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
             }`}
           >
             Lending Records ({receivables.length})
@@ -385,13 +298,8 @@ export const ReceivablesDashboard: React.FC<ReceivablesDashboardProps> = ({
             onClick={() => setViewMode('borrowers')}
             className={`px-3.5 py-1.5 rounded-xl transition-all flex items-center gap-1.5 ${
               viewMode === 'borrowers'
-<<<<<<< HEAD
                 ? 'bg-[#174F32] text-white shadow-xs'
                 : 'text-[#61685D] dark:text-[#9EA59B] hover:text-[#174F32] dark:hover:text-white'
-=======
-                ? 'bg-neutral-950 text-white dark:bg-white dark:text-neutral-950 shadow-xs'
-                : 'text-neutral-500 hover:text-black dark:hover:text-white'
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
             }`}
           >
             <Users className="w-3.5 h-3.5" />
@@ -472,25 +380,15 @@ export const ReceivablesDashboard: React.FC<ReceivablesDashboardProps> = ({
       {viewMode === 'borrowers' && (
         <div className="space-y-3">
           {borrowerSummaries.length === 0 ? (
-<<<<<<< HEAD
             <div className="bg-white dark:bg-[#15221B] rounded-[24px] p-6 sm:p-8 text-center space-y-3 border border-[#E5E1D8] dark:border-[#223528]">
               <Users className="w-10 h-10 text-[#777D75] dark:text-[#8FA095] mx-auto stroke-[1.5]" />
               <p className="text-xs sm:text-sm text-[#777D75] dark:text-[#8FA095]">
-=======
-            <div className="bg-white dark:bg-[#121318] rounded-[22px] sm:rounded-[24px] p-6 sm:p-8 text-center space-y-3 border border-black/[0.04] dark:border-white/[0.08]">
-              <Users className="w-10 h-10 text-neutral-400 mx-auto stroke-[1.5]" />
-              <p className="text-xs sm:text-sm text-neutral-500">
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
                 No borrowers recorded yet. Record money you lent to someone to start tracking.
               </p>
               <button
                 type="button"
                 onClick={() => handleOpenAdd()}
-<<<<<<< HEAD
                 className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#174F32] hover:bg-[#123E27] text-white text-xs font-bold transition-colors shadow-xs"
-=======
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-[#10B981] text-black text-xs font-bold shadow-xs"
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
               >
                 <Plus className="w-4 h-4 stroke-[2.5]" />
                 <span>Lend Money</span>
@@ -507,17 +405,12 @@ export const ReceivablesDashboard: React.FC<ReceivablesDashboardProps> = ({
                 return (
                   <div
                     key={b.personName}
-<<<<<<< HEAD
                     className="bg-white dark:bg-[#15221B] rounded-[22px] p-4.5 shadow-[0_2px_12px_rgba(0,0,0,0.025)] border border-[#E5E1D8] dark:border-[#223528] flex flex-col justify-between space-y-3.5"
-=======
-                    className="bg-white dark:bg-[#191A20] rounded-[22px] p-4.5 shadow-[0_2px_12px_rgba(0,0,0,0.025)] border border-black/[0.04] dark:border-white/[0.08] flex flex-col justify-between space-y-3.5"
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
                   >
                     <div>
                       {/* Borrower Header */}
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-center gap-2.5 min-w-0 flex-1">
-<<<<<<< HEAD
                           <div className="w-9 h-9 rounded-full bg-[#174F32] text-[#83C95B] flex items-center justify-center font-extrabold text-xs shrink-0">
                             {b.personName.slice(0, 2).toUpperCase()}
                           </div>
@@ -526,16 +419,6 @@ export const ReceivablesDashboard: React.FC<ReceivablesDashboardProps> = ({
                               {b.personName}
                             </h4>
                             <div className="text-[11px] text-[#777D75] dark:text-[#8FA095] mt-0.5">
-=======
-                          <div className="w-9 h-9 rounded-full bg-[#10B981] text-black flex items-center justify-center font-extrabold text-xs shrink-0">
-                            {b.personName.slice(0, 2).toUpperCase()}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <h4 className="font-bold text-black dark:text-white text-sm sm:text-base truncate">
-                              {b.personName}
-                            </h4>
-                            <div className="text-[11px] text-neutral-400 mt-0.5">
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
                               {b.recordsCount} lending transaction{b.recordsCount > 1 ? 's' : ''} · {b.activeCount} active
                             </div>
                           </div>
@@ -544,40 +427,24 @@ export const ReceivablesDashboard: React.FC<ReceivablesDashboardProps> = ({
                         <button
                           type="button"
                           onClick={() => handleOpenAdd(b.personName)}
-<<<<<<< HEAD
                           className="px-2.5 py-1 rounded-xl bg-[#F6F4EE] dark:bg-[#1A2A20] hover:bg-[#EFECE3] text-xs font-bold text-[#174F32] dark:text-[#83C95B] transition-colors shrink-0 flex items-center gap-1 border border-[#E5E1D8] dark:border-[#243A2C]"
                         >
                           <Plus className="w-3.5 h-3.5" />
-=======
-                          className="px-2.5 py-1 rounded-xl bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-xs font-bold text-black dark:text-white transition-colors shrink-0 flex items-center gap-1"
-                        >
-                          <Plus className="w-3.5 h-3.5 text-[#10B981]" />
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
                           <span>Lend More</span>
                         </button>
                       </div>
 
                       {/* Total Outstanding for this Person */}
-<<<<<<< HEAD
                       <div className="mt-3 p-3 rounded-xl bg-[#F6F4EE] dark:bg-[#1A2A20] border border-[#E5E1D8] dark:border-[#243A2C] flex items-center justify-between">
                         <div>
                           <div className="text-[11px] text-[#777D75] dark:text-[#8FA095]">
-=======
-                      <div className="mt-3 p-3 rounded-xl bg-[#F6F5F8] dark:bg-[#14151B] border border-black/[0.02] dark:border-white/5 flex items-center justify-between">
-                        <div>
-                          <div className="text-[11px] text-neutral-500 dark:text-neutral-400">
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
                             Total Outstanding Owed
                           </div>
                           <div
                             className={`text-lg sm:text-xl font-extrabold tabular-nums ${
                               b.remainingBalance > 0
                                 ? 'text-[#DC2626]'
-<<<<<<< HEAD
                                 : 'text-[#16A34A] dark:text-[#83C95B]'
-=======
-                                : 'text-[#10B981]'
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
                             }`}
                           >
                             {formatPeso(b.remainingBalance, { hide })}

@@ -4,7 +4,6 @@
     <string name="title_activity_main">PesoTrack Offline</string>
     <string name="package_name">com.pesotrack.offline</string>
     <string name="custom_url_scheme">com.pesotrack.offline</string>
-<<<<<<< HEAD
 
     <!-- Native Android Home-Screen Widgets -->
     <string name="widget_quick_actions_name">PesoTrack Quick Actions</string>
@@ -26,6 +25,3 @@
     <string name="action_save_expense">Save Expense</string>
 </resources>
 
-=======
-</resources>
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
