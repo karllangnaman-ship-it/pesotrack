@@ -1,12 +1,12 @@
 {
-  "projectId": "liquid-charge-48f9p",
-  "appId": "1:3051374246:web:aeab521c79318928891667",
-  "apiKey": "AIzaSyCBXsjIXNb6o-VddBoSz9JDxYRVK6DRLjo",
-  "authDomain": "liquid-charge-48f9p.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-remixremixpesotr-34f6b0bf-fd71-419d-a9c3-a43bf5444e82",
-  "storageBucket": "liquid-charge-48f9p.firebasestorage.app",
-  "messagingSenderId": "3051374246",
+  "projectId": "pesotrack-51670",
+  "appId": "1:1034020660663:web:9c460843f5373220bab432",
+  "apiKey": "AIzaSyCQhVHgEhiJNWD8f6csuxlr1yzxDDijTOI",
+  "authDomain": "pesotrack-51670.firebaseapp.com",
+  "firestoreDatabaseId": "(default)",
+  "storageBucket": "pesotrack-51670.firebasestorage.app",
+  "messagingSenderId": "1034020660663",
   "measurementId": "",
-  "oAuthClientId": "3051374246-rlf9uvd66n6a3elutvtri7b81486lcgg.apps.googleusercontent.com",
+  "oAuthClientId": "643081274070-qsff05kii5nkq9ni6tmu61cc1qrafh8v.apps.googleusercontent.com",
   "recaptchaSiteKey": ""
 }

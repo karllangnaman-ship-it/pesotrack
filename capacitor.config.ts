@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.pesotrack.offline',
-  appName: 'PesoTrack Offline',
+  appName: 'PesoTrack',
   webDir: 'dist',
   server: {
     androidScheme: 'https',
