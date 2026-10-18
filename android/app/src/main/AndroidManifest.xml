@@ -11,7 +11,7 @@
 
         <activity
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation|density"
-            android:name=".MainActivity"
+            android:name="com.pesotrack.app.MainActivity"
             android:label="@string/title_activity_main"
             android:theme="@style/AppTheme.NoActionBarLaunch"
             android:launchMode="singleTask"
@@ -27,6 +27,12 @@
             <intent-filter>
                 <action android:name="com.pesotrack.app.ACTION_WIDGET_CLICK" />
                 <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="pesotrack" android:host="widget" />
             </intent-filter>
 
         </activity>
@@ -47,7 +53,7 @@
 
         <!-- 1. PesoTrack Quick Actions Widget (Expense, Income, Transfer, Loan, Card, Grocery) -->
         <receiver
-            android:name=".widgets.QuickActionsWidgetProvider"
+            android:name="com.pesotrack.app.widgets.QuickActionsWidgetProvider"
             android:label="@string/widget_quick_actions_name"
             android:exported="true">
             <intent-filter>
@@ -62,7 +68,7 @@
 
         <!-- 2. PesoTrack Financial Overview Widget (Income, Expenses, Net Cash Flow, Sparkline) -->
         <receiver
-            android:name=".widgets.FinancialOverviewWidgetProvider"
+            android:name="com.pesotrack.app.widgets.FinancialOverviewWidgetProvider"
             android:label="@string/widget_financial_overview_name"
             android:exported="true">
             <intent-filter>
@@ -77,7 +83,7 @@
 
         <!-- 3. PesoTrack Quick Expense Widget (Amount, Category, Date, Save Expense) -->
         <receiver
-            android:name=".widgets.QuickExpenseWidgetProvider"
+            android:name="com.pesotrack.app.widgets.QuickExpenseWidgetProvider"
             android:label="@string/widget_quick_expense_name"
             android:exported="true">
             <intent-filter>
@@ -88,6 +94,14 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/widget_quick_expense_info" />
+        </receiver>
+        <!-- 4. Widget Pinned Confirmation Receiver -->
+        <receiver
+            android:name="com.pesotrack.app.widgets.WidgetPinnedReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.pesotrack.app.ACTION_WIDGET_PINNED" />
+            </intent-filter>
         </receiver>
     </application>
 

@@ -162,6 +162,7 @@ public class WidgetDataStore {
             Context context, String action, String target, String extraJson, int requestCode) {
         Intent intent = new Intent(context, MainActivity.class);
         intent.setAction(ACTION_WIDGET_CLICK);
+        intent.setData(android.net.Uri.parse("pesotrack://widget/" + action + "/" + (target != null ? target : "default") + "/" + requestCode));
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         intent.putExtra("action", action);
         intent.putExtra("target", target);

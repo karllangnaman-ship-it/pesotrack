@@ -26,6 +26,7 @@ import {
   RotateCcw,
   Shield,
   ShieldAlert,
+  Smartphone,
   Sun,
   Trash2,
   Upload,
@@ -48,9 +49,10 @@ import {
   getFirebaseConsoleRulesUrl,
 } from '../utils/firestoreRulesHelper';
 import { THEME_COLOR_LIST, ThemeColor } from '../utils/themeColors';
+import { HomeScreenWidgetsSettings } from '../components/HomeScreenWidgetsSettings';
 
 interface SettingsPageProps {
-  initialSection?: 'profile' | 'notifications' | 'backup' | 'appearance' | 'sync';
+  initialSection?: 'profile' | 'notifications' | 'backup' | 'appearance' | 'sync' | 'widgets';
 }
 
 export const SettingsPage: React.FC<SettingsPageProps> = ({ initialSection }) => {
@@ -932,6 +934,14 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ initialSection }) =>
             />
           </div>
         </div>
+      </div>
+
+      {/* 4. ANDROID HOME-SCREEN WIDGETS */}
+      <div
+        id="section-widgets"
+        className="bg-white dark:bg-[#15221B] rounded-[24px] p-4.5 sm:p-6 shadow-[0_2px_12px_rgba(0,0,0,0.025)] space-y-4 border border-[#E5E1D8] dark:border-[#223528] scroll-mt-20"
+      >
+        <HomeScreenWidgetsSettings />
       </div>
 
       {/* 5. NATIVE ANDROID PHONE NOTIFICATIONS – OFFLINE ONLY */}

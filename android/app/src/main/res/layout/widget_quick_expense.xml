@@ -55,7 +55,7 @@
             android:id="@+id/btn_refresh_expense"
             android:layout_width="32dp"
             android:layout_height="32dp"
-            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:background="@drawable/widget_header_btn_bg"
             android:contentDescription="Refresh"
             android:padding="6dp"
             android:src="@drawable/ic_widget_refresh" />
@@ -65,7 +65,7 @@
             android:layout_width="32dp"
             android:layout_height="32dp"
             android:layout_marginStart="2dp"
-            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:background="@drawable/widget_header_btn_bg"
             android:contentDescription="Open PesoTrack"
             android:padding="6dp"
             android:src="@drawable/ic_widget_chevron_right" />

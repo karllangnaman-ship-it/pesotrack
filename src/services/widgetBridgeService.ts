@@ -51,6 +51,16 @@ interface PesoTrackWidgetNativePlugin {
 
   clearPendingWidgetAction(): Promise<{ success: boolean }>;
   clearWidgetData(): Promise<{ success: boolean }>;
+  isPinningSupported(): Promise<{ supported: boolean; error?: string }>;
+  requestPinWidget(options: {
+    widgetType: 'quick_actions' | 'quick_expense' | 'financial_overview';
+  }): Promise<{
+    success: boolean;
+    supported: boolean;
+    widgetType?: string;
+    reason?: string;
+    message?: string;
+  }>;
 
   addListener(
     eventName: 'widgetActionReceived',
@@ -243,3 +253,53 @@ export function computeWidgetMetrics(
     quickExpenseCategory: 'Food',
   };
 }
+
+export type WidgetType = 'quick_actions' | 'quick_expense' | 'financial_overview';
+
+export interface WidgetPinResult {
+  success: boolean;
+  supported: boolean;
+  widgetType?: string;
+  reason?: string;
+  message?: string;
+}
+
+/**
+ * Checks whether native Android home-screen widget pinning is supported by the OS and launcher.
+ */
+export async function checkWidgetPinningSupported(): Promise<boolean> {
+  if (!isNativeWidgetSupported()) return false;
+  try {
+    const res = await NativeWidgetPlugin.isPinningSupported();
+    return Boolean(res?.supported);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Requests the Android system to pin a specific PesoTrack native widget directly to the home screen.
+ */
+export async function pinWidgetToHomeScreen(widgetType: WidgetType): Promise<WidgetPinResult> {
+  if (!isNativeWidgetSupported()) {
+    return {
+      success: false,
+      supported: false,
+      reason: 'web_platform',
+      message: 'Android home-screen widgets require the installed PesoTrack Android app on your phone.',
+    };
+  }
+
+  try {
+    const res = await NativeWidgetPlugin.requestPinWidget({ widgetType });
+    return res;
+  } catch (err: any) {
+    return {
+      success: false,
+      supported: false,
+      reason: 'plugin_error',
+      message: err?.message || 'Could not launch Android widget placement.',
+    };
+  }
+}
+

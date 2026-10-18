@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:angle="270"
+                android:startColor="#0F241A"
+                android:centerColor="#0B1C14"
+                android:endColor="#08160F"
+                android:type="linear" />
+            <corners android:radius="20dp" />
+            <stroke
+                android:width="1.5dp"
+                android:color="#244432" />
+        </shape>
+    </item>
+    <item
+        android:gravity="center"
+        android:width="44dp"
+        android:height="44dp"
+        android:drawable="@drawable/ic_widget_leaf" />
+</layer-list>

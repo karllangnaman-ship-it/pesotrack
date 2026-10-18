@@ -62,7 +62,7 @@ const PesoTrackAppContent: React.FC = () => {
   const [accountsSubTab, setAccountsSubTab] = useState<'accounts' | 'receivables'>('accounts');
   const [accountsCategoryFilter, setAccountsCategoryFilter] = useState<'All' | AccountCategory>('All');
   const [reportsSection, setReportsSection] = useState<'analytics' | 'cashflow' | 'breakdown' | undefined>(undefined);
-  const [settingsSection, setSettingsSection] = useState<'profile' | 'notifications' | 'backup' | 'appearance' | 'sync' | undefined>(undefined);
+  const [settingsSection, setSettingsSection] = useState<'profile' | 'notifications' | 'backup' | 'appearance' | 'sync' | 'widgets' | undefined>(undefined);
 
   // Responsive Navigation State
   const [isOpenMobileDrawer, setIsOpenMobileDrawer] = useState<boolean>(false);
