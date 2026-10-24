@@ -1,0 +1,286 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_financial_overview_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_bg"
+    android:orientation="vertical"
+    android:padding="12dp">
+
+    <!-- Header -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <FrameLayout
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:background="@drawable/widget_icon_badge_bg">
+
+            <ImageView
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:layout_gravity="center"
+                android:contentDescription="@string/app_name"
+                android:src="@drawable/ic_widget_leaf" />
+        </FrameLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="PesoTrack"
+                android:textColor="#FFFFFF"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Financial Overview"
+                android:textColor="#8FA095"
+                android:textSize="10sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <ImageView
+            android:id="@+id/btn_refresh_overview"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Refresh"
+            android:padding="6dp"
+            android:src="@drawable/ic_widget_refresh" />
+
+        <ImageView
+            android:id="@+id/btn_open_app_overview"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginStart="2dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Open PesoTrack"
+            android:padding="6dp"
+            android:src="@drawable/ic_widget_chevron_right" />
+    </LinearLayout>
+
+    <!-- Main Content Container (Shown when data is available) -->
+    <LinearLayout
+        android:id="@+id/ll_overview_content"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="8dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <!-- Top Row: Income Card & Expenses Card -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:baselineAligned="false"
+            android:orientation="horizontal">
+
+            <!-- Income Card -->
+            <LinearLayout
+                android:id="@+id/card_overview_income"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="@drawable/widget_card_bg"
+                android:orientation="vertical"
+                android:padding="8dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Income"
+                    android:textColor="#8FA095"
+                    android:textSize="11sp" />
+
+                <TextView
+                    android:id="@+id/tv_overview_income"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:text="₱0.00"
+                    android:textColor="#FFFFFF"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+
+                <LinearLayout
+                    android:id="@+id/ll_overview_income_badge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:background="@drawable/widget_badge_green_bg"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="6dp"
+                    android:paddingVertical="2dp">
+
+                    <ImageView
+                        android:layout_width="10dp"
+                        android:layout_height="10dp"
+                        android:src="@drawable/ic_widget_arrow_up" />
+
+                    <TextView
+                        android:id="@+id/tv_overview_income_percent"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="3dp"
+                        android:text="0%"
+                        android:textColor="#4ADE80"
+                        android:textSize="10sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Expenses Card -->
+            <LinearLayout
+                android:id="@+id/card_overview_expenses"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:background="@drawable/widget_card_bg"
+                android:orientation="vertical"
+                android:padding="8dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Expenses"
+                    android:textColor="#8FA095"
+                    android:textSize="11sp" />
+
+                <TextView
+                    android:id="@+id/tv_overview_expense"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:text="₱0.00"
+                    android:textColor="#FFFFFF"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+
+                <LinearLayout
+                    android:id="@+id/ll_overview_expense_badge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:background="@drawable/widget_badge_red_bg"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="6dp"
+                    android:paddingVertical="2dp">
+
+                    <ImageView
+                        android:layout_width="10dp"
+                        android:layout_height="10dp"
+                        android:src="@drawable/ic_widget_arrow_down" />
+
+                    <TextView
+                        android:id="@+id/tv_overview_expense_percent"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="3dp"
+                        android:text="0%"
+                        android:textColor="#EF4444"
+                        android:textSize="10sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Bottom Row: Net Cash Flow + Sparkline -->
+        <LinearLayout
+            android:id="@+id/card_overview_cashflow"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_marginTop="8dp"
+            android:layout_weight="1"
+            android:background="@drawable/widget_card_bg"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="10dp"
+            android:paddingVertical="6dp">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Net Cash Flow"
+                    android:textColor="#8FA095"
+                    android:textSize="11sp" />
+
+                <TextView
+                    android:id="@+id/tv_overview_cashflow"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:text="₱0.00"
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <ImageView
+                android:id="@+id/iv_overview_sparkline"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_marginStart="12dp"
+                android:layout_weight="1"
+                android:contentDescription="Cash flow trend sparkline"
+                android:scaleType="fitXY" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Logged-Out or Empty Placeholder Container -->
+    <LinearLayout
+        android:id="@+id/ll_overview_logged_out"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="8dp"
+        android:layout_weight="1"
+        android:background="@drawable/widget_card_bg"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="Open PesoTrack to view your live overview"
+            android:textColor="#FFFFFF"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:gravity="center"
+            android:text="Tap here to open your vault and sync transactions"
+            android:textColor="#8FA095"
+            android:textSize="11sp" />
+    </LinearLayout>
+</LinearLayout>

@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_quick_expense_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_bg"
+    android:orientation="vertical"
+    android:padding="12dp">
+
+    <!-- Header -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <FrameLayout
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:background="@drawable/widget_icon_badge_bg">
+
+            <ImageView
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:layout_gravity="center"
+                android:contentDescription="@string/app_name"
+                android:src="@drawable/ic_widget_wallet" />
+        </FrameLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="PesoTrack"
+                android:textColor="#FFFFFF"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Quick Expense"
+                android:textColor="#8FA095"
+                android:textSize="10sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <ImageView
+            android:id="@+id/btn_refresh_expense"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Refresh"
+            android:padding="6dp"
+            android:src="@drawable/ic_widget_refresh" />
+
+        <ImageView
+            android:id="@+id/btn_open_app_expense"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginStart="2dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Open PesoTrack"
+            android:padding="6dp"
+            android:src="@drawable/ic_widget_chevron_right" />
+    </LinearLayout>
+
+    <!-- Main Body Container -->
+    <LinearLayout
+        android:id="@+id/ll_quick_expense_body"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:orientation="vertical">
+
+        <!-- Amount Display -->
+        <TextView
+            android:id="@+id/tv_quick_expense_amount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="₱250.00"
+            android:textColor="#FFFFFF"
+            android:textSize="26sp"
+            android:textStyle="bold" />
+
+        <!-- Category & Date Row -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <!-- Category -->
+            <LinearLayout
+                android:id="@+id/ll_quick_expense_category"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:src="@drawable/ic_widget_food" />
+
+                <TextView
+                    android:id="@+id/tv_quick_expense_category"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:text="Food"
+                    android:textColor="#B0C4B8"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <View
+                android:layout_width="12dp"
+                android:layout_height="1dp" />
+
+            <!-- Date -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:src="@drawable/ic_widget_calendar" />
+
+                <TextView
+                    android:id="@+id/tv_quick_expense_date"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:text="Today"
+                    android:textColor="#B0C4B8"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Save Expense CTA Button -->
+    <LinearLayout
+        android:id="@+id/btn_save_quick_expense"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:layout_marginBottom="2dp"
+        android:background="@drawable/widget_save_btn_bg"
+        android:gravity="center"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/action_save_expense"
+            android:textColor="#FFFFFF"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+</LinearLayout>

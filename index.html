@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en-PH" class="bg-[#F6F4EE]">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
+    <title>PesoTrack — Philippine Personal Finance & Wallet Tracker</title>
+    <meta name="description" content="A minimalist personal finance manager to track your net worth, manage budgets, and monitor transactions in Philippine pesos." />
+    <meta property="og:title" content="PesoTrack — Philippine Personal Finance & Wallet Tracker" />
+    <meta property="og:description" content="A minimalist personal finance manager to track your net worth, manage budgets, and monitor transactions in Philippine pesos." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#F6F4EE" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <script>
+      (function() {
+        // Prevent extension errors (like interceptors trying to override window.fetch) from failing
+        try {
+          if (typeof window !== 'undefined') {
+            var rawFetch = window.fetch;
+            var currentFetch = typeof rawFetch === 'function' ? rawFetch.bind(window) : rawFetch;
+            try {
+              Object.defineProperty(window, 'fetch', {
+                configurable: true,
+                enumerable: true,
+                get: function() {
+                  return currentFetch;
+                },
+                set: function(fn) {
+                  currentFetch = fn;
+                }
+              });
+            } catch (err) {
+              // Ignore if already non-configurable
+            }
+
+            // Global error handler to suppress unhandled errors originating from browser extensions
+            window.addEventListener('error', function(e) {
+              if (
+                (e.filename && (e.filename.indexOf('chrome-extension://') !== -1 || e.filename.indexOf('moz-extension://') !== -1)) ||
+                (e.message && e.message.indexOf('Cannot set property fetch') !== -1)
+              ) {
+                e.preventDefault && e.preventDefault();
+                e.stopImmediatePropagation && e.stopImmediatePropagation();
+                return true;
+              }
+            }, true);
+          }
+        } catch (e) {}
+
+        try {
+          var s = localStorage.getItem('pesotrack_state_v1');
+          var isDark = false;
+          var tc = 'forest';
+          if (s) {
+            var p = JSON.parse(s);
+            if (p && p.settings) {
+              if (p.settings.themeColor) tc = p.settings.themeColor;
+              var tm = p.settings.themeMode;
+              if (tm === 'dark') isDark = true;
+              else if (tm === 'light') isDark = false;
+              else if (tm === 'system') {
+                isDark = !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+              } else {
+                isDark = !!p.settings.darkMode;
+              }
+            }
+          } else {
+            isDark = !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+            var savedTc = localStorage.getItem('pesotrack_theme_color');
+            if (savedTc) tc = savedTc;
+          }
+          if (tc) {
+            document.documentElement.setAttribute('data-theme-color', tc);
+          }
+          if (isDark) {
+            document.documentElement.classList.add('dark', 'dark-theme');
+            document.documentElement.style.colorScheme = 'dark';
+            var meta = document.querySelector('meta[name="theme-color"]');
+            if (meta) meta.setAttribute('content', '#0D1410');
+          } else {
+            document.documentElement.classList.remove('dark', 'dark-theme');
+            document.documentElement.style.colorScheme = 'light';
+            var meta = document.querySelector('meta[name="theme-color"]');
+            if (meta) meta.setAttribute('content', '#F6F4EE');
+          }
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body class="bg-[#F6F4EE] text-[#252923] antialiased selection:bg-[#174F32] selection:text-white m-0 p-0">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
