@@ -159,6 +159,19 @@ export default async function handler(req: any, res: any) {
         return res.status(400).json({ ok: false, error: 'Joint account name is required.' });
       }
 
+      // Validate optional invite data before any durable write. Previously a
+      // self-invitation created the workspace and then returned an error,
+      // making a successful creation look like a server failure to the client.
+      const normalizedInviteeEmail = typeof inviteeEmail === 'string'
+        ? inviteeEmail.toLowerCase().trim()
+        : '';
+      if (normalizedInviteeEmail && normalizedInviteeEmail === userEmailNormalized) {
+        return res.status(400).json({
+          ok: false,
+          error: 'You cannot invite yourself to a joint account.',
+        });
+      }
+
       const workspaceId = `jw_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 
       const initialMember = {
@@ -209,15 +222,8 @@ export default async function handler(req: any, res: any) {
       let invitationWarning: string | undefined;
 
       // 3. Handle partner invitation if provided
-      if (inviteeEmail && typeof inviteeEmail === 'string') {
-        const targetEmail = inviteeEmail.toLowerCase().trim();
-        if (targetEmail === userEmailNormalized) {
-          return res.status(400).json({
-            ok: false,
-            error: 'You cannot invite yourself to a joint account.',
-            workspace: workspaceData,
-          });
-        }
+      if (normalizedInviteeEmail) {
+        const targetEmail = normalizedInviteeEmail;
 
         const inviteId = `inv_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
         invitationData = {

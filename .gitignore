@@ -3,3 +3,5 @@ dist
 .env
 .dev.env.json
 data
+
+.vercel

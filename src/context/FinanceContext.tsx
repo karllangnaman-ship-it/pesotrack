@@ -157,6 +157,7 @@ const GUEST_STORAGE_KEY = 'pesotrack_state_v1';
 const LOCAL_STORAGE_KEY = GUEST_STORAGE_KEY;
 const LAST_ACTIVE_UID_KEY = 'pesotrack_last_active_uid';
 const LAST_SYNC_TIME_KEY = 'pesotrack_last_sync_time';
+const ACTIVE_JOINT_WORKSPACE_KEY_PREFIX = 'pesotrack_active_joint_workspace_';
 
 function getUserStorageKey(uid?: string | null): string {
   return uid ? `pesotrack_workspace_${uid}` : GUEST_STORAGE_KEY;
@@ -420,6 +421,9 @@ interface FinanceContextValue {
   setAccountMode: (mode: AccountMode) => void;
   activeJointWorkspace: JointWorkspace | null;
   myJointWorkspaces: JointWorkspace[];
+  /** A failed discovery must never be rendered as "no workspaces". */
+  jointDiscoveryStatus: 'idle' | 'loading' | 'ready' | 'error';
+  jointDiscoveryError: string | null;
   jointAccounts: FinancialAccount[];
   setJointAccounts: React.Dispatch<React.SetStateAction<FinancialAccount[]>>;
   jointTransactions: TransactionRecord[];
@@ -611,6 +615,8 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const [activeJointWorkspace, setActiveJointWorkspace] = useState<JointWorkspace | null>(null);
   const [myJointWorkspaces, setMyJointWorkspaces] = useState<JointWorkspace[]>([]);
+  const [jointDiscoveryStatus, setJointDiscoveryStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
+  const [jointDiscoveryError, setJointDiscoveryError] = useState<string | null>(null);
   const [jointAccounts, setJointAccounts] = useState<FinancialAccount[]>([]);
   const [jointTransactions, setJointTransactions] = useState<TransactionRecord[]>([]);
   const [jointBills, setJointBills] = useState<BillDefinition[]>([]);
@@ -1712,6 +1718,8 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const refreshJointData = async () => {
     if (!currentUser || !currentUser.emailVerified) return;
+    setJointDiscoveryStatus('loading');
+    setJointDiscoveryError(null);
     try {
       const [wsRes, invRes] = await Promise.all([
         fetchMyJointWorkspaces(),
@@ -1720,16 +1728,30 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
 
       if (wsRes.ok && wsRes.workspaces) {
         setMyJointWorkspaces(wsRes.workspaces);
+        setJointDiscoveryStatus('ready');
         if (wsRes.workspaces.length > 0) {
+          let savedWorkspaceId: string | null = null;
+          try {
+            savedWorkspaceId = localStorage.getItem(`${ACTIVE_JOINT_WORKSPACE_KEY_PREFIX}${currentUser.uid}`);
+          } catch {}
           setActiveJointWorkspace((prev) => {
             if (prev && wsRes.workspaces!.some((w) => w.id === prev.id)) {
               return wsRes.workspaces!.find((w) => w.id === prev.id) || prev;
+            }
+            if (savedWorkspaceId) {
+              const saved = wsRes.workspaces!.find((w) => w.id === savedWorkspaceId);
+              if (saved) return saved;
             }
             return wsRes.workspaces![0];
           });
         } else {
           setActiveJointWorkspace(null);
         }
+      } else {
+        // Do not clear the current workspace or show the create screen when
+        // the membership query failed (500, permission denial, timeout, etc.).
+        setJointDiscoveryStatus('error');
+        setJointDiscoveryError(wsRes.error || 'Unable to load your Joint Accounts.');
       }
 
       if (invRes.ok) {
@@ -1770,8 +1792,20 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
       }
     } catch (e) {
       console.warn('[FinanceContext] Error refreshing joint data:', e);
+      setJointDiscoveryStatus('error');
+      setJointDiscoveryError(e instanceof Error ? e.message : 'Unable to load your Joint Accounts.');
     }
   };
+
+  useEffect(() => {
+    if (!currentUser?.uid || !activeJointWorkspace?.id) return;
+    try {
+      localStorage.setItem(
+        `${ACTIVE_JOINT_WORKSPACE_KEY_PREFIX}${currentUser.uid}`,
+        activeJointWorkspace.id
+      );
+    } catch {}
+  }, [activeJointWorkspace?.id, currentUser?.uid]);
 
   useEffect(() => {
     if (activeJointWorkspace?.id) {
@@ -1789,6 +1823,8 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
     if (currentUser && currentUser.emailVerified) {
       refreshJointData();
     } else {
+      setJointDiscoveryStatus('idle');
+      setJointDiscoveryError(null);
       setActiveJointWorkspace(null);
       setMyJointWorkspaces([]);
       setJointInvitations([]);
@@ -7030,6 +7066,8 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
         setAccountMode,
         activeJointWorkspace,
         myJointWorkspaces,
+        jointDiscoveryStatus,
+        jointDiscoveryError,
         jointAccounts,
         setJointAccounts,
         jointTransactions,

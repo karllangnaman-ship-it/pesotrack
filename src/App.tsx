@@ -76,6 +76,8 @@ const PesoTrackAppContent: React.FC = () => {
     accountMode,
     setAccountMode,
     activeJointWorkspace,
+    jointDiscoveryStatus,
+    jointDiscoveryError,
     jointAccounts,
     jointTransactions,
     jointBills,
@@ -441,6 +443,25 @@ const PesoTrackAppContent: React.FC = () => {
                   <span>Sign In or Register to Use Joint Account</span>
                 </button>
               </div>
+            </div>
+          ) : accountMode === 'joint' && jointDiscoveryStatus === 'loading' && !activeJointWorkspace ? (
+            <div className="max-w-xl mx-auto py-12 px-4 text-center space-y-4">
+              <div className="w-12 h-12 mx-auto rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center animate-pulse">
+                <Users className="w-6 h-6 stroke-[2.2]" />
+              </div>
+              <h1 className="text-xl font-extrabold text-[#252923] dark:text-white">Loading your Joint Finances…</h1>
+              <p className="text-sm text-[#777D75] dark:text-[#8FA095]">Looking up workspaces connected to your signed-in account.</p>
+            </div>
+          ) : accountMode === 'joint' && jointDiscoveryStatus === 'error' && !activeJointWorkspace ? (
+            <div className="max-w-xl mx-auto py-12 px-4 text-center space-y-5">
+              <div className="w-16 h-16 mx-auto rounded-3xl bg-red-500/10 text-red-600 dark:text-red-300 flex items-center justify-center shadow-xs">
+                <AlertCircle className="w-8 h-8 stroke-[2.2]" />
+              </div>
+              <div className="space-y-2">
+                <h1 className="text-2xl font-extrabold text-[#252923] dark:text-white">Couldn’t load Joint Finances</h1>
+                <p className="text-sm text-[#777D75] dark:text-[#8FA095] leading-relaxed">{jointDiscoveryError || 'Your workspace list could not be retrieved. Your existing data has not been changed.'}</p>
+              </div>
+              <button type="button" onClick={() => refreshJointData()} className="px-6 py-3 rounded-2xl bg-[#174F32] hover:bg-[#123E27] text-white text-sm font-extrabold">Try Again</button>
             </div>
           ) : accountMode === 'joint' && !activeJointWorkspace ? (
             <div className="max-w-xl mx-auto py-12 px-4 text-center space-y-6">
