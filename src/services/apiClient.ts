@@ -1,4 +1,6 @@
 import { auth } from './firebase';
+import { db } from './firebase';
+import { collection, getDoc, getDocs, query, runTransaction, setDoc, updateDoc, where, doc } from 'firebase/firestore';
 import { PesoTrackState, NotificationSettings } from '../types/finance';
 import { BackupSummary } from '../utils/backupService';
 import { Capacitor } from '@capacitor/core';
@@ -296,12 +298,102 @@ async function authorizedFetch(
   return res;
 }
 
+function shouldUseDirectFirestore(response: Response, body: any): boolean {
+  return response.status === 503 && body?.code === 'FIREBASE_ADMIN_NOT_CONFIGURED';
+}
+
+function requireVerifiedFirebaseUser() {
+  const user = auth.currentUser;
+  if (!user) throw new Error('Unauthenticated: Please sign in to continue.');
+  if (!user.emailVerified && !user.providerData.some((provider) => provider.providerId === 'google.com')) {
+    throw new Error('Email verification required before using Joint Finances.');
+  }
+  return user;
+}
+
+async function fetchMyJointWorkspacesDirect(): Promise<any[]> {
+  const user = requireVerifiedFirebaseUser();
+  const snapshot = await getDocs(query(collection(db, 'jointWorkspaces'), where('memberUids', 'array-contains', user.uid)));
+  return snapshot.docs.map((item) => item.data()).sort((a: any, b: any) => new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime());
+}
+
+async function fetchJointInvitationsDirect(): Promise<{ invitations: any[]; sentInvitations: any[] }> {
+  const user = requireVerifiedFirebaseUser();
+  const email = (user.email || '').toLowerCase().trim();
+  const [received, sent] = await Promise.all([
+    getDocs(query(collection(db, 'jointInvitations'), where('inviteeEmail', '==', email))),
+    getDocs(query(collection(db, 'jointInvitations'), where('inviterUid', '==', user.uid))),
+  ]);
+  return { invitations: received.docs.map((item) => item.data()).filter((item: any) => item.status === 'pending'), sentInvitations: sent.docs.map((item) => item.data()) };
+}
+
+async function createJointWorkspaceDirect(payload: { name: string; relationship?: string; inviteeEmail?: string; invitationMessage?: string; displayName?: string }): Promise<{ workspace: any; invitation?: any }> {
+  const user = requireVerifiedFirebaseUser();
+  const email = (user.email || '').toLowerCase().trim();
+  const name = (payload.name || 'Our Household').trim();
+  if (!name) throw new Error('Joint account name is required.');
+  const relationship = (payload.relationship || 'Partner').trim();
+  const memberLimit = /partner|spouse|married/i.test(relationship) ? 2 : 10;
+  const now = new Date().toISOString();
+  const id = `jw_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+  const displayName = (payload.displayName || user.displayName || email.split('@')[0] || 'User').trim();
+  const workspace = { id, name, relationship, memberLimit, ownerUid: user.uid, ownerEmail: email, ownerName: displayName, memberUids: [user.uid], members: [{ uid: user.uid, email, displayName, role: 'owner', joinedAt: now, avatarColor: '#174F32' }], createdAt: now, updatedAt: now };
+  await setDoc(doc(db, 'jointWorkspaces', id), workspace);
+  let invitation: any;
+  const inviteeEmail = payload.inviteeEmail?.toLowerCase().trim();
+  if (inviteeEmail) {
+    if (inviteeEmail === email) throw new Error('You cannot invite yourself to a joint account.');
+    const inviteId = `inv_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    invitation = { id: inviteId, jointWorkspaceId: id, jointWorkspaceName: name, inviterUid: user.uid, inviterEmail: email, inviterName: displayName, inviteeEmail, relationship, message: (payload.invitationMessage || '').trim(), status: 'pending', createdAt: now };
+    await setDoc(doc(db, 'jointInvitations', inviteId), invitation);
+  }
+  return { workspace, invitation };
+}
+
+async function invitePartnerToJointDirect(payload: { workspaceId: string; inviteeEmail: string; relationship?: string; message?: string; displayName?: string }): Promise<any> {
+  const user = requireVerifiedFirebaseUser();
+  const email = (user.email || '').toLowerCase().trim();
+  const inviteeEmail = payload.inviteeEmail.toLowerCase().trim();
+  if (!inviteeEmail || inviteeEmail === email) throw new Error('Enter another verified user email address.');
+  const ws = (await getDocs(query(collection(db, 'jointWorkspaces'), where('memberUids', 'array-contains', user.uid)))).docs.map((item) => item.data()).find((item: any) => item.id === payload.workspaceId);
+  if (!ws) throw new Error('Joint workspace not found or you are not a member.');
+  const now = new Date().toISOString();
+  const id = `inv_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+  const invitation = { id, jointWorkspaceId: payload.workspaceId, jointWorkspaceName: ws.name || 'Joint Workspace', inviterUid: user.uid, inviterEmail: email, inviterName: (payload.displayName || user.displayName || email.split('@')[0] || 'User').trim(), inviteeEmail, relationship: payload.relationship || ws.relationship || 'Partner', message: (payload.message || '').trim(), status: 'pending', createdAt: now };
+  await setDoc(doc(db, 'jointInvitations', id), invitation);
+  return invitation;
+}
+
+async function acceptJointInvitationDirect(invitationId: string, displayName?: string): Promise<any> {
+  const user = requireVerifiedFirebaseUser();
+  const invitationRef = doc(db, 'jointInvitations', invitationId);
+  return runTransaction(db, async (transaction) => {
+    const invitationSnap = await transaction.get(invitationRef);
+    if (!invitationSnap.exists()) throw new Error('Invitation not found.');
+    const invitation = invitationSnap.data() as any;
+    if (invitation.status !== 'pending') throw new Error('This invitation is no longer pending.');
+    if ((invitation.inviteeEmail || '').toLowerCase() !== (user.email || '').toLowerCase()) throw new Error('This invitation is not addressed to you.');
+    const workspaceRef = doc(db, 'jointWorkspaces', invitation.jointWorkspaceId);
+    const workspaceSnap = await transaction.get(workspaceRef);
+    if (!workspaceSnap.exists()) throw new Error('Joint workspace no longer exists.');
+    const current = workspaceSnap.data() as any;
+    const members = current.members || [];
+    if (!current.memberUids?.includes(user.uid) && members.length >= (current.memberLimit || 10)) throw new Error('This joint workspace is full.');
+    const nextMembers = current.memberUids?.includes(user.uid) ? members : [...members, { uid: user.uid, email: (user.email || '').toLowerCase(), displayName: displayName || user.displayName || user.email?.split('@')[0] || 'User', role: 'member', joinedAt: new Date().toISOString(), avatarColor: '#2D7D5A' }];
+    const nextWorkspace = { ...current, members: nextMembers, memberUids: nextMembers.map((member: any) => member.uid), updatedAt: new Date().toISOString() };
+    transaction.update(workspaceRef, nextWorkspace);
+    transaction.update(invitationRef, { status: 'accepted', acceptedAt: new Date().toISOString(), acceptedByUid: user.uid });
+    return nextWorkspace;
+  });
+}
+
 export async function fetchMyJointWorkspaces(): Promise<{ ok: boolean; workspaces?: any[]; error?: string }> {
   try {
     const res = await authorizedFetch('/api/joint?action=get-my-workspaces', {
       method: 'GET',
     });
     const body = await res.json().catch(() => null);
+    if (shouldUseDirectFirestore(res, body)) return { ok: true, workspaces: await fetchMyJointWorkspacesDirect() };
     if (!res.ok) return { ok: false, error: body?.error || `HTTP ${res.status}` };
     return { ok: true, workspaces: body?.workspaces || [] };
   } catch (err: any) {
@@ -320,6 +412,7 @@ export async function fetchJointInvitations(): Promise<{
       method: 'GET',
     });
     const body = await res.json().catch(() => null);
+    if (shouldUseDirectFirestore(res, body)) { const result = await fetchJointInvitationsDirect(); return { ok: true, ...result }; }
     if (!res.ok) return { ok: false, error: body?.error || `HTTP ${res.status}` };
     return {
       ok: true,
@@ -345,6 +438,7 @@ export async function createJointWorkspaceApi(payload: {
       body: JSON.stringify({ action: 'create-workspace', ...payload }),
     });
     const body = await res.json().catch(() => null);
+    if (shouldUseDirectFirestore(res, body)) { const result = await createJointWorkspaceDirect(payload); return { ok: true, ...result }; }
     if (!res.ok) return { ok: false, error: body?.error || `HTTP ${res.status}`, workspace: body?.workspace };
     return { ok: true, workspace: body?.workspace, invitation: body?.invitation };
   } catch (err: any) {
@@ -415,6 +509,7 @@ export async function invitePartnerToJointApi(payload: {
       body: JSON.stringify({ action: 'invite-partner', ...payload }),
     });
     const body = await res.json().catch(() => null);
+    if (shouldUseDirectFirestore(res, body)) return { ok: true, invitation: await invitePartnerToJointDirect(payload) };
     if (!res.ok) return { ok: false, error: body?.error || `HTTP ${res.status}` };
     return { ok: true, invitation: body?.invitation };
   } catch (err: any) {
@@ -433,6 +528,7 @@ export async function acceptJointInvitationApi(
       body: JSON.stringify({ action: 'accept-invitation', invitationId, displayName }),
     });
     const body = await res.json().catch(() => null);
+    if (shouldUseDirectFirestore(res, body)) { const workspace = await acceptJointInvitationDirect(invitationId, displayName); return { ok: true, workspace, message: 'Invitation accepted.' }; }
     if (!res.ok) return { ok: false, error: body?.error || `HTTP ${res.status}` };
     return { ok: true, workspace: body?.workspace, message: body?.message };
   } catch (err: any) {
@@ -450,6 +546,7 @@ export async function declineJointInvitationApi(
       body: JSON.stringify({ action: 'decline-invitation', invitationId }),
     });
     const body = await res.json().catch(() => null);
+    if (shouldUseDirectFirestore(res, body)) { await updateDoc(doc(db, 'jointInvitations', invitationId), { status: 'declined', declinedAt: new Date().toISOString() }); return { ok: true }; }
     if (!res.ok) return { ok: false, error: body?.error || `HTTP ${res.status}` };
     return { ok: true };
   } catch (err: any) {

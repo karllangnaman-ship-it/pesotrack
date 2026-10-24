@@ -1,5 +1,5 @@
 import { handleCors } from './_lib/cors.ts';
-import { authenticateRequest } from './_lib/firebaseAdmin.ts';
+import { authenticateRequest, hasAdminCredentials } from './_lib/firebaseAdmin.ts';
 import {
   getDoc,
   setDoc,
@@ -57,6 +57,18 @@ export default async function handler(req: any, res: any) {
       ok: false,
       error: 'Email verification required. Please verify your email address to access Joint Accounts.',
       email: user.email,
+    });
+  }
+
+  // The joint API performs privileged multi-user operations. A Firebase ID
+  // token is enough for the browser Firestore SDK, but it is not a substitute
+  // for the service-account credentials needed by this serverless API. Do
+  // not forward an opaque Firestore 500 when Vercel has not been configured.
+  if (!hasAdminCredentials()) {
+    return res.status(503).json({
+      ok: false,
+      code: 'FIREBASE_ADMIN_NOT_CONFIGURED',
+      error: 'The server sync service is not configured. The app will use its secure direct Firestore connection instead.',
     });
   }
 
