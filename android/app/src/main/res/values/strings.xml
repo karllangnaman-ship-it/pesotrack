@@ -1,0 +1,27 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">PesoTrack Offline</string>
+    <string name="title_activity_main">PesoTrack Offline</string>
+    <string name="package_name">com.pesotrack.offline</string>
+    <string name="custom_url_scheme">com.pesotrack.offline</string>
+
+    <!-- Native Android Home-Screen Widgets -->
+    <string name="widget_quick_actions_name">PesoTrack Quick Actions</string>
+    <string name="widget_quick_actions_desc">Quick access to Expense, Income, Transfer, Loan, Card, and Grocery directly from your home screen.</string>
+
+    <string name="widget_financial_overview_name">PesoTrack Financial Overview</string>
+    <string name="widget_financial_overview_desc">Live summary of monthly income, expenses, and net cash flow with trend sparkline.</string>
+
+    <string name="widget_quick_expense_name">PesoTrack Quick Expense</string>
+    <string name="widget_quick_expense_desc">One-tap expense entry with preselected amount and category ready to confirm.</string>
+
+    <!-- Action Labels -->
+    <string name="action_expense">Expense</string>
+    <string name="action_income">Income</string>
+    <string name="action_transfer">Transfer</string>
+    <string name="action_loan">Loan</string>
+    <string name="action_card">Card</string>
+    <string name="action_grocery">Grocery</string>
+    <string name="action_save_expense">Save Expense</string>
+</resources>
+

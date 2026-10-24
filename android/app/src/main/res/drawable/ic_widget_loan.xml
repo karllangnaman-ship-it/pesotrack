@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Hand holding coin / coin loan icon -->
+    <path
+        android:fillColor="#FBBF24"
+        android:pathData="M12,4a4,4 0,1 0,0 8a4,4 0,1 0,0 -8zM12,6a2,2 0,1 1,0 4a2,2 0,1 1,0 -4z" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FBBF24"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M3,18h4l3.5,-2.5c1.2,-0.9 2.8,-0.9 4,0l3.5,2.5H21v3H3z" />
+</vector>
