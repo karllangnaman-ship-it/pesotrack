@@ -1824,10 +1824,13 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
       if (res.ok && res.workspace) {
         setActiveJointWorkspace(res.workspace);
         setMyJointWorkspaces((prev) => [res.workspace, ...prev]);
-        const successMsg = data.inviteeEmail
+        const successMsg = data.inviteeEmail && !res.invitationWarning
           ? `Joint account "${res.workspace.name}" created and invitation sent successfully!`
           : `Joint workspace "${res.workspace.name}" created!`;
         showToast(successMsg, 'success');
+        if (res.invitationWarning) {
+          showToast(res.invitationWarning, 'info');
+        }
         refreshJointData();
         return true;
       } else {
@@ -2151,7 +2154,10 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
           if (saved) {
             try {
               const parsed = validateAndSanitizeState(JSON.parse(saved));
-              if (parsed) setState(parsed);
+              if (parsed) {
+                stateRef.current = parsed;
+                setState(parsed);
+              }
             } catch (e) {
               console.error('Failed parsing workspace:', e);
             }
@@ -2163,8 +2169,9 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
             let cloudRestored = false;
             if (navigator.onLine) {
               try {
-                const restoreRes = await restoreAccountDataFromCloud(fbUser.uid, state);
+                const restoreRes = await restoreAccountDataFromCloud(fbUser.uid, stateRef.current);
                 if (restoreRes.hasCloudData) {
+                  stateRef.current = restoreRes.restoredState;
                   setState(restoreRes.restoredState);
                   localStorage.setItem(userKey, JSON.stringify(restoreRes.restoredState));
                   cloudRestored = true;
@@ -2202,6 +2209,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
                 setIsMigrationModalOpen(true);
               } else {
                 const fresh = createInitialPesoTrackState();
+                stateRef.current = fresh;
                 setState(fresh);
                 localStorage.setItem(userKey, JSON.stringify(fresh));
                 if (navigator.onLine) {

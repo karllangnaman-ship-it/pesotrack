@@ -15,6 +15,7 @@ import {
   ReceivableRecord,
   GroceryItem,
   GroceryCategory,
+  RecurringTransaction,
   PesoTrackState,
 } from '../types/finance';
 import firebaseConfig from '../../firebase-applet-config.json';
@@ -214,6 +215,7 @@ export async function restoreAccountDataFromCloud(
     recSnap,
     grocSnap,
     catSnap,
+    recurringSnap,
     syncDocSnap,
   ] = await Promise.all([
     getDocs(collection(db, 'users', uid, 'accounts')).catch((e) =>
@@ -239,6 +241,9 @@ export async function restoreAccountDataFromCloud(
     ),
     getDocs(collection(db, 'users', uid, 'groceryCategories')).catch((e) =>
       handleFirestoreError(e, OperationType.LIST, `users/${uid}/groceryCategories`)
+    ),
+    getDocs(collection(db, 'users', uid, 'recurringTransactions')).catch((e) =>
+      handleFirestoreError(e, OperationType.LIST, `users/${uid}/recurringTransactions`)
     ),
     getDoc(doc(db, 'users', uid, 'sync', 'state')).catch((e) =>
       handleFirestoreError(e, OperationType.GET, `users/${uid}/sync/state`)
@@ -296,6 +301,12 @@ export async function restoreAccountDataFromCloud(
     if (!data.isDeleted) remoteGroceryCategories.push(data as GroceryCategory);
   });
 
+  const remoteRecurringTransactions: RecurringTransaction[] = [];
+  recurringSnap.forEach((d) => {
+    const data = d.data();
+    if (!data.isDeleted) remoteRecurringTransactions.push(data as RecurringTransaction);
+  });
+
   const remoteSyncData = syncDocSnap.exists() ? syncDocSnap.data() : null;
 
   const hasCloudData =
@@ -304,6 +315,10 @@ export async function restoreAccountDataFromCloud(
     remoteBills.length > 0 ||
     remoteReceivables.length > 0 ||
     remoteGroceries.length > 0 ||
+    remoteGroceryCategories.length > 0 ||
+    remoteRecurringTransactions.length > 0 ||
+    Object.keys(remoteEntries).length > 0 ||
+    Object.keys(remoteBudgets).length > 0 ||
     Boolean(remoteSyncData);
 
   const totalRecordsCount =
@@ -314,7 +329,8 @@ export async function restoreAccountDataFromCloud(
     remoteReceivables.length +
     Object.keys(remoteBudgets).length +
     remoteGroceries.length +
-    remoteGroceryCategories.length;
+    remoteGroceryCategories.length +
+    remoteRecurringTransactions.length;
 
   if (!hasCloudData) {
     return {
@@ -334,7 +350,10 @@ export async function restoreAccountDataFromCloud(
     monthlyBillEntries: remoteEntries,
     receivables: remoteReceivables,
     budgets: Object.keys(remoteBudgets).length > 0 ? remoteBudgets : baseState.budgets,
-    recurringTransactions: baseState.recurringTransactions || [],
+    recurringTransactions:
+      remoteRecurringTransactions.length > 0
+        ? remoteRecurringTransactions
+        : baseState.recurringTransactions || [],
     groceryItems: remoteGroceries.length > 0 ? remoteGroceries : baseState.groceryItems || [],
     groceryCategories:
       remoteGroceryCategories.length > 0
@@ -507,6 +526,7 @@ export async function performFullSync(
     recSnap,
     grocSnap,
     catSnap,
+    recurringSnap,
     syncDocSnap,
   ] = await Promise.all([
     getDocs(collection(db, 'users', uid, 'accounts')).catch((e) =>
@@ -532,6 +552,9 @@ export async function performFullSync(
     ),
     getDocs(collection(db, 'users', uid, 'groceryCategories')).catch((e) =>
       handleFirestoreError(e, OperationType.LIST, `users/${uid}/groceryCategories`)
+    ),
+    getDocs(collection(db, 'users', uid, 'recurringTransactions')).catch((e) =>
+      handleFirestoreError(e, OperationType.LIST, `users/${uid}/recurringTransactions`)
     ),
     getDoc(doc(db, 'users', uid, 'sync', 'state')).catch((e) =>
       handleFirestoreError(e, OperationType.GET, `users/${uid}/sync/state`)
@@ -563,6 +586,9 @@ export async function performFullSync(
   const remoteGroceryCategories = new Map<string, any>();
   catSnap.forEach((d) => remoteGroceryCategories.set(d.id, d.data()));
 
+  const remoteRecurringTransactions = new Map<string, any>();
+  recurringSnap.forEach((d) => remoteRecurringTransactions.set(d.id, d.data()));
+
   const totalDownloaded =
     remoteAccounts.size +
     remoteTransactions.size +
@@ -571,7 +597,8 @@ export async function performFullSync(
     remoteBudgets.size +
     remoteReceivables.size +
     remoteGroceries.size +
-    remoteGroceryCategories.size;
+    remoteGroceryCategories.size +
+    remoteRecurringTransactions.size;
 
   // Merge Accounts
   const mergedAccounts: FinancialAccount[] = [];
@@ -880,6 +907,38 @@ export async function performFullSync(
     catsToUpload.push(lCat);
   }
 
+  // Merge recurring transactions using the same stable-ID, latest-update-wins
+  // policy as the other private collections.
+  const mergedRecurringTransactions: RecurringTransaction[] = [];
+  const localRecurringMap = new Map(
+    (localState.recurringTransactions || []).map((item) => [item.id, item])
+  );
+  const recurringToUpload: RecurringTransaction[] = [];
+  for (const [id, remoteItem] of remoteRecurringTransactions.entries()) {
+    if (remoteItem.isDeleted) {
+      localRecurringMap.delete(id);
+      continue;
+    }
+    const localItem = localRecurringMap.get(id);
+    if (!localItem) {
+      mergedRecurringTransactions.push(remoteItem as RecurringTransaction);
+    } else {
+      const localTime = new Date(localItem.updatedAt || localItem.createdAt || 0).getTime();
+      const remoteTime = new Date(remoteItem.updatedAt || remoteItem.createdAt || 0).getTime();
+      if (remoteTime >= localTime) {
+        mergedRecurringTransactions.push(remoteItem as RecurringTransaction);
+      } else {
+        mergedRecurringTransactions.push(localItem);
+        recurringToUpload.push(localItem);
+      }
+      localRecurringMap.delete(id);
+    }
+  }
+  for (const item of localRecurringMap.values()) {
+    mergedRecurringTransactions.push(item);
+    recurringToUpload.push(item);
+  }
+
   for (const g of grocsToUpload) {
     uploadPromises.push(
       setDoc(
@@ -903,6 +962,16 @@ export async function performFullSync(
           userId: uid,
           updatedAt: nowIso,
         },
+        { merge: true }
+      )
+    );
+  }
+
+  for (const item of recurringToUpload) {
+    uploadPromises.push(
+      setDoc(
+        doc(db, 'users', uid, 'recurringTransactions', item.id),
+        { ...item, userId: uid, updatedAt: item.updatedAt || nowIso },
         { merge: true }
       )
     );
@@ -942,7 +1011,7 @@ export async function performFullSync(
     monthlyBillEntries: mergedEntries,
     receivables: mergedReceivables,
     budgets: Object.keys(mergedBudgets).length > 0 ? mergedBudgets : localState.budgets,
-    recurringTransactions: localState.recurringTransactions || [],
+    recurringTransactions: mergedRecurringTransactions,
     groceryItems: mergedGroceries,
     groceryCategories:
       mergedCategories.length > 0 ? mergedCategories : localState.groceryCategories,

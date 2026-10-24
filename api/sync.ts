@@ -49,7 +49,7 @@ export default async function handler(req: any, res: any) {
 
   try {
     const firestore = getAdminFirestore();
-    const batch = firestore.batch();
+    let batch = firestore.batch();
     let batchOperationsCount = 0;
 
     // A. Process offline queue items if provided
@@ -99,6 +99,7 @@ export default async function handler(req: any, res: any) {
         // Commit in chunks if nearing batch limit of 500
         if (batchOperationsCount >= 450) {
           await batch.commit();
+          batch = firestore.batch();
           batchOperationsCount = 0;
         }
       }
@@ -262,7 +263,30 @@ export default async function handler(req: any, res: any) {
         }
       }
 
-      // 9. Workspace Settings & Sync State
+      // 9. Recurring Transactions
+      if (Array.isArray(fullState.recurringTransactions)) {
+        for (const item of fullState.recurringTransactions) {
+          if (!item.id) continue;
+          const ref = firestore
+            .collection('users')
+            .doc(uid)
+            .collection('recurringTransactions')
+            .doc(item.id);
+          batch.set(
+            ref,
+            {
+              ...item,
+              userId: uid,
+              updatedAt: item.updatedAt || nowIso,
+            },
+            { merge: true }
+          );
+          batchOperationsCount++;
+          syncedCount++;
+        }
+      }
+
+      // 10. Workspace Settings & Sync State
       const syncDocRef = firestore
         .collection('users')
         .doc(uid)

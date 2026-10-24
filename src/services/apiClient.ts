@@ -353,7 +353,7 @@ export async function createJointWorkspaceApi(payload: {
   inviteeEmail?: string;
   invitationMessage?: string;
   displayName?: string;
-}): Promise<{ ok: boolean; workspace?: any; invitation?: any; error?: string }> {
+}): Promise<{ ok: boolean; workspace?: any; invitation?: any; invitationWarning?: string; error?: string }> {
   try {
     const res = await authorizedFetch('/api/joint', {
       method: 'POST',
@@ -362,7 +362,12 @@ export async function createJointWorkspaceApi(payload: {
     });
     const body = await res.json().catch(() => null);
     if (!res.ok) return { ok: false, error: getApiErrorMessage(body, `HTTP ${res.status}`), workspace: body?.workspace };
-    return { ok: true, workspace: body?.workspace, invitation: body?.invitation };
+    return {
+      ok: true,
+      workspace: body?.workspace,
+      invitation: body?.invitation,
+      invitationWarning: typeof body?.invitationWarning === 'string' ? body.invitationWarning : undefined,
+    };
   } catch (err: any) {
     return { ok: false, error: err?.message || 'Network error' };
   }

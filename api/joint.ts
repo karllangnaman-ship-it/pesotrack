@@ -1,5 +1,5 @@
 import { handleCors } from './_lib/cors.ts';
-import { authenticateRequest } from './_lib/firebaseAdmin.ts';
+import { authenticateRequest, requireAdminCredentials } from './_lib/firebaseAdmin.ts';
 import {
   getDoc,
   setDoc,
@@ -30,6 +30,7 @@ export function getWorkspaceMemberLimit(relationship?: string): number {
 }
 
 export default async function handler(req: any, res: any) {
+  const requestId = req.headers['x-vercel-id'] || `joint_${Date.now().toString(36)}`;
   if (handleCors(req, res)) return;
 
   if (req.method !== 'POST' && req.method !== 'GET') {
@@ -68,6 +69,9 @@ export default async function handler(req: any, res: any) {
   const action = req.body?.action || (req.query?.action as string);
 
   try {
+    // All workspace and invitation reads/writes run through Admin SDK after
+    // authentication. This preserves private workspace membership metadata.
+    requireAdminCredentials();
     // -------------------------------------------------------------------------
     // ACTION: GET MY WORKSPACES
     // -------------------------------------------------------------------------
@@ -202,6 +206,7 @@ export default async function handler(req: any, res: any) {
       ).catch(() => {});
 
       let invitationData: any = null;
+      let invitationWarning: string | undefined;
 
       // 3. Handle partner invitation if provided
       if (inviteeEmail && typeof inviteeEmail === 'string') {
@@ -249,9 +254,14 @@ export default async function handler(req: any, res: any) {
             token
           ).catch(() => {});
         } catch (inviteErr: any) {
-          // Compensating action: Delete workspace if invitation creation failed
-          await deleteDoc('jointWorkspaces', workspaceId, token).catch(() => {});
-          throw new Error(`Failed creating invitation: ${inviteErr?.message || inviteErr}`);
+          // The workspace itself was created successfully. Keep it available to
+          // the owner and report that only the optional invitation failed.
+          invitationWarning = `Joint account was created, but the invitation could not be sent: ${inviteErr?.message || 'unknown error'}`;
+          console.warn('[API /api/joint] Invitation creation failed after workspace creation:', {
+            requestId,
+            workspaceId,
+            message: inviteErr?.message,
+          });
         }
       }
 
@@ -259,6 +269,7 @@ export default async function handler(req: any, res: any) {
         ok: true,
         workspace: workspaceData,
         invitation: invitationData,
+        invitationWarning,
       });
     }
 
@@ -1502,7 +1513,7 @@ export default async function handler(req: any, res: any) {
       error: `Unknown action: "${action}"`,
     });
   } catch (err: any) {
-    console.error('[API /api/joint] Error handling action:', action, err);
+    console.error('[API /api/joint] Error handling action:', { requestId, action, uid, code: err?.code, message: err?.message });
     const rawErrorMessage =
       typeof err?.message === 'string'
         ? err.message
@@ -1520,10 +1531,12 @@ export default async function handler(req: any, res: any) {
       ? 'Firestore permission denied: Please publish the updated security rules from FIREBASE_SETUP.md in your Firebase Console (Build > Firestore Database > Rules).'
       : rawErrorMessage;
 
-    return res.status(isPermissionError ? 403 : 500).json({
+    const statusCode = err?.statusCode || (isPermissionError ? 403 : 500);
+    return res.status(statusCode).json({
       ok: false,
       error: errorMessage,
       isRulesPermissionError: isPermissionError,
+      requestId,
     });
   }
 }
