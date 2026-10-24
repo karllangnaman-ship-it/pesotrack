@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   AlertCircle,
   Calendar,
   CheckCircle2,
   CreditCard,
+  RotateCcw,
   Wallet,
   X,
 } from 'lucide-react';
@@ -12,24 +13,47 @@ import { formatPeso, roundPHP, subPHP } from '../utils/currency';
 import { ReconciledAccount } from '../utils/financeEngine';
 import { ProviderLogo } from './ProviderLogo';
 
-interface PayCreditBillModalProps {
+import { formatFriendlyDate } from '../utils/loanCalculations';
+
+export interface PayCreditBillModalProps {
   isOpen: boolean;
   onClose: () => void;
   account: ReconciledAccount;
+  initialAmount?: number;
+  initialDate?: string;
+  dueDate?: string;
 }
 
 export const PayCreditBillModal: React.FC<PayCreditBillModalProps> = ({
   isOpen,
   onClose,
   account,
+  initialAmount,
+  initialDate,
+  dueDate,
 }) => {
-  const { reconciledAccounts, payCreditBill, showToast } = useFinance();
+  const { reconciledAccounts, payCreditBill, revertAccountPayment, state, showToast } =
+    useFinance();
 
   const outstandingBalance = Math.max(0, account.currentBalance);
   const creditLimit = account.creditInfo?.creditLimit || 0;
   const availableCredit = account.availableCredit !== undefined
     ? account.availableCredit
     : Math.max(0, subPHP(creditLimit, outstandingBalance));
+
+  const recentPayments = useMemo(() => {
+    return state.transactions
+      .filter(
+        (t) =>
+          (t.type === 'transfer' && t.destinationAccountId === account.id) ||
+          (t.accountId === account.id &&
+            (t.category === 'Credit Card Payment' || t.category === 'Credit Payment')) ||
+          (t.accountId === account.id &&
+            t.type === 'adjustment' &&
+            t.adjustmentSign === 'negative')
+      )
+      .slice(0, 4);
+  }, [state.transactions, account.id]);
 
   // Minimum or installment estimate
   const installmentEstimate =
@@ -41,16 +65,26 @@ export const PayCreditBillModal: React.FC<PayCreditBillModalProps> = ({
           .reduce((sum, p) => sum + p.monthlyPayment, 0)
       : undefined);
 
+  const effectiveInstallment =
+    initialAmount && initialAmount > 0 && (initialAmount <= outstandingBalance || outstandingBalance === 0)
+      ? initialAmount
+      : installmentEstimate;
+
   // Available funding sources (Wallets and Savings)
   const availableSources = reconciledAccounts.filter(
     (a) => !a.isLiability && a.id !== account.id && !a.archived
   );
 
-  const [amount, setAmount] = useState<string>(
-    outstandingBalance > 0 ? String(outstandingBalance) : '0'
-  );
+  const defaultAmountToPrefill =
+    effectiveInstallment !== undefined && effectiveInstallment > 0 && (effectiveInstallment <= outstandingBalance || outstandingBalance === 0)
+      ? String(effectiveInstallment)
+      : outstandingBalance > 0
+      ? String(outstandingBalance)
+      : '0';
+
+  const [amount, setAmount] = useState<string>(defaultAmountToPrefill);
   const [date, setDate] = useState<string>(
-    new Date().toISOString().slice(0, 10)
+    initialDate || new Date().toISOString().slice(0, 10)
   );
   const [sourceAccountId, setSourceAccountId] = useState<string>(
     availableSources[0]?.id || ''
@@ -62,19 +96,21 @@ export const PayCreditBillModal: React.FC<PayCreditBillModalProps> = ({
 
   React.useEffect(() => {
     if (isOpen) {
-      setAmount(outstandingBalance > 0 ? String(outstandingBalance) : '0');
-      setDate(new Date().toISOString().slice(0, 10));
+      setAmount(defaultAmountToPrefill);
+      setDate(initialDate || new Date().toISOString().slice(0, 10));
       setSourceAccountId(availableSources[0]?.id || '');
       setNotes('');
       setError(null);
       setIsSubmitting(false);
       setAllowAdvancePayment(false);
     }
-  }, [isOpen, account.id, outstandingBalance]);
+  }, [isOpen, account.id, outstandingBalance, defaultAmountToPrefill, initialDate]);
 
   if (!isOpen) return null;
 
-  const dueDayText = account.creditInfo?.dueDay
+  const dueDayText = dueDate
+    ? `Due on ${formatFriendlyDate(dueDate)}`
+    : account.creditInfo?.dueDay
     ? `Due on day ${account.creditInfo.dueDay} of each month`
     : 'Standard billing cycle';
 
@@ -188,6 +224,44 @@ export const PayCreditBillModal: React.FC<PayCreditBillModalProps> = ({
           </div>
         </div>
 
+        {/* Recent Repayments with Undo / Revert to Unsettled Option */}
+        {recentPayments.length > 0 && (
+          <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 space-y-1.5">
+            <div className="text-[11px] font-bold text-amber-700 dark:text-amber-400 flex items-center justify-between">
+              <span>Recent Repayments ({recentPayments.length})</span>
+              <span className="text-[10px] font-normal">Misclicked? Click Undo to revert</span>
+            </div>
+            <div className="space-y-1.5">
+              {recentPayments.map((tx) => (
+                <div
+                  key={tx.id}
+                  className="flex items-center justify-between text-xs bg-white/70 dark:bg-neutral-800/70 p-2 rounded-xl"
+                >
+                  <div className="min-w-0 flex-1 pr-2">
+                    <div className="font-bold text-black dark:text-white tabular-nums">
+                      {formatPeso(tx.amount)}
+                    </div>
+                    <div className="text-[10px] text-neutral-500 truncate">
+                      {formatFriendlyDate(tx.dateTime.slice(0, 10))} · {tx.merchantOrTitle}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      revertAccountPayment(account.id, tx.id);
+                    }}
+                    className="px-2.5 py-1 rounded-lg border border-red-500/20 text-red-600 dark:text-red-400 text-[11px] font-bold hover:bg-red-500/10 active:scale-95 transition-all flex items-center gap-1 shrink-0 cursor-pointer"
+                    title="Bawiin payment / Revert to unsettled"
+                  >
+                    <RotateCcw className="w-3 h-3" />
+                    <span>Undo</span>
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {error && (
           <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 text-xs flex items-center gap-2">
             <AlertCircle className="w-4 h-4 shrink-0" />
@@ -202,23 +276,23 @@ export const PayCreditBillModal: React.FC<PayCreditBillModalProps> = ({
               Quick Select Amount:
             </div>
             <div className="flex items-center gap-1.5 flex-wrap">
+              {effectiveInstallment && effectiveInstallment > 0 && effectiveInstallment <= outstandingBalance && (
+                <button
+                  type="button"
+                  onClick={() => handleSelectAmount(effectiveInstallment)}
+                  className="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 hover:opacity-90 transition-opacity"
+                >
+                  Pay Installment / Statement Due ({formatPeso(effectiveInstallment, { compact: true })})
+                </button>
+              )}
+
               {outstandingBalance > 0 && (
                 <button
                   type="button"
                   onClick={() => handleSelectAmount(outstandingBalance)}
-                  className="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 hover:opacity-90 transition-opacity"
-                >
-                  Pay Full Balance ({formatPeso(outstandingBalance, { compact: true })})
-                </button>
-              )}
-
-              {installmentEstimate && installmentEstimate > 0 && installmentEstimate < outstandingBalance && (
-                <button
-                  type="button"
-                  onClick={() => handleSelectAmount(installmentEstimate)}
                   className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-neutral-100 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 hover:bg-neutral-200 transition-colors"
                 >
-                  Installment Due ({formatPeso(installmentEstimate, { compact: true })})
+                  Pay Full Balance ({formatPeso(outstandingBalance, { compact: true })})
                 </button>
               )}
             </div>

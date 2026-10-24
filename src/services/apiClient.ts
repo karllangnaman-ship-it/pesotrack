@@ -1,5 +1,5 @@
 import { auth } from './firebase';
-import { PesoTrackState } from '../types/finance';
+import { PesoTrackState, NotificationSettings } from '../types/finance';
 import { BackupSummary } from '../utils/backupService';
 import { Capacitor } from '@capacitor/core';
 
@@ -12,7 +12,6 @@ export function getApiBaseUrl(): string {
   if (envUrl) {
     return envUrl.replace(/\/+$/, '');
   }
-
   // In native Android Capacitor apps, relative /api paths won't hit a local web server unless configured.
   // We check if a user or deployment set a custom backend URL in localStorage.
   if (Capacitor.isNativePlatform()) {
@@ -239,5 +238,371 @@ export async function fetchRestoreFromBackend(): Promise<BackendRestoreResponse>
       ok: false,
       error: `Network error reaching Vercel backend: ${err?.message || 'Connection failed'}`,
     };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// JOINT ACCOUNT BACKEND API CLIENT
+// ---------------------------------------------------------------------------
+
+async function getAuthBearerHeader(forceRefresh = false): Promise<{ Authorization: string } | null> {
+  const currentUser = auth.currentUser;
+  if (!currentUser) return null;
+  try {
+    const idToken = await currentUser.getIdToken(forceRefresh);
+    return { Authorization: `Bearer ${idToken}` };
+  } catch (err) {
+    console.warn('[ApiClient] Failed acquiring auth token:', err);
+    return null;
+  }
+}
+
+/**
+ * Executes an authenticated API request with automatic token refresh on HTTP 401.
+ */
+async function authorizedFetch(
+  endpoint: string,
+  options: RequestInit = {}
+): Promise<Response> {
+  const baseUrl = getApiBaseUrl();
+  const url = `${baseUrl}${endpoint}`;
+
+  let authHeader = await getAuthBearerHeader(false);
+  if (!authHeader) {
+    throw new Error('Unauthenticated: Please sign in to continue.');
+  }
+
+  let headers: Record<string, string> = {
+    Accept: 'application/json',
+    ...authHeader,
+    ...((options.headers as Record<string, string>) || {}),
+  };
+
+  let res = await fetch(url, { ...options, headers });
+
+  // If 401 Unauthorized, token might be expired. Force refresh and retry once.
+  if (res.status === 401) {
+    const freshAuthHeader = await getAuthBearerHeader(true);
+    if (freshAuthHeader) {
+      headers = {
+        ...headers,
+        ...freshAuthHeader,
+      };
+      res = await fetch(url, { ...options, headers });
+    }
+  }
+
+  return res;
+}
+
+export async function fetchMyJointWorkspaces(): Promise<{ ok: boolean; workspaces?: any[]; error?: string }> {
+  try {
+    const res = await authorizedFetch('/api/joint?action=get-my-workspaces', {
+      method: 'GET',
+    });
+    const body = await res.json().catch(() => null);
+    if (!res.ok) return { ok: false, error: body?.error || `HTTP ${res.status}` };
+    return { ok: true, workspaces: body?.workspaces || [] };
+  } catch (err: any) {
+    return { ok: false, error: err?.message || 'Network error' };
+  }
+}
+
+export async function fetchJointInvitations(): Promise<{
+  ok: boolean;
+  invitations?: any[];
+  sentInvitations?: any[];
+  error?: string;
+}> {
+  try {
+    const res = await authorizedFetch('/api/joint?action=get-invitations', {
+      method: 'GET',
+    });
+    const body = await res.json().catch(() => null);
+    if (!res.ok) return { ok: false, error: body?.error || `HTTP ${res.status}` };
+    return {
+      ok: true,
+      invitations: body?.invitations || [],
+      sentInvitations: body?.sentInvitations || [],
+    };
+  } catch (err: any) {
+    return { ok: false, error: err?.message || 'Network error' };
+  }
+}
+
+export async function createJointWorkspaceApi(payload: {
+  name: string;
+  relationship?: string;
+  inviteeEmail?: string;
+  invitationMessage?: string;
+  displayName?: string;
+}): Promise<{ ok: boolean; workspace?: any; invitation?: any; error?: string }> {
+  try {
+    const res = await authorizedFetch('/api/joint', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'create-workspace', ...payload }),
+    });
+    const body = await res.json().catch(() => null);
+    if (!res.ok) return { ok: false, error: body?.error || `HTTP ${res.status}`, workspace: body?.workspace };
+    return { ok: true, workspace: body?.workspace, invitation: body?.invitation };
+  } catch (err: any) {
+    return { ok: false, error: err?.message || 'Network error' };
+  }
+}
+
+export async function fetchWorkspacePendingInvitations(
+  workspaceId: string
+): Promise<{
+  ok: boolean;
+  pendingInvitations?: any[];
+  activeMemberCount?: number;
+  pendingCount?: number;
+  memberLimit?: number;
+  availableSlots?: number;
+  error?: string;
+}> {
+  try {
+    const res = await authorizedFetch(`/api/joint?action=get-workspace-invitations&workspaceId=${encodeURIComponent(workspaceId)}`, {
+      method: 'GET',
+    });
+    const body = await res.json().catch(() => null);
+    if (!res.ok) return { ok: false, error: body?.error || `HTTP ${res.status}` };
+    return {
+      ok: true,
+      pendingInvitations: body?.pendingInvitations || [],
+      activeMemberCount: body?.activeMemberCount || 0,
+      pendingCount: body?.pendingCount || 0,
+      memberLimit: body?.memberLimit || 2,
+      availableSlots: body?.availableSlots || 0,
+    };
+  } catch (err: any) {
+    return { ok: false, error: err?.message || 'Network error' };
+  }
+}
+
+export async function updateJointMemberRoleApi(payload: {
+  workspaceId: string;
+  memberUid: string;
+  newRole: string;
+}): Promise<{ ok: boolean; workspace?: any; message?: string; error?: string }> {
+  try {
+    const res = await authorizedFetch('/api/joint', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'update-member-role', ...payload }),
+    });
+    const body = await res.json().catch(() => null);
+    if (!res.ok) return { ok: false, error: body?.error || `HTTP ${res.status}` };
+    return { ok: true, workspace: body?.workspace, message: body?.message };
+  } catch (err: any) {
+    return { ok: false, error: err?.message || 'Network error' };
+  }
+}
+
+export async function invitePartnerToJointApi(payload: {
+  workspaceId: string;
+  inviteeEmail: string;
+  relationship?: string;
+  message?: string;
+  displayName?: string;
+}): Promise<{ ok: boolean; invitation?: any; error?: string }> {
+  try {
+    const res = await authorizedFetch('/api/joint', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'invite-partner', ...payload }),
+    });
+    const body = await res.json().catch(() => null);
+    if (!res.ok) return { ok: false, error: body?.error || `HTTP ${res.status}` };
+    return { ok: true, invitation: body?.invitation };
+  } catch (err: any) {
+    return { ok: false, error: err?.message || 'Network error' };
+  }
+}
+
+export async function acceptJointInvitationApi(
+  invitationId: string,
+  displayName?: string
+): Promise<{ ok: boolean; workspace?: any; message?: string; error?: string }> {
+  try {
+    const res = await authorizedFetch('/api/joint', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'accept-invitation', invitationId, displayName }),
+    });
+    const body = await res.json().catch(() => null);
+    if (!res.ok) return { ok: false, error: body?.error || `HTTP ${res.status}` };
+    return { ok: true, workspace: body?.workspace, message: body?.message };
+  } catch (err: any) {
+    return { ok: false, error: err?.message || 'Network error' };
+  }
+}
+
+export async function declineJointInvitationApi(
+  invitationId: string
+): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const res = await authorizedFetch('/api/joint', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'decline-invitation', invitationId }),
+    });
+    const body = await res.json().catch(() => null);
+    if (!res.ok) return { ok: false, error: body?.error || `HTTP ${res.status}` };
+    return { ok: true };
+  } catch (err: any) {
+    return { ok: false, error: err?.message || 'Network error' };
+  }
+}
+
+export async function revokeJointInvitationApi(
+  invitationId: string
+): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const res = await authorizedFetch('/api/joint', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'revoke-invitation', invitationId }),
+    });
+    const body = await res.json().catch(() => null);
+    if (!res.ok) return { ok: false, error: body?.error || `HTTP ${res.status}` };
+    return { ok: true };
+  } catch (err: any) {
+    return { ok: false, error: err?.message || 'Network error' };
+  }
+}
+
+export async function leaveJointWorkspaceApi(
+  workspaceId: string,
+  displayName?: string
+): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const res = await authorizedFetch('/api/joint', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'leave-workspace', workspaceId, displayName }),
+    });
+    const body = await res.json().catch(() => null);
+    if (!res.ok) return { ok: false, error: body?.error || `HTTP ${res.status}` };
+    return { ok: true };
+  } catch (err: any) {
+    return { ok: false, error: err?.message || 'Network error' };
+  }
+}
+
+export async function removeJointMemberApi(
+  workspaceId: string,
+  memberUid: string,
+  displayName?: string
+): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const res = await authorizedFetch('/api/joint', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'remove-member', workspaceId, memberUid, displayName }),
+    });
+    const body = await res.json().catch(() => null);
+    if (!res.ok) return { ok: false, error: body?.error || `HTTP ${res.status}` };
+    return { ok: true };
+  } catch (err: any) {
+    return { ok: false, error: err?.message || 'Network error' };
+  }
+}
+
+export async function updateJointWorkspaceApi(payload: {
+  workspaceId: string;
+  name?: string;
+  relationship?: string;
+  notificationSettings?: NotificationSettings;
+}): Promise<{ ok: boolean; workspace?: any; error?: string }> {
+  try {
+    const res = await authorizedFetch('/api/joint', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'update-workspace', ...payload }),
+    });
+    const body = await res.json().catch(() => null);
+    if (!res.ok) return { ok: false, error: body?.error || `HTTP ${res.status}` };
+    return { ok: true, workspace: body?.workspace };
+  } catch (err: any) {
+    return { ok: false, error: err?.message || 'Network error' };
+  }
+}
+
+export async function logJointActivityApi(
+  workspaceId: string,
+  activity: any
+): Promise<{ ok: boolean; error?: string }> {
+  try {
+    await authorizedFetch('/api/joint', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'log-activity', workspaceId, activity }),
+    });
+    return { ok: true };
+  } catch {
+    return { ok: false, error: 'Network error' };
+  }
+}
+
+export async function markJointNotificationReadApi(
+  workspaceId: string,
+  notificationId: string
+): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const res = await authorizedFetch('/api/joint', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'mark-notification-read', workspaceId, notificationId }),
+    });
+    const body = await res.json().catch(() => null);
+    if (!res.ok) return { ok: false, error: body?.error || `HTTP ${res.status}` };
+    return { ok: true };
+  } catch (err: any) {
+    return { ok: false, error: err?.message || 'Network error' };
+  }
+}
+
+export async function markAllJointNotificationsReadApi(
+  workspaceId: string,
+  notificationIds: string[]
+): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const res = await authorizedFetch('/api/joint', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'mark-all-notifications-read', workspaceId, notificationIds }),
+    });
+    const body = await res.json().catch(() => null);
+    if (!res.ok) return { ok: false, error: body?.error || `HTTP ${res.status}` };
+    return { ok: true };
+  } catch (err: any) {
+    return { ok: false, error: err?.message || 'Network error' };
+  }
+}
+
+export async function sendJointApiAction(
+  actionOrPayload: string | Record<string, any>,
+  payload?: Record<string, any>
+): Promise<{ ok: boolean; [key: string]: any }> {
+  try {
+    const finalPayload =
+      typeof actionOrPayload === 'string'
+        ? { action: actionOrPayload, ...(payload || {}) }
+        : actionOrPayload;
+
+    const res = await authorizedFetch('/api/joint', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(finalPayload),
+    });
+    const body = await res.json().catch(() => null);
+    if (!res.ok) {
+      return { ok: false, error: body?.error || `HTTP ${res.status}`, ...body };
+    }
+    return { ok: true, ...body };
+  } catch (err: any) {
+    return { ok: false, error: err?.message || 'Network error' };
   }
 }

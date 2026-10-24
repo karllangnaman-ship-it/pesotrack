@@ -1,10 +1,7 @@
 import {
   AccountCategory,
   DEFAULT_EXPENSE_CATEGORIES,
-<<<<<<< HEAD
   DEFAULT_GROCERY_CATEGORIES,
-=======
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
   DEFAULT_INCOME_CATEGORIES,
   FinancialAccount,
   MonthlyBudget,
@@ -15,10 +12,7 @@ import {
   TransactionRecord,
 } from '../types/finance';
 import { addPHP, fromCentavos, getMonthKey, roundPHP, subPHP, toCentavos } from './currency';
-<<<<<<< HEAD
 import { DEFAULT_GROCERY_ITEMS } from './groceryEngine';
-=======
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
 
 export function isLiabilityCategory(category: AccountCategory): boolean {
   return category === 'Credit' || category === 'Loans';
@@ -256,11 +250,7 @@ export interface NetWorthSummary {
   totalAssets: number; // Total Wallet Balances + Total Savings Balances ONLY
   totalDebt: number; // Outstanding Credit Debt + Outstanding Loan Debt ONLY
   totalLiabilities: number; // Alias for totalDebt for backwards compatibility
-<<<<<<< HEAD
   netWorth: number; // Addition of Wallet and Savings accounts ONLY (not assets minus liabilities)
-=======
-  netWorth: number; // Total Assets - Total Debt (Net Financial Position)
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
   walletTotal: number;
   savingsTotal: number;
   creditTotal: number;
@@ -285,20 +275,11 @@ export function calculateNetWorthSummary(
     else if (acc.category === 'Loans') loansCentavos += bal;
   }
 
-<<<<<<< HEAD
   // Net Worth: Addition of wallet and savings account ONLY (not assets minus liabilities)
   const netWorthCentavos = walletCentavos + savingsCentavos;
   const totalAssetsCentavos = walletCentavos + savingsCentavos;
   // Total Debt: Outstanding credit debt + Outstanding loan debt ONLY (actual obligations, excludes unused credit limits)
   const totalDebtCentavos = creditCentavos + loansCentavos;
-=======
-  // 1. Total Assets: Wallet balances + Savings balances ONLY (excludes credit limits, credit purchases, loans, receivables)
-  const totalAssetsCentavos = walletCentavos + savingsCentavos;
-  // 2. Total Debt: Outstanding credit debt + Outstanding loan debt ONLY (actual obligations, excludes unused credit limits)
-  const totalDebtCentavos = creditCentavos + loansCentavos;
-  // 3. Net Financial Position
-  const netWorthCentavos = totalAssetsCentavos - totalDebtCentavos;
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
 
   const totalAssets = fromCentavos(totalAssetsCentavos);
   const totalDebt = fromCentavos(totalDebtCentavos);
@@ -845,11 +826,8 @@ export function createInitialPesoTrackState(): PesoTrackState {
       'Gym Membership',
       'Pet Care',
     ],
-<<<<<<< HEAD
     groceryItems: DEFAULT_GROCERY_ITEMS,
     groceryCategories: DEFAULT_GROCERY_CATEGORIES,
-=======
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
     settings: {
       profileName: 'Juan Dela Cruz',
       profileEmail: 'juan@pesotrack.ph',
@@ -857,10 +835,7 @@ export function createInitialPesoTrackState(): PesoTrackState {
       currencySymbol: '₱',
       hideBalances: false,
       darkMode: false,
-<<<<<<< HEAD
       themeColor: 'forest',
-=======
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
       startOfMonthDay: 1,
       budgetReminders: true,
       dueReminders: true,
@@ -868,15 +843,10 @@ export function createInitialPesoTrackState(): PesoTrackState {
       notificationSettings: {
         enabled: true,
         reminderTime: '09:00',
-<<<<<<< HEAD
         reminderTimes: ['09:00', '13:00', '19:00'],
         remindOnDueDate: true,
         remindDaysBeforeList: [0, 3],
         remindEveryDay: false,
-=======
-        remindOnDueDate: true,
-        remindDaysBeforeList: [0, 1],
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
         billsEnabled: true,
         creditEnabled: true,
         loanEnabled: true,

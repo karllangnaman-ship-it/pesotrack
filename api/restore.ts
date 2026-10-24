@@ -1,5 +1,5 @@
-import { handleCors } from './_lib/cors';
-import { authenticateRequest, getAdminFirestore } from './_lib/firebaseAdmin';
+import { handleCors } from './_lib/cors.ts';
+import { authenticateRequest, getAdminFirestore } from './_lib/firebaseAdmin.ts';
 
 export default async function handler(req: any, res: any) {
   if (handleCors(req, res)) return;
@@ -44,11 +44,8 @@ export default async function handler(req: any, res: any) {
       entriesSnap,
       budSnap,
       recSnap,
-<<<<<<< HEAD
       grocSnap,
       catSnap,
-=======
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
       syncDocSnap,
     ] = await Promise.all([
       firestore.collection('users').doc(uid).collection('accounts').get(),
@@ -57,11 +54,8 @@ export default async function handler(req: any, res: any) {
       firestore.collection('users').doc(uid).collection('monthlyBillEntries').get(),
       firestore.collection('users').doc(uid).collection('budgets').get(),
       firestore.collection('users').doc(uid).collection('receivables').get(),
-<<<<<<< HEAD
       firestore.collection('users').doc(uid).collection('groceries').get(),
       firestore.collection('users').doc(uid).collection('groceryCategories').get(),
-=======
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
       firestore.collection('users').doc(uid).collection('sync').doc('state').get(),
     ]);
 
@@ -104,7 +98,6 @@ export default async function handler(req: any, res: any) {
       if (!data.isDeleted) receivables.push(data);
     });
 
-<<<<<<< HEAD
     const groceryItems: any[] = [];
     grocSnap.forEach((doc: any) => {
       const data = doc.data();
@@ -117,8 +110,6 @@ export default async function handler(req: any, res: any) {
       if (!data.isDeleted) groceryCategories.push(data);
     });
 
-=======
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
     const syncData = syncDocSnap.exists ? syncDocSnap.data() : null;
 
     const hasCloudData =
@@ -126,10 +117,7 @@ export default async function handler(req: any, res: any) {
       transactions.length > 0 ||
       bills.length > 0 ||
       receivables.length > 0 ||
-<<<<<<< HEAD
       groceryItems.length > 0 ||
-=======
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
       Boolean(syncData);
 
     if (!hasCloudData) {
@@ -159,11 +147,8 @@ export default async function handler(req: any, res: any) {
       monthlyBillEntries,
       receivables,
       budgets,
-<<<<<<< HEAD
       groceryItems,
       groceryCategories,
-=======
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
       recurringTransactions: [],
       customBillNames: syncData?.customBillNames || [],
       customCategories: syncData?.customCategories || {
@@ -211,7 +196,9 @@ export default async function handler(req: any, res: any) {
 
     if (
       err?.code === 'app/no-options' ||
-      err?.message?.includes('Could not load the default credentials')
+      err?.code === 7 ||
+      err?.message?.includes('Could not load the default credentials') ||
+      err?.message?.includes('Missing or insufficient permissions')
     ) {
       return res.status(200).json({
         ok: true,

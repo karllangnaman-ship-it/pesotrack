@@ -249,6 +249,22 @@ export function calculateRepaymentDetails(
   };
 }
 
+export type InstallmentStatus = 'paid' | 'partially_paid' | 'unpaid' | 'overdue';
+
+export interface PurchaseInstallmentItem {
+  installmentIndex: number; // 1-indexed (e.g. 1 of 12)
+  totalInstallments: number;
+  monthKey: string; // YYYY-MM
+  dueDate: string; // YYYY-MM-DD
+  dueDay: number;
+  amountDue: number;
+  amountPaid: number;
+  remainingAmount: number;
+  status: InstallmentStatus;
+  isPaid: boolean;
+  cumulativeDue: number;
+}
+
 export interface MonthInstallmentDue {
   purchaseId: string;
   purchaseName: string;
@@ -258,6 +274,9 @@ export interface MonthInstallmentDue {
   dueDay: number;
   dueDate: string; // YYYY-MM-DD
   isPaid: boolean;
+  status: InstallmentStatus;
+  amountPaid: number;
+  remainingAmount: number;
 }
 
 export interface MonthlyRepaymentSummaryMonth {
@@ -271,12 +290,87 @@ export interface MonthlyRepaymentSummaryMonth {
 }
 
 /**
+ * Generates the full installment schedule for an individual Credit purchase or Loan drawdown.
+ * Single source of truth for due dates, installment amounts, cumulative payment allocation,
+ * and settlement status across both Loans/Credit tabs and the Bills & Debt Calendar.
+ */
+export function generatePurchaseInstallmentSchedule(
+  p: import('../types/finance').CreditPurchaseOrDrawdown
+): PurchaseInstallmentItem[] {
+  const terms = Math.max(1, p.termMonths || 1);
+  const totalRepay = p.totalRepayment > 0 ? p.totalRepayment : p.principal;
+  const baseMonthly = p.monthlyPayment > 0 ? p.monthlyPayment : roundPHP(totalRepay / terms);
+  const startBase =
+    p.firstPaymentDate || p.startDate || p.createdAt?.slice(0, 10) || new Date().toISOString().slice(0, 10);
+  const dueDay = p.dueDay >= 1 && p.dueDay <= 31 ? p.dueDay : 15;
+  const todayStr = new Date().toISOString().slice(0, 10);
+
+  const schedule: PurchaseInstallmentItem[] = [];
+  let cumulativeDue = 0;
+
+  for (let i = 0; i < terms; i++) {
+    const isLast = i === terms - 1;
+    const installmentAmt = isLast
+      ? roundPHP(totalRepay - cumulativeDue)
+      : baseMonthly;
+    cumulativeDue = roundPHP(cumulativeDue + installmentAmt);
+    const prevCumulativeDue = roundPHP(cumulativeDue - installmentAmt);
+
+    const rawMonthDate = addMonthsToDate(startBase, i);
+    const [y, m] = rawMonthDate.split('-').map(Number);
+    const maxDays = new Date(y, m, 0).getDate();
+    const clampedDay = Math.min(maxDays, dueDay);
+    const dueDate = `${y}-${String(m).padStart(2, '0')}-${String(clampedDay).padStart(2, '0')}`;
+    const monthKey = `${y}-${String(m).padStart(2, '0')}`;
+
+    let isPaid = false;
+    let amountPaid = 0;
+    let remainingAmount = installmentAmt;
+    let status: InstallmentStatus = 'unpaid';
+
+    if (p.remainingBalance <= 0 || p.status === 'completed') {
+      isPaid = true;
+      amountPaid = installmentAmt;
+      remainingAmount = 0;
+      status = 'paid';
+    } else if ((p.totalPaid || 0) >= cumulativeDue - 0.009) {
+      isPaid = true;
+      amountPaid = installmentAmt;
+      remainingAmount = 0;
+      status = 'paid';
+    } else if ((p.totalPaid || 0) > prevCumulativeDue) {
+      isPaid = false;
+      amountPaid = roundPHP((p.totalPaid || 0) - prevCumulativeDue);
+      remainingAmount = Math.max(0, roundPHP(installmentAmt - amountPaid));
+      status = dueDate < todayStr ? 'overdue' : 'partially_paid';
+    } else {
+      isPaid = false;
+      amountPaid = 0;
+      remainingAmount = installmentAmt;
+      status = dueDate < todayStr ? 'overdue' : 'unpaid';
+    }
+
+    schedule.push({
+      installmentIndex: i + 1,
+      totalInstallments: terms,
+      monthKey,
+      dueDate,
+      dueDay: clampedDay,
+      amountDue: installmentAmt,
+      amountPaid,
+      remainingAmount,
+      status,
+      isPaid,
+      cumulativeDue,
+    });
+  }
+
+  return schedule;
+}
+
+/**
  * Generates an aggregated calendar-month repayment schedule across all purchases/drawdowns.
- * Example:
- *  Purchase A: ₱6,000 starting Jan (6 mos) -> ₱1,000/mo Jan-Jun
- *  Purchase B: ₱3,000 starting Mar (3 mos) -> ₱1,000/mo Mar-May
- *  Purchase C: ₱2,000 starting May (4 mos) -> ₱500/mo May-Aug
- * Correctly combines amounts due for each calendar month while preserving individual schedules.
+ * Reuses generatePurchaseInstallmentSchedule as the single source of truth.
  */
 export function generateMonthlyRepaymentSummary(
   purchases: import('../types/finance').CreditPurchaseOrDrawdown[]
@@ -287,60 +381,30 @@ export function generateMonthlyRepaymentSummary(
   const currentMonthKey = new Date().toISOString().slice(0, 7);
 
   for (const p of purchases) {
-    const terms = Math.max(1, p.termMonths || 1);
-    const totalRepay = p.totalRepayment > 0 ? p.totalRepayment : p.principal;
-    const baseMonthly = p.monthlyPayment > 0 ? p.monthlyPayment : roundPHP(totalRepay / terms);
-
-    // Determine initial payment base date
-    const startBase = p.firstPaymentDate || p.startDate || new Date().toISOString().slice(0, 10);
-    const dueDay = p.dueDay >= 1 && p.dueDay <= 31 ? p.dueDay : 15;
-
-    let cumulativeDue = 0;
-
-    for (let i = 0; i < terms; i++) {
-      const isLast = i === terms - 1;
-      // Adjust final installment for rounding
-      const installmentAmount = isLast
-        ? roundPHP(totalRepay - cumulativeDue)
-        : baseMonthly;
-      cumulativeDue += installmentAmount;
-
-      // Calculate month date
-      const rawMonthDate = addMonthsToDate(startBase, i);
-      const [y, m] = rawMonthDate.split('-').map(Number);
-      const maxDays = new Date(y, m, 0).getDate();
-      const clampedDay = Math.min(maxDays, dueDay);
-      const dueDate = `${y}-${String(m).padStart(2, '0')}-${String(clampedDay).padStart(2, '0')}`;
-      const monthKey = `${y}-${String(m).padStart(2, '0')}`;
-
-      // Check if this specific installment is paid
-      // If purchase remainingBalance is 0, or totalPaid covers up to this installment
-      const isPaid =
-        p.remainingBalance <= 0 ||
-        p.status === 'completed' ||
-        p.totalPaid >= cumulativeDue;
-
-      if (!monthsMap.has(monthKey)) {
+    const schedule = generatePurchaseInstallmentSchedule(p);
+    for (const item of schedule) {
+      if (!monthsMap.has(item.monthKey)) {
+        const [y, m] = item.monthKey.split('-').map(Number);
         const dObj = new Date(y, m - 1, 1);
         const monthLabel = dObj.toLocaleDateString('en-US', {
           month: 'short',
           year: 'numeric',
         });
-        monthsMap.set(monthKey, {
-          monthKey,
+        monthsMap.set(item.monthKey, {
+          monthKey: item.monthKey,
           monthLabel,
           totalDue: 0,
           totalPaid: 0,
           items: [],
           isFullyPaid: true,
-          isCurrentOrPast: monthKey <= currentMonthKey,
+          isCurrentOrPast: item.monthKey <= currentMonthKey,
         });
       }
 
-      const summaryMonth = monthsMap.get(monthKey)!;
-      summaryMonth.totalDue = roundPHP(summaryMonth.totalDue + installmentAmount);
-      if (isPaid) {
-        summaryMonth.totalPaid = roundPHP(summaryMonth.totalPaid + installmentAmount);
+      const summaryMonth = monthsMap.get(item.monthKey)!;
+      summaryMonth.totalDue = roundPHP(summaryMonth.totalDue + item.amountDue);
+      if (item.isPaid) {
+        summaryMonth.totalPaid = roundPHP(summaryMonth.totalPaid + item.amountDue);
       } else {
         summaryMonth.isFullyPaid = false;
       }
@@ -348,12 +412,15 @@ export function generateMonthlyRepaymentSummary(
       summaryMonth.items.push({
         purchaseId: p.id,
         purchaseName: p.name,
-        installmentIndex: i + 1,
-        totalInstallments: terms,
-        amountDue: installmentAmount,
-        dueDay: clampedDay,
-        dueDate,
-        isPaid,
+        installmentIndex: item.installmentIndex,
+        totalInstallments: item.totalInstallments,
+        amountDue: item.amountDue,
+        dueDay: item.dueDay,
+        dueDate: item.dueDate,
+        isPaid: item.isPaid,
+        status: item.status,
+        amountPaid: item.amountPaid,
+        remainingAmount: item.remainingAmount,
       });
     }
   }
@@ -421,48 +488,273 @@ export interface IndividualInstallmentItem {
   installmentIndex: number;
   totalInstallments: number;
   dueDate: string;
+  monthKey?: string;
+  dueDay?: number;
   amountDue: number;
+  amountPaid?: number;
+  remainingAmount?: number;
   cumulativeDue: number;
   isPaid: boolean;
+  status?: InstallmentStatus;
 }
 
 export function generateTransactionSchedule(
   p: import('../types/finance').CreditPurchaseOrDrawdown
 ): IndividualInstallmentItem[] {
-  const terms = Math.max(1, p.termMonths || 1);
-  const totalRepay = p.totalRepayment > 0 ? p.totalRepayment : p.principal;
-  const baseMonthly = p.monthlyPayment > 0 ? p.monthlyPayment : roundPHP(totalRepay / terms);
-  const startBase = p.firstPaymentDate || p.startDate || new Date().toISOString().slice(0, 10);
-  const dueDay = p.dueDay >= 1 && p.dueDay <= 31 ? p.dueDay : 15;
+  const schedule = generatePurchaseInstallmentSchedule(p);
+  return schedule.map((item) => ({
+    installmentIndex: item.installmentIndex,
+    totalInstallments: item.totalInstallments,
+    dueDate: item.dueDate,
+    monthKey: item.monthKey,
+    dueDay: item.dueDay,
+    amountDue: item.amountDue,
+    amountPaid: item.amountPaid,
+    remainingAmount: item.remainingAmount,
+    cumulativeDue: item.cumulativeDue,
+    isPaid: item.isPaid,
+    status: item.status,
+  }));
+}
 
-  const schedule: IndividualInstallmentItem[] = [];
+/**
+ * Generates the full installment schedule for a single loan account.
+ * Reuses the exact same installment schedule and status logic.
+ */
+export function generateSingleLoanSchedule(
+  acc: {
+    id: string;
+    currentBalance: number;
+    startingBalance?: number;
+    totalRepayment?: number;
+    createdAt?: string;
+    loanInfo?: {
+      originalPrincipal?: number;
+      totalRepayment?: number;
+      termMonths?: number;
+      customMonthlyPayment?: number;
+      monthlyInstallmentEstimate?: number;
+      startDate?: string;
+      dueDay?: number;
+    };
+  },
+  transactions: TransactionRecord[] = []
+): PurchaseInstallmentItem[] {
+  const terms = Math.max(1, acc.loanInfo?.termMonths || 12);
+  const principal =
+    acc.loanInfo?.originalPrincipal ||
+    acc.startingBalance ||
+    acc.currentBalance;
+  const totalRepay = acc.loanInfo?.totalRepayment ?? acc.totalRepayment ?? principal;
+  const baseMonthly =
+    acc.loanInfo?.customMonthlyPayment ||
+    acc.loanInfo?.monthlyInstallmentEstimate ||
+    roundPHP(totalRepay / terms);
+  const startBase =
+    acc.loanInfo?.startDate || acc.createdAt?.slice(0, 10) || new Date().toISOString().slice(0, 10);
+  const dueDay = acc.loanInfo?.dueDay && acc.loanInfo.dueDay >= 1 && acc.loanInfo.dueDay <= 31
+    ? acc.loanInfo.dueDay
+    : 15;
+  const todayStr = new Date().toISOString().slice(0, 10);
+
+  let totalTxPaid = 0;
+  if (acc.id && transactions.length > 0) {
+    for (const tx of transactions) {
+      if (tx.isStartingBalance) continue;
+      if (tx.type === 'transfer' && tx.destinationAccountId === acc.id) {
+        totalTxPaid = addPHP(totalTxPaid, tx.amount);
+      } else if (
+        tx.accountId === acc.id &&
+        (tx.category === 'Loan Payment' ||
+          (tx.type === 'adjustment' && tx.adjustmentSign === 'negative') ||
+          tx.type === 'income')
+      ) {
+        totalTxPaid = addPHP(totalTxPaid, tx.amount);
+      }
+    }
+  }
+
+  const totalPaid = Math.max(totalTxPaid, Math.max(0, subPHP(totalRepay, acc.currentBalance)));
+
+  const schedule: PurchaseInstallmentItem[] = [];
   let cumulativeDue = 0;
 
   for (let i = 0; i < terms; i++) {
     const isLast = i === terms - 1;
-    const installmentAmount = isLast
+    const installmentAmt = isLast
       ? roundPHP(totalRepay - cumulativeDue)
       : baseMonthly;
-    cumulativeDue = roundPHP(cumulativeDue + installmentAmount);
+    cumulativeDue = roundPHP(cumulativeDue + installmentAmt);
+    const prevCumulativeDue = roundPHP(cumulativeDue - installmentAmt);
 
     const rawMonthDate = addMonthsToDate(startBase, i);
     const [y, m] = rawMonthDate.split('-').map(Number);
     const maxDays = new Date(y, m, 0).getDate();
     const clampedDay = Math.min(maxDays, dueDay);
     const dueDate = `${y}-${String(m).padStart(2, '0')}-${String(clampedDay).padStart(2, '0')}`;
+    const monthKey = `${y}-${String(m).padStart(2, '0')}`;
 
-    const isPaid =
-      p.remainingBalance <= 0 ||
-      p.status === 'completed' ||
-      (p.totalPaid || 0) >= cumulativeDue;
+    let isPaid = false;
+    let amountPaid = 0;
+    let remainingAmount = installmentAmt;
+    let status: InstallmentStatus = 'unpaid';
+
+    if (acc.currentBalance <= 0) {
+      isPaid = true;
+      amountPaid = installmentAmt;
+      remainingAmount = 0;
+      status = 'paid';
+    } else if (totalPaid >= cumulativeDue - 0.009) {
+      isPaid = true;
+      amountPaid = installmentAmt;
+      remainingAmount = 0;
+      status = 'paid';
+    } else if (totalPaid > prevCumulativeDue) {
+      isPaid = false;
+      amountPaid = roundPHP(totalPaid - prevCumulativeDue);
+      remainingAmount = Math.max(0, roundPHP(installmentAmt - amountPaid));
+      status = dueDate < todayStr ? 'overdue' : 'partially_paid';
+    } else {
+      isPaid = false;
+      amountPaid = 0;
+      remainingAmount = installmentAmt;
+      status = dueDate < todayStr ? 'overdue' : 'unpaid';
+    }
 
     schedule.push({
       installmentIndex: i + 1,
       totalInstallments: terms,
+      monthKey,
       dueDate,
-      amountDue: installmentAmount,
-      cumulativeDue,
+      dueDay: clampedDay,
+      amountDue: installmentAmt,
+      amountPaid,
+      remainingAmount,
+      status,
       isPaid,
+      cumulativeDue,
+    });
+  }
+
+  return schedule;
+}
+
+/**
+ * Generates the full installment schedule for a single credit card account with installment plan.
+ */
+export function generateSingleCreditSchedule(
+  acc: {
+    id: string;
+    currentBalance: number;
+    startingBalance?: number;
+    totalRepayment?: number;
+    createdAt?: string;
+    creditInfo?: {
+      installmentPrincipal?: number;
+      totalRepayment?: number;
+      termMonths?: number;
+      customMonthlyPayment?: number;
+      monthlyInstallmentEstimate?: number;
+      startDate?: string;
+      dueDay?: number;
+    };
+  },
+  transactions: TransactionRecord[] = []
+): PurchaseInstallmentItem[] {
+  const terms = Math.max(1, acc.creditInfo?.termMonths || 12);
+  const principal =
+    acc.creditInfo?.installmentPrincipal ||
+    acc.creditInfo?.totalRepayment ||
+    acc.startingBalance ||
+    acc.currentBalance;
+  const totalRepay = acc.creditInfo?.totalRepayment ?? acc.totalRepayment ?? principal;
+  const baseMonthly =
+    acc.creditInfo?.customMonthlyPayment ||
+    acc.creditInfo?.monthlyInstallmentEstimate ||
+    roundPHP(totalRepay / terms);
+  const startBase =
+    acc.creditInfo?.startDate || acc.createdAt?.slice(0, 10) || new Date().toISOString().slice(0, 10);
+  const dueDay = acc.creditInfo?.dueDay && acc.creditInfo.dueDay >= 1 && acc.creditInfo.dueDay <= 31
+    ? acc.creditInfo.dueDay
+    : 15;
+  const todayStr = new Date().toISOString().slice(0, 10);
+
+  let totalTxPaid = 0;
+  if (acc.id && transactions.length > 0) {
+    for (const tx of transactions) {
+      if (tx.isStartingBalance) continue;
+      if (tx.type === 'transfer' && tx.destinationAccountId === acc.id) {
+        totalTxPaid = addPHP(totalTxPaid, tx.amount);
+      } else if (
+        tx.accountId === acc.id &&
+        (tx.category === 'Credit Payment' ||
+          (tx.type === 'adjustment' && tx.adjustmentSign === 'negative') ||
+          tx.type === 'income')
+      ) {
+        totalTxPaid = addPHP(totalTxPaid, tx.amount);
+      }
+    }
+  }
+
+  const totalPaid = Math.max(totalTxPaid, Math.max(0, subPHP(totalRepay, acc.currentBalance)));
+
+  const schedule: PurchaseInstallmentItem[] = [];
+  let cumulativeDue = 0;
+
+  for (let i = 0; i < terms; i++) {
+    const isLast = i === terms - 1;
+    const installmentAmt = isLast
+      ? roundPHP(totalRepay - cumulativeDue)
+      : baseMonthly;
+    cumulativeDue = roundPHP(cumulativeDue + installmentAmt);
+    const prevCumulativeDue = roundPHP(cumulativeDue - installmentAmt);
+
+    const rawMonthDate = addMonthsToDate(startBase, i);
+    const [y, m] = rawMonthDate.split('-').map(Number);
+    const maxDays = new Date(y, m, 0).getDate();
+    const clampedDay = Math.min(maxDays, dueDay);
+    const dueDate = `${y}-${String(m).padStart(2, '0')}-${String(clampedDay).padStart(2, '0')}`;
+    const monthKey = `${y}-${String(m).padStart(2, '0')}`;
+
+    let isPaid = false;
+    let amountPaid = 0;
+    let remainingAmount = installmentAmt;
+    let status: InstallmentStatus = 'unpaid';
+
+    if (acc.currentBalance <= 0) {
+      isPaid = true;
+      amountPaid = installmentAmt;
+      remainingAmount = 0;
+      status = 'paid';
+    } else if (totalPaid >= cumulativeDue - 0.009) {
+      isPaid = true;
+      amountPaid = installmentAmt;
+      remainingAmount = 0;
+      status = 'paid';
+    } else if (totalPaid > prevCumulativeDue) {
+      isPaid = false;
+      amountPaid = roundPHP(totalPaid - prevCumulativeDue);
+      remainingAmount = Math.max(0, roundPHP(installmentAmt - amountPaid));
+      status = dueDate < todayStr ? 'overdue' : 'partially_paid';
+    } else {
+      isPaid = false;
+      amountPaid = 0;
+      remainingAmount = installmentAmt;
+      status = dueDate < todayStr ? 'overdue' : 'unpaid';
+    }
+
+    schedule.push({
+      installmentIndex: i + 1,
+      totalInstallments: terms,
+      monthKey,
+      dueDate,
+      dueDay: clampedDay,
+      amountDue: installmentAmt,
+      amountPaid,
+      remainingAmount,
+      status,
+      isPaid,
+      cumulativeDue,
     });
   }
 

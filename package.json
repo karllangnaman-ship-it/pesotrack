@@ -4,13 +4,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-<<<<<<< HEAD
-    "dev": "node node_modules/tsx/dist/cli.mjs server.ts",
-    "start": "node node_modules/tsx/dist/cli.mjs server.ts",
-=======
     "dev": "tsx server.ts",
-    "start": "tsx server.ts",
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
+    "start": "node server.ts",
     "build": "vite build",
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",
@@ -37,6 +32,7 @@
     "nodemailer": "^10.1.2",
     "react": "^19.0.1",
     "react-dom": "^19.0.1",
+    "tsx": "^4.21.0",
     "vite": "^8.3.0"
   },
   "devDependencies": {

@@ -3,35 +3,22 @@ import {
   AccountCategory,
   AccountPaymentRecord,
   AddBillInput,
-<<<<<<< HEAD
   AddGroceryItemInput,
   AddReceivableInput,
   BillCategory,
   BillDefinition,
   BillPaymentRecord,
   ConvertGroceriesToExpenseInput,
-=======
-  BillCategory,
-  BillDefinition,
-  BillPaymentRecord,
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
   CreditAccountInfo,
   CreditPurchaseOrDrawdown,
   DEFAULT_BILL_CATEGORIES,
   DEFAULT_EXPENSE_CATEGORIES,
-<<<<<<< HEAD
   DEFAULT_GROCERY_CATEGORIES,
   DEFAULT_INCOME_CATEGORIES,
   DEFAULT_NOTIFICATION_SETTINGS,
   FinancialAccount,
   GroceryCategory,
   GroceryItem,
-=======
-  DEFAULT_INCOME_CATEGORIES,
-  DEFAULT_NOTIFICATION_SETTINGS,
-  FinancialAccount,
-  AddReceivableInput,
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
   LoanAccountInfo,
   MonthlyBillEntry,
   MonthlyBudget,
@@ -48,12 +35,43 @@ import {
   ThemeMode,
   TransactionRecord,
   UserSettings,
+  AccountMode,
+  JointRole,
+  JointMember,
+  JointWorkspace,
+  JointInvitation,
+  JointActivityItem,
+  AppNotification,
+  NotificationScope,
+  JointMessage,
+  JointRingRequest,
+  MessageDeliveryStatus,
 } from '../types/finance';
-import { fromCentavos, getMonthKey, toCentavos } from '../utils/currency';
-<<<<<<< HEAD
+import {
+  loadCachedMessages,
+  saveCachedMessages,
+  sendChatMessage,
+  flushMessageOutbox,
+  acknowledgeMessageDelivery,
+  markMessagesAsRead,
+  ringPartnerAction,
+  respondToRingAction,
+  deliverMessageLocalNotification,
+  deliverRingLocalNotification,
+  initChatNotificationChannels,
+  deleteMessageForMeAction,
+  unsendChatMessageAction,
+  clearChatHistoryAction,
+} from '../services/jointChatService';
+import {
+  playMessageSentSound,
+  playMessageReceivedSound,
+  startPartnerRingtone,
+  stopPartnerRingtone,
+} from '../utils/soundService';
+import { collection, onSnapshot, query, orderBy, doc, updateDoc, setDoc } from 'firebase/firestore';
+import { formatPeso, fromCentavos, getMonthKey, toCentavos } from '../utils/currency';
 import { calculateEstimatedItemTotal, DEFAULT_GROCERY_ITEMS } from '../utils/groceryEngine';
-=======
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
 import {
   calculateAccountBalance,
   calculateNetWorthSummary,
@@ -70,10 +88,7 @@ import { applyThemeToDom, resolveIsDarkMode } from '../utils/theme';
 import { initCapacitorApp } from '../utils/capacitorApp';
 import {
   reconcileAllLocalReminders,
-<<<<<<< HEAD
   sanitizeNotificationSettings,
-=======
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
   sendImmediateTestNotification,
 } from '../utils/notificationService';
 import {
@@ -99,23 +114,44 @@ import {
   createLocalSafetyBackup,
   getLocalSafetyBackup,
 } from '../services/syncService';
-import { pingBackendHealth, BackendHealthResult } from '../services/apiClient';
+import {
+  pingBackendHealth,
+  BackendHealthResult,
+  fetchMyJointWorkspaces,
+  fetchJointInvitations,
+  createJointWorkspaceApi,
+  invitePartnerToJointApi,
+  acceptJointInvitationApi,
+  declineJointInvitationApi,
+  revokeJointInvitationApi,
+  leaveJointWorkspaceApi,
+  removeJointMemberApi,
+  updateJointWorkspaceApi,
+  fetchWorkspacePendingInvitations,
+  updateJointMemberRoleApi,
+} from '../services/apiClient';
+import {
+  JointRealtimeManager,
+  loadCachedJointState,
+  saveCachedJointState,
+  getJointPendingQueue,
+  writeJointMutation,
+  writeJointNotification,
+} from '../services/jointSyncService';
 import { BackupSummary } from '../utils/backupService';
-import { auth, testFirestoreConnection } from '../services/firebase';
+import { auth, db, testFirestoreConnection } from '../services/firebase';
 import {
   parseSyncError,
   CURRENT_FIREBASE_PROJECT_ID,
 } from '../utils/firestoreRulesHelper';
 import { AuthModal } from '../components/AuthModal';
+import { derivePersonalActivities } from '../utils/personalActivityEngine';
 import { FirstTimeMigrationModal } from '../components/FirstTimeMigrationModal';
-<<<<<<< HEAD
 import {
   computeWidgetMetrics,
   syncWidgetFinancialData,
   clearNativeWidgetData,
 } from '../services/widgetBridgeService';
-=======
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
 
 const GUEST_STORAGE_KEY = 'pesotrack_state_v1';
 const LOCAL_STORAGE_KEY = GUEST_STORAGE_KEY;
@@ -311,6 +347,21 @@ interface FinanceContextValue {
     monthKey: string,
     paymentId: string
   ) => boolean;
+  revertBillPayment: (
+    billId: string,
+    monthKey: string,
+    paymentId?: string
+  ) => boolean;
+  revertAccountPayment: (
+    accountId: string,
+    transactionIdOrPaymentId?: string,
+    purchaseOrDrawdownId?: string
+  ) => boolean;
+  revertSalaryDeposit: (
+    recurringId: string,
+    monthKey: string,
+    transactionId?: string
+  ) => boolean;
   saveCustomBillName: (name: string) => void;
   // Local Notifications & Reminders
   notificationSettings: NotificationSettings;
@@ -347,7 +398,6 @@ interface FinanceContextValue {
     message?: string;
   }>;
   getLocalSafetyBackupInfo: () => { state: PesoTrackState; createdAt: string } | null;
-<<<<<<< HEAD
   // Grocery List Management
   groceryItems: GroceryItem[];
   groceryCategories: GroceryCategory[];
@@ -365,8 +415,82 @@ interface FinanceContextValue {
     transaction?: TransactionRecord;
     message?: string;
   };
-=======
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
+  // Personal / Joint Account Mode & Multi-User Collaboration
+  accountMode: AccountMode;
+  setAccountMode: (mode: AccountMode) => void;
+  activeJointWorkspace: JointWorkspace | null;
+  myJointWorkspaces: JointWorkspace[];
+  jointAccounts: FinancialAccount[];
+  setJointAccounts: React.Dispatch<React.SetStateAction<FinancialAccount[]>>;
+  jointTransactions: TransactionRecord[];
+  setJointTransactions: React.Dispatch<React.SetStateAction<TransactionRecord[]>>;
+  jointBills: BillDefinition[];
+  setJointBills: React.Dispatch<React.SetStateAction<BillDefinition[]>>;
+  jointMonthlyBillEntries: Record<string, MonthlyBillEntry>;
+  setJointMonthlyBillEntries: React.Dispatch<React.SetStateAction<Record<string, MonthlyBillEntry>>>;
+  jointBudgets: Record<string, MonthlyBudget>;
+  setJointBudgets: React.Dispatch<React.SetStateAction<Record<string, MonthlyBudget>>>;
+  jointGroceryItems: GroceryItem[];
+  setJointGroceryItems: React.Dispatch<React.SetStateAction<GroceryItem[]>>;
+  jointRecurringTransactions: RecurringTransaction[];
+  jointActivities: JointActivityItem[];
+  setJointActivities: React.Dispatch<React.SetStateAction<JointActivityItem[]>>;
+  personalActivities: JointActivityItem[];
+  jointInvitations: JointInvitation[];
+  jointSentInvitations: JointInvitation[];
+  workspacePendingInvitations: JointInvitation[];
+  isJointRealtimeActive: boolean;
+  jointPendingMutationCount: number;
+  jointLastSyncTime: string | null;
+  createJointWorkspace: (data: {
+    name: string;
+    relationship: string;
+    inviteeEmail?: string;
+    invitationMessage?: string;
+  }) => Promise<boolean>;
+  invitePartnerToJoint: (email: string, message?: string) => Promise<boolean>;
+  acceptJointInvitation: (invitationId: string) => Promise<boolean>;
+  declineJointInvitation: (invitationId: string) => Promise<boolean>;
+  revokeJointInvitation: (invitationId: string) => Promise<boolean>;
+  updateJointWorkspace: (data: {
+    name?: string;
+    relationship?: string;
+    notificationSettings?: Partial<NotificationSettings>;
+  }) => Promise<boolean>;
+  updateJointNotificationSettings: (updates: Partial<NotificationSettings>) => Promise<boolean>;
+  testJointLocalNotification: () => Promise<{ ok: boolean; message: string }>;
+  removeJointMember: (memberUid: string) => Promise<boolean>;
+  updateJointMemberRole: (memberUid: string, newRole: string) => Promise<boolean>;
+  leaveJointWorkspace: () => Promise<boolean>;
+  refreshJointData: () => Promise<void>;
+  // Dual In-App Notification Center
+  personalNotifications: AppNotification[];
+  jointNotifications: AppNotification[];
+  allNotifications: AppNotification[];
+  unreadNotificationsCount: number;
+  personalUnreadCount: number;
+  jointUnreadCount: number;
+  markNotificationAsRead: (id: string, scope?: NotificationScope) => Promise<void>;
+  markAllNotificationsAsRead: (scope?: 'all' | 'personal' | 'joint') => Promise<void>;
+  deleteNotification: (id: string, scope?: NotificationScope) => void;
+  createInAppNotification: (item: Omit<AppNotification, 'id' | 'timestamp' | 'isRead'>) => void;
+  // Joint Chat, Offline Messaging & Ring Partner
+  jointMessages: JointMessage[];
+  jointUnreadMessagesCount: number;
+  activeIncomingRing: JointRingRequest | null;
+  sendJointChatMessage: (
+    text: string,
+    media?: { mediaUrl?: string; mediaType?: 'image' | 'file'; mediaName?: string; fileSize?: number },
+    replyTo?: { id: string; senderName: string; text: string }
+  ) => Promise<boolean>;
+  retryJointMessage: (messageId: string) => Promise<void>;
+  markJointMessagesAsRead: () => Promise<void>;
+  ringPartner: () => Promise<{ ok: boolean; message?: string }>;
+  respondToIncomingRing: (status: 'accepted' | 'dismissed') => Promise<void>;
+  cancelMyRing: () => Promise<void>;
+  clearJointChat: (scope: 'for_me' | 'for_everyone') => Promise<{ ok: boolean; error?: string }>;
+  deleteJointMessageForMe: (messageId: string) => Promise<{ ok: boolean; error?: string }>;
+  unsendJointMessage: (messageId: string) => Promise<{ ok: boolean; error?: string }>;
 }
 
 const FinanceContext = createContext<FinanceContextValue | undefined>(undefined);
@@ -417,7 +541,6 @@ function validateAndSanitizeState(raw: unknown): PesoTrackState | null {
           : fallback.customCategories?.income || DEFAULT_INCOME_CATEGORIES,
     },
     receivables: Array.isArray(candidate.receivables) ? candidate.receivables : [],
-<<<<<<< HEAD
     groceryItems: Array.isArray(candidate.groceryItems)
       ? candidate.groceryItems
       : fallback.groceryItems || DEFAULT_GROCERY_ITEMS,
@@ -425,15 +548,12 @@ function validateAndSanitizeState(raw: unknown): PesoTrackState | null {
       Array.isArray(candidate.groceryCategories) && candidate.groceryCategories.length > 0
         ? candidate.groceryCategories
         : fallback.groceryCategories || DEFAULT_GROCERY_CATEGORIES,
-=======
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
     settings: {
       ...fallback.settings,
       ...(candidate.settings || {}),
       themeMode:
         candidate.settings?.themeMode ||
         (candidate.settings?.darkMode ? 'dark' : 'system'),
-<<<<<<< HEAD
       themeColor:
         candidate.settings?.themeColor &&
         ['forest', 'ocean', 'purple', 'teal', 'sunset', 'rose', 'crimson', 'amber', 'monochrome'].includes(
@@ -445,12 +565,6 @@ function validateAndSanitizeState(raw: unknown): PesoTrackState | null {
         ...(fallback.settings.notificationSettings || DEFAULT_NOTIFICATION_SETTINGS),
         ...(candidate.settings?.notificationSettings || {}),
       }),
-=======
-      notificationSettings: {
-        ...(fallback.settings.notificationSettings || DEFAULT_NOTIFICATION_SETTINGS),
-        ...(candidate.settings?.notificationSettings || {}),
-      },
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
     },
     updatedAt: candidate.updatedAt || new Date().toISOString(),
   };
@@ -476,6 +590,49 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<'login' | 'register' | 'forgot'>('login');
   const [isMigrationModalOpen, setIsMigrationModalOpen] = useState(false);
+
+  // ---------------------------------------------------------------------------
+  // Account Mode & Joint Account Collaboration State
+  // ---------------------------------------------------------------------------
+  const [accountMode, setAccountModeState] = useState<AccountMode>(() => {
+    try {
+      return (localStorage.getItem('pesotrack_account_mode') as AccountMode) || 'personal';
+    } catch {
+      return 'personal';
+    }
+  });
+
+  const setAccountMode = (mode: AccountMode) => {
+    setAccountModeState(mode);
+    try {
+      localStorage.setItem('pesotrack_account_mode', mode);
+    } catch {}
+  };
+
+  const [activeJointWorkspace, setActiveJointWorkspace] = useState<JointWorkspace | null>(null);
+  const [myJointWorkspaces, setMyJointWorkspaces] = useState<JointWorkspace[]>([]);
+  const [jointAccounts, setJointAccounts] = useState<FinancialAccount[]>([]);
+  const [jointTransactions, setJointTransactions] = useState<TransactionRecord[]>([]);
+  const [jointBills, setJointBills] = useState<BillDefinition[]>([]);
+  const [jointMonthlyBillEntries, setJointMonthlyBillEntries] = useState<Record<string, MonthlyBillEntry>>({});
+  const [jointBudgets, setJointBudgets] = useState<Record<string, MonthlyBudget>>({});
+  const [jointGroceryItems, setJointGroceryItems] = useState<GroceryItem[]>([]);
+  const [jointRecurringTransactions, setJointRecurringTransactions] = useState<RecurringTransaction[]>([]);
+  const [jointActivities, setJointActivities] = useState<JointActivityItem[]>([]);
+  const [jointNotifications, setJointNotifications] = useState<AppNotification[]>([]);
+  const [jointInvitations, setJointInvitations] = useState<JointInvitation[]>([]);
+  const [jointSentInvitations, setJointSentInvitations] = useState<JointInvitation[]>([]);
+  const [workspacePendingInvitations, setWorkspacePendingInvitations] = useState<JointInvitation[]>([]);
+  const [isJointRealtimeActive, setIsJointRealtimeActive] = useState<boolean>(false);
+  const [jointPendingMutationCount, setJointPendingMutationCount] = useState<number>(0);
+  const [jointLastSyncTime, setJointLastSyncTime] = useState<string | null>(null);
+
+  // Joint Chat & Ring Partner States
+  const [jointMessages, setJointMessages] = useState<JointMessage[]>([]);
+  const [activeIncomingRing, setActiveIncomingRing] = useState<JointRingRequest | null>(null);
+  const [activeOutgoingRingId, setActiveOutgoingRingId] = useState<string | null>(null);
+
+  const jointManagerRef = React.useRef<JointRealtimeManager | null>(null);
 
   const [state, setState] = useState<PesoTrackState>(() => {
     try {
@@ -523,7 +680,6 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
     } catch (e) {
       console.error('Failed saving to localStorage:', e);
     }
-<<<<<<< HEAD
 
     // Synchronize native Android home-screen widgets with live data
     try {
@@ -536,8 +692,6 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
     } catch (err) {
       console.warn('[FinanceContext] Widget update error:', err);
     }
-=======
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
   }, [state, currentUser]);
 
   // Helper to enqueue a mutation for offline sync and flush when online
@@ -960,11 +1114,23 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
     } catch {
       setState(createInitialPesoTrackState());
     }
+    if (jointManagerRef.current) {
+      jointManagerRef.current.stop();
+      jointManagerRef.current = null;
+    }
+    setActiveJointWorkspace(null);
+    setMyJointWorkspaces([]);
+    setJointInvitations([]);
+    setJointSentInvitations([]);
+    setJointAccounts([]);
+    setJointTransactions([]);
+    setJointBills([]);
+    setJointMonthlyBillEntries({});
+    setJointBudgets({});
+    setJointGroceryItems([]);
+    setJointActivities([]);
     await logoutUser();
-<<<<<<< HEAD
     await clearNativeWidgetData();
-=======
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
     showToast('Signed out of cloud account. Switched to local vault.', 'info');
   };
 
@@ -992,6 +1158,913 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const closeAuthModal = () => setIsAuthModalOpen(false);
+
+  // ---------------------------------------------------------------------------
+  // Joint Account Real-Time Synchronization Lifecycle
+  // ---------------------------------------------------------------------------
+  useEffect(() => {
+    if (jointManagerRef.current) {
+      jointManagerRef.current.stop();
+      jointManagerRef.current = null;
+    }
+
+    if (!activeJointWorkspace || !currentUser) {
+      setIsJointRealtimeActive(false);
+      return;
+    }
+
+    // Load cached state from local storage for instant offline availability
+    const cached = loadCachedJointState(activeJointWorkspace.id);
+    if (cached) {
+      if (cached.accounts) setJointAccounts(cached.accounts);
+      if (cached.transactions) setJointTransactions(cached.transactions);
+      if (cached.bills) setJointBills(cached.bills);
+      if (cached.monthlyBillEntries) setJointMonthlyBillEntries(cached.monthlyBillEntries);
+      if (cached.budgets) setJointBudgets(cached.budgets);
+      if (cached.groceryItems) setJointGroceryItems(cached.groceryItems);
+      if (cached.recurringTransactions) setJointRecurringTransactions(cached.recurringTransactions);
+      if (cached.activities) setJointActivities(cached.activities);
+      if (cached.notifications) setJointNotifications(cached.notifications);
+    }
+
+    // Connect real-time Firestore onSnapshot listener
+    const manager = new JointRealtimeManager(activeJointWorkspace.id, (updates) => {
+      if (updates.workspace) setActiveJointWorkspace(updates.workspace);
+      if (updates.accounts !== undefined) {
+        setJointAccounts(updates.accounts);
+        saveCachedJointState(activeJointWorkspace.id, { accounts: updates.accounts });
+      }
+      if (updates.transactions !== undefined) {
+        setJointTransactions(updates.transactions);
+        saveCachedJointState(activeJointWorkspace.id, { transactions: updates.transactions });
+      }
+      if (updates.bills !== undefined) {
+        setJointBills(updates.bills);
+        saveCachedJointState(activeJointWorkspace.id, { bills: updates.bills });
+      }
+      if (updates.monthlyBillEntries !== undefined) {
+        setJointMonthlyBillEntries(updates.monthlyBillEntries);
+        saveCachedJointState(activeJointWorkspace.id, { monthlyBillEntries: updates.monthlyBillEntries });
+      }
+      if (updates.budgets !== undefined) {
+        setJointBudgets(updates.budgets);
+        saveCachedJointState(activeJointWorkspace.id, { budgets: updates.budgets });
+      }
+      if (updates.groceryItems !== undefined) {
+        setJointGroceryItems(updates.groceryItems);
+        saveCachedJointState(activeJointWorkspace.id, { groceryItems: updates.groceryItems });
+      }
+      if (updates.recurringTransactions !== undefined) {
+        setJointRecurringTransactions(updates.recurringTransactions);
+        saveCachedJointState(activeJointWorkspace.id, { recurringTransactions: updates.recurringTransactions });
+      }
+      if (updates.activities !== undefined) {
+        setJointActivities(updates.activities);
+        saveCachedJointState(activeJointWorkspace.id, { activities: updates.activities });
+      }
+      if (updates.notifications !== undefined) {
+        setJointNotifications(updates.notifications);
+        saveCachedJointState(activeJointWorkspace.id, { notifications: updates.notifications });
+      }
+      if (updates.isRealtimeActive !== undefined) setIsJointRealtimeActive(updates.isRealtimeActive);
+      if (updates.lastSyncTime !== undefined) setJointLastSyncTime(updates.lastSyncTime);
+      if (updates.pendingMutationCount !== undefined) setJointPendingMutationCount(updates.pendingMutationCount);
+    });
+
+    manager.start();
+    jointManagerRef.current = manager;
+
+    return () => {
+      manager.stop();
+      jointManagerRef.current = null;
+    };
+  }, [activeJointWorkspace?.id, currentUser?.uid]);
+
+  // ---------------------------------------------------------------------------
+  // Joint Chat & Ring Partner Real-Time Listeners
+  // ---------------------------------------------------------------------------
+  useEffect(() => {
+    if (!activeJointWorkspace || !currentUser) {
+      setJointMessages([]);
+      setActiveIncomingRing(null);
+      stopPartnerRingtone();
+      return;
+    }
+
+    const wsId = activeJointWorkspace.id;
+
+    // 1. Initialize native Android notification channels
+    initChatNotificationChannels();
+
+    // 2. Load cached messages for offline instant rendering
+    const cachedMsgs = loadCachedMessages(
+      wsId,
+      currentUser?.uid,
+      activeJointWorkspace.clearedAtByMember?.[currentUser.uid],
+      activeJointWorkspace.chatClearedForEveryoneAt
+    );
+    if (cachedMsgs.length > 0) {
+      setJointMessages(cachedMsgs);
+    }
+
+    // 3. Flush local outbox and pending destructive ops if online
+    if (navigator.onLine) {
+      flushMessageOutbox(wsId).catch(() => {});
+    }
+
+    // 4. Firestore real-time onSnapshot listener for messages
+    const msgsQuery = query(
+      collection(db, 'jointWorkspaces', wsId, 'messages'),
+      orderBy('timestamp', 'asc')
+    );
+
+    let isInitialMessageLoad = true;
+    const unsubMsgs = onSnapshot(
+      msgsQuery,
+      (snapshot) => {
+        const serverMsgs: JointMessage[] = [];
+        const clearedForEveryoneAt = activeJointWorkspace?.chatClearedForEveryoneAt;
+        const clearedForUserAt =
+          activeJointWorkspace?.clearedAtByMember?.[currentUser.uid] ||
+          (currentUser?.uid ? localStorage.getItem(`pesotrack_chat_cleared_${wsId}_${currentUser.uid}`) : null);
+
+        snapshot.forEach((d) => {
+          const item = d.data() as any;
+          if (item.isDeleted) return;
+          if (
+            currentUser?.uid &&
+            Array.isArray(item.deletedForUserIds) &&
+            item.deletedForUserIds.includes(currentUser.uid)
+          ) {
+            return;
+          }
+          const msgTs = new Date(item.timestamp).getTime();
+          if (clearedForEveryoneAt && msgTs <= new Date(clearedForEveryoneAt).getTime()) return;
+          if (clearedForUserAt && msgTs <= new Date(clearedForUserAt).getTime()) return;
+
+          serverMsgs.push(item);
+        });
+
+        // Acknowledge delivery for partner messages intended for currentUser that are in 'sent' state
+        if (currentUser?.uid && navigator.onLine) {
+          const unacknowledged = serverMsgs.filter(
+            (sm) => sm.recipientUid === currentUser.uid && sm.status === 'sent'
+          );
+          if (unacknowledged.length > 0) {
+            acknowledgeMessageDelivery(
+              wsId,
+              unacknowledged.map((m) => m.id)
+            ).catch(() => {});
+          }
+        }
+
+        setJointMessages((prev) => {
+          // Keep optimistic messages that are currently in flight/outbox and not yet reflected in serverMsgs
+          const serverIds = new Set(serverMsgs.map((m) => m.id));
+          const pendingLocals = prev.filter(
+            (m) => (m.status === 'pending' || m.status === 'failed') && !serverIds.has(m.id)
+          );
+          const combined = [...serverMsgs, ...pendingLocals].sort(
+            (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+          );
+
+          // If a new message arrived from partner after initial load
+          if (!isInitialMessageLoad && prev.length > 0) {
+            const newPartnerMsg = serverMsgs.find(
+              (sm) =>
+                sm.senderUid !== currentUser.uid &&
+                !prev.some((pm) => pm.id === sm.id)
+            );
+
+            if (newPartnerMsg) {
+              playMessageReceivedSound();
+              deliverMessageLocalNotification(
+                newPartnerMsg.senderName,
+                newPartnerMsg.text || 'Sent an attachment',
+                activeJointWorkspace.name
+              );
+              showToast(`💬 ${newPartnerMsg.senderName}: ${(newPartnerMsg.text || 'Sent an attachment').slice(0, 45)}`, 'info');
+            }
+          }
+          isInitialMessageLoad = false;
+          saveCachedMessages(wsId, combined);
+          return combined;
+        });
+      },
+      (err) => console.warn('[JointChat] Messages onSnapshot error:', err.message)
+    );
+
+    // Resilient background sync polling fallback in case Firestore onSnapshot encounters permission, token, or network issues
+    const pollMessagesFallback = async () => {
+      if (!navigator.onLine || !currentUser) return;
+      try {
+        const resp = await fetch('/api/joint', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'get-messages', workspaceId: wsId }),
+        });
+        const res = await resp.json();
+        if (res.ok && Array.isArray(res.messages) && res.messages.length > 0) {
+          const fetched: JointMessage[] = res.messages;
+          setJointMessages((prev) => {
+            const fetchedIds = new Set(fetched.map((m) => m.id));
+            const pendingLocals = prev.filter(
+              (m) => (m.status === 'pending' || m.status === 'failed') && !fetchedIds.has(m.id)
+            );
+            const merged = [...fetched, ...pendingLocals].sort(
+              (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+            );
+
+            if (!isInitialMessageLoad && prev.length > 0) {
+              const newPartnerMsg = fetched.find(
+                (sm) => sm.senderUid !== currentUser.uid && !prev.some((pm) => pm.id === sm.id)
+              );
+
+              if (newPartnerMsg) {
+                playMessageReceivedSound();
+                deliverMessageLocalNotification(
+                  newPartnerMsg.senderName,
+                  newPartnerMsg.text || 'Sent an attachment',
+                  activeJointWorkspace.name
+                );
+              }
+            }
+            saveCachedMessages(wsId, merged);
+            return merged;
+          });
+        }
+      } catch {
+        // Silent polling catch
+      }
+    };
+
+    // Poll every 4 seconds while conversation is active
+    const pollInterval = setInterval(pollMessagesFallback, 4000);
+
+    // 5. Firestore real-time onSnapshot listener for Ring Partner alerts
+    const ringRef = collection(db, 'jointWorkspaces', wsId, 'ringRequests');
+    const unsubRing = onSnapshot(
+      ringRef,
+      (snapshot) => {
+        const nowMs = Date.now();
+        let incoming: JointRingRequest | null = null;
+
+        snapshot.forEach((d) => {
+          const r = d.data() as JointRingRequest;
+          const expiryMs = new Date(r.expiresAt).getTime();
+          if (
+            r.status === 'ringing' &&
+            expiryMs > nowMs &&
+            r.targetUid === currentUser.uid &&
+            r.callerUid !== currentUser.uid
+          ) {
+            incoming = r;
+          }
+        });
+
+        if (incoming) {
+          const ringAlert: JointRingRequest = incoming;
+          setActiveIncomingRing((prev: JointRingRequest | null) => {
+            if (!prev || prev.id !== ringAlert.id) {
+              startPartnerRingtone();
+              deliverRingLocalNotification(ringAlert.callerName, activeJointWorkspace.name);
+            }
+            return ringAlert;
+          });
+        } else {
+          setActiveIncomingRing((prev: JointRingRequest | null) => {
+            if (prev) {
+              stopPartnerRingtone();
+            }
+            return null;
+          });
+        }
+      },
+      (err) => console.warn('[JointChat] Ring requests onSnapshot error:', err.message)
+    );
+
+    // Online event handler to flush outbox automatically
+    const handleOnline = () => {
+      flushMessageOutbox(wsId).catch(() => {});
+      pollMessagesFallback().catch(() => {});
+    };
+    window.addEventListener('online', handleOnline);
+
+    return () => {
+      unsubMsgs();
+      clearInterval(pollInterval);
+      unsubRing();
+      window.removeEventListener('online', handleOnline);
+      stopPartnerRingtone();
+    };
+  }, [activeJointWorkspace?.id, currentUser?.uid]);
+
+  const jointUnreadMessagesCount = useMemo(() => {
+    if (!currentUser) return 0;
+    return jointMessages.filter(
+      (m) => m.senderUid !== currentUser.uid && m.status !== 'read'
+    ).length;
+  }, [jointMessages, currentUser]);
+
+  const sendJointChatMessage = async (
+    text: string,
+    media?: { mediaUrl?: string; mediaType?: 'image' | 'file'; mediaName?: string; fileSize?: number },
+    replyTo?: { id: string; senderName: string; text: string }
+  ): Promise<boolean> => {
+    if (!activeJointWorkspace || !currentUser) return false;
+    const partner = activeJointWorkspace.members?.find((m) => m.uid !== currentUser.uid);
+    const newMsg: JointMessage = {
+      id: `msg_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      workspaceId: activeJointWorkspace.id,
+      senderUid: currentUser.uid,
+      senderName: currentUser.displayName || state.settings.profileName || 'Partner',
+      senderEmail: currentUser.email || '',
+      senderAvatarColor: state.settings.themeColor || '#174F32',
+      recipientUid: partner?.uid || '',
+      text,
+      timestamp: new Date().toISOString(),
+      status: 'pending',
+      mediaUrl: media?.mediaUrl,
+      mediaType: media?.mediaType,
+      mediaName: media?.mediaName,
+      fileSize: media?.fileSize,
+      replyTo: replyTo,
+      replyToMessageId: replyTo?.id,
+      replyToSenderName: replyTo?.senderName,
+      replyToPreview: replyTo?.text,
+    };
+
+    setJointMessages((prev) => {
+      const next = [...prev, newMsg];
+      saveCachedMessages(activeJointWorkspace.id, next);
+      return next;
+    });
+    playMessageSentSound();
+
+    try {
+      const res = await sendChatMessage(newMsg);
+      setJointMessages((prev) => {
+        const updated = prev.map((m) =>
+          m.id === newMsg.id ? { ...m, status: (res.status as MessageDeliveryStatus) || 'sent' } : m
+        );
+        saveCachedMessages(activeJointWorkspace.id, updated);
+        return updated;
+      });
+      return true;
+    } catch {
+      setJointMessages((prev) => {
+        const updated = prev.map((m) =>
+          m.id === newMsg.id ? { ...m, status: 'failed' as MessageDeliveryStatus } : m
+        );
+        saveCachedMessages(activeJointWorkspace.id, updated);
+        return updated;
+      });
+      return false;
+    }
+  };
+
+  const retryJointMessage = async (messageId: string): Promise<void> => {
+    if (!activeJointWorkspace) return;
+    const target = jointMessages.find((m) => m.id === messageId);
+    if (!target) return;
+    try {
+      const res = await sendChatMessage(target);
+      setJointMessages((prev) =>
+        prev.map((m) => (m.id === messageId ? { ...m, status: res.status } : m))
+      );
+    } catch {
+      showToast('Retry queued in outbox. Waiting for connection.', 'info');
+    }
+  };
+
+  const markJointMessagesAsRead = async (): Promise<void> => {
+    if (!activeJointWorkspace || !currentUser) return;
+    const unreadPartnerMsgIds = jointMessages
+      .filter((m) => m.senderUid !== currentUser.uid && m.status !== 'read')
+      .map((m) => m.id);
+    if (unreadPartnerMsgIds.length === 0) return;
+
+    const nowIso = new Date().toISOString();
+    setJointMessages((prev) =>
+      prev.map((m) =>
+        unreadPartnerMsgIds.includes(m.id) ? { ...m, status: 'read', readAt: nowIso } : m
+      )
+    );
+    await markMessagesAsRead(activeJointWorkspace.id, unreadPartnerMsgIds);
+  };
+
+  const ringPartner = async (): Promise<{ ok: boolean; message?: string }> => {
+    if (!activeJointWorkspace) return { ok: false, message: 'No active joint workspace' };
+    const res = await ringPartnerAction(activeJointWorkspace.id);
+    if (res.ok && res.ringRequest) {
+      setActiveOutgoingRingId(res.ringRequest.id);
+      return { ok: true };
+    }
+    return { ok: false, message: res.error };
+  };
+
+  const respondToIncomingRing = async (status: 'accepted' | 'dismissed'): Promise<void> => {
+    stopPartnerRingtone();
+    if (!activeJointWorkspace || !activeIncomingRing) return;
+    const ringId = activeIncomingRing.id;
+    setActiveIncomingRing(null);
+    await respondToRingAction(activeJointWorkspace.id, ringId, status);
+  };
+
+  const cancelMyRing = async (): Promise<void> => {
+    if (!activeJointWorkspace || !activeOutgoingRingId) return;
+    await respondToRingAction(activeJointWorkspace.id, activeOutgoingRingId, 'cancelled');
+    setActiveOutgoingRingId(null);
+  };
+
+  const clearJointChat = async (
+    scope: 'for_me' | 'for_everyone'
+  ): Promise<{ ok: boolean; error?: string }> => {
+    if (!activeJointWorkspace || !currentUser) {
+      return { ok: false, error: 'No active joint vault or signed-in user.' };
+    }
+    const wsId = activeJointWorkspace.id;
+    const nowIso = new Date().toISOString();
+
+    // Optimistic local state update
+    if (scope === 'for_everyone') {
+      setJointMessages([]);
+      setActiveJointWorkspace((prev) =>
+        prev ? { ...prev, chatClearedForEveryoneAt: nowIso } : prev
+      );
+    } else {
+      setJointMessages((prev) =>
+        prev.filter((m) => new Date(m.timestamp).getTime() > new Date(nowIso).getTime())
+      );
+      setActiveJointWorkspace((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          clearedAtByMember: {
+            ...(prev.clearedAtByMember || {}),
+            [currentUser.uid]: nowIso,
+          },
+        };
+      });
+    }
+
+    try {
+      const res = await clearChatHistoryAction(wsId, scope, currentUser.uid);
+      if (res.ok) {
+        showToast(
+          scope === 'for_everyone'
+            ? 'Chat history cleared for everyone.'
+            : 'Chat history cleared for your view.',
+          'info'
+        );
+        return { ok: true };
+      } else {
+        showToast(res.error || 'Failed to clear chat on server. Retrying queued in background.', 'error');
+        return { ok: false, error: res.error };
+      }
+    } catch (err: any) {
+      showToast(err?.message || 'Error clearing chat.', 'error');
+      return { ok: false, error: err?.message };
+    }
+  };
+
+  const deleteJointMessageForMe = async (
+    messageId: string
+  ): Promise<{ ok: boolean; error?: string }> => {
+    if (!activeJointWorkspace || !currentUser) {
+      return { ok: false, error: 'No active workspace or user.' };
+    }
+    const wsId = activeJointWorkspace.id;
+
+    // Optimistic local state update
+    setJointMessages((prev) => prev.filter((m) => m.id !== messageId));
+
+    try {
+      const res = await deleteMessageForMeAction(wsId, messageId, currentUser.uid);
+      if (res.ok) {
+        showToast('Message deleted for you.', 'info');
+        return { ok: true };
+      } else {
+        showToast(res.error || 'Failed to delete message.', 'error');
+        return { ok: false, error: res.error };
+      }
+    } catch (err: any) {
+      showToast(err?.message || 'Error deleting message.', 'error');
+      return { ok: false, error: err?.message };
+    }
+  };
+
+  const unsendJointMessage = async (
+    messageId: string
+  ): Promise<{ ok: boolean; error?: string }> => {
+    if (!activeJointWorkspace || !currentUser) {
+      return { ok: false, error: 'No active workspace or user.' };
+    }
+    const wsId = activeJointWorkspace.id;
+    const target = jointMessages.find((m) => m.id === messageId);
+    if (target && target.senderUid !== currentUser.uid) {
+      showToast('You can only unsend messages that you sent.', 'error');
+      return { ok: false, error: 'You can only unsend your own messages.' };
+    }
+
+    const nowIso = new Date().toISOString();
+
+    // Optimistic local state update: convert to unsent tombstone
+    setJointMessages((prev) =>
+      prev.map((m) =>
+        m.id === messageId
+          ? {
+              ...m,
+              isUnsent: true,
+              unsentAt: nowIso,
+              unsentByUid: currentUser.uid,
+              text: '',
+              mediaUrl: undefined,
+              mediaType: undefined,
+              mediaName: undefined,
+            }
+          : m
+      )
+    );
+
+    try {
+      const res = await unsendChatMessageAction(wsId, messageId, currentUser.uid);
+      if (res.ok) {
+        showToast('Message unsent for everyone.', 'info');
+        return { ok: true };
+      } else {
+        showToast(res.error || 'Failed to unsend message.', 'error');
+        return { ok: false, error: res.error };
+      }
+    } catch (err: any) {
+      showToast(err?.message || 'Error unsending message.', 'error');
+      return { ok: false, error: err?.message };
+    }
+  };
+
+  const refreshJointData = async () => {
+    if (!currentUser || !currentUser.emailVerified) return;
+    try {
+      const [wsRes, invRes] = await Promise.all([
+        fetchMyJointWorkspaces(),
+        fetchJointInvitations(),
+      ]);
+
+      if (wsRes.ok && wsRes.workspaces) {
+        setMyJointWorkspaces(wsRes.workspaces);
+        if (wsRes.workspaces.length > 0) {
+          setActiveJointWorkspace((prev) => {
+            if (prev && wsRes.workspaces!.some((w) => w.id === prev.id)) {
+              return wsRes.workspaces!.find((w) => w.id === prev.id) || prev;
+            }
+            return wsRes.workspaces![0];
+          });
+        } else {
+          setActiveJointWorkspace(null);
+        }
+      }
+
+      if (invRes.ok) {
+        if (invRes.invitations) {
+          // Notify on newly received invitations
+          const prevIds = new Set(jointInvitations.map((i) => i.id));
+          const newPending = invRes.invitations.filter(
+            (i: any) => i.status === 'pending' && !prevIds.has(i.id)
+          );
+          if (newPending.length > 0 && jointInvitations.length > 0) {
+            showToast(`📬 Received joint invitation from ${newPending[0].inviterName || 'Partner'}!`, 'info');
+          }
+          setJointInvitations(invRes.invitations);
+        }
+
+        if (invRes.sentInvitations) {
+          // Notify on sent invitation acceptance or decline
+          const prevSentMap = new Map(jointSentInvitations.map((i) => [i.id, i.status]));
+          for (const sent of invRes.sentInvitations) {
+            const prevStatus = prevSentMap.get(sent.id);
+            if (prevStatus === 'pending' && sent.status === 'accepted') {
+              showToast(`🎉 ${sent.inviteeEmail} accepted your invitation to "${sent.jointWorkspaceName}"!`, 'success');
+            } else if (prevStatus === 'pending' && sent.status === 'declined') {
+              showToast(`ℹ️ ${sent.inviteeEmail} declined your invitation to "${sent.jointWorkspaceName}".`, 'info');
+            }
+          }
+          setJointSentInvitations(invRes.sentInvitations);
+        }
+      }
+
+      if (activeJointWorkspace?.id) {
+        try {
+          const wInvRes = await fetchWorkspacePendingInvitations(activeJointWorkspace.id);
+          if (wInvRes.ok && wInvRes.pendingInvitations) {
+            setWorkspacePendingInvitations(wInvRes.pendingInvitations);
+          }
+        } catch {}
+      }
+    } catch (e) {
+      console.warn('[FinanceContext] Error refreshing joint data:', e);
+    }
+  };
+
+  useEffect(() => {
+    if (activeJointWorkspace?.id) {
+      fetchWorkspacePendingInvitations(activeJointWorkspace.id).then((res) => {
+        if (res.ok && res.pendingInvitations) {
+          setWorkspacePendingInvitations(res.pendingInvitations);
+        }
+      }).catch(() => {});
+    } else {
+      setWorkspacePendingInvitations([]);
+    }
+  }, [activeJointWorkspace?.id]);
+
+  useEffect(() => {
+    if (currentUser && currentUser.emailVerified) {
+      refreshJointData();
+    } else {
+      setActiveJointWorkspace(null);
+      setMyJointWorkspaces([]);
+      setJointInvitations([]);
+      setJointSentInvitations([]);
+      setWorkspacePendingInvitations([]);
+      setJointAccounts([]);
+      setJointTransactions([]);
+      setJointBills([]);
+      setJointMonthlyBillEntries({});
+      setJointBudgets({});
+      setJointGroceryItems([]);
+      setJointRecurringTransactions([]);
+      setJointActivities([]);
+      setJointNotifications([]);
+    }
+  }, [currentUser?.uid, currentUser?.emailVerified]);
+
+  const createJointWorkspace = async (data: {
+    name: string;
+    relationship: string;
+    inviteeEmail?: string;
+    invitationMessage?: string;
+  }): Promise<boolean> => {
+    if (!currentUser) {
+      showToast('You must be signed in to create a joint account.', 'error');
+      return false;
+    }
+    try {
+      const res = await createJointWorkspaceApi({
+        ...data,
+        displayName: currentUser.displayName || state.settings.profileName,
+      });
+      if (res.ok && res.workspace) {
+        setActiveJointWorkspace(res.workspace);
+        setMyJointWorkspaces((prev) => [res.workspace, ...prev]);
+        const successMsg = data.inviteeEmail
+          ? `Joint account "${res.workspace.name}" created and invitation sent successfully!`
+          : `Joint workspace "${res.workspace.name}" created!`;
+        showToast(successMsg, 'success');
+        refreshJointData();
+        return true;
+      } else {
+        const errText = res.error || 'Failed to create joint workspace.';
+        showToast(errText, 'error');
+        throw new Error(errText);
+      }
+    } catch (e: any) {
+      const errText = e?.message || 'Error creating joint workspace.';
+      showToast(errText, 'error');
+      throw e;
+    }
+  };
+
+  const invitePartnerToJoint = async (email: string, message?: string): Promise<boolean> => {
+    if (!activeJointWorkspace || !currentUser) return false;
+    try {
+      const res = await invitePartnerToJointApi({
+        workspaceId: activeJointWorkspace.id,
+        inviteeEmail: email,
+        relationship: activeJointWorkspace.relationship,
+        message,
+        displayName: currentUser.displayName || state.settings.profileName,
+      });
+      if (res.ok) {
+        showToast(`Invitation sent to ${email}!`, 'success');
+        refreshJointData();
+        return true;
+      } else {
+        showToast(res.error || 'Failed to send invitation.', 'error');
+        return false;
+      }
+    } catch (e: any) {
+      showToast(e?.message || 'Error sending invitation.', 'error');
+      return false;
+    }
+  };
+
+  const acceptJointInvitation = async (invitationId: string): Promise<boolean> => {
+    if (!currentUser) return false;
+    try {
+      const res = await acceptJointInvitationApi(
+        invitationId,
+        currentUser.displayName || state.settings.profileName
+      );
+      if (res.ok && res.workspace) {
+        setActiveJointWorkspace(res.workspace);
+        setMyJointWorkspaces((prev) => [res.workspace, ...prev]);
+        showToast('Accepted joint invitation! Opening shared vault...', 'success');
+        refreshJointData();
+        return true;
+      } else {
+        showToast(res.error || 'Failed to accept invitation.', 'error');
+        return false;
+      }
+    } catch (e: any) {
+      showToast(e?.message || 'Error accepting invitation.', 'error');
+      return false;
+    }
+  };
+
+  const declineJointInvitation = async (invitationId: string): Promise<boolean> => {
+    try {
+      const res = await declineJointInvitationApi(invitationId);
+      if (res.ok) {
+        showToast('Invitation declined.', 'info');
+        refreshJointData();
+        return true;
+      } else {
+        showToast(res.error || 'Failed to decline invitation.', 'error');
+        return false;
+      }
+    } catch (e: any) {
+      showToast(e?.message || 'Error declining invitation.', 'error');
+      return false;
+    }
+  };
+
+  const revokeJointInvitation = async (invitationId: string): Promise<boolean> => {
+    try {
+      const res = await revokeJointInvitationApi(invitationId);
+      if (res.ok) {
+        showToast('Invitation cancelled.', 'info');
+        refreshJointData();
+        return true;
+      } else {
+        showToast(res.error || 'Failed to cancel invitation.', 'error');
+        return false;
+      }
+    } catch (e: any) {
+      showToast(e?.message || 'Error cancelling invitation.', 'error');
+      return false;
+    }
+  };
+
+  const updateJointWorkspace = async (data: {
+    name?: string;
+    relationship?: string;
+    notificationSettings?: Partial<NotificationSettings>;
+  }): Promise<boolean> => {
+    if (!activeJointWorkspace) return false;
+
+    const nextNotificationSettings = data.notificationSettings
+      ? sanitizeNotificationSettings({
+          ...(activeJointWorkspace.notificationSettings || DEFAULT_NOTIFICATION_SETTINGS),
+          ...data.notificationSettings,
+        })
+      : activeJointWorkspace.notificationSettings;
+
+    const updatedWorkspace: JointWorkspace = {
+      ...activeJointWorkspace,
+      ...(data.name ? { name: data.name } : {}),
+      ...(data.relationship ? { relationship: data.relationship } : {}),
+      ...(nextNotificationSettings ? { notificationSettings: nextNotificationSettings } : {}),
+      updatedAt: new Date().toISOString(),
+    };
+
+    // Optimistically update local active workspace and cache immediately
+    setActiveJointWorkspace(updatedWorkspace);
+    saveCachedJointState(activeJointWorkspace.id, { workspace: updatedWorkspace });
+
+    // Update Firestore directly if possible so realtime onSnapshot notifies partner instantly
+    try {
+      const docRef = doc(db, 'jointWorkspaces', activeJointWorkspace.id);
+      const fsUpdates: any = { updatedAt: updatedWorkspace.updatedAt };
+      if (data.name) fsUpdates.name = data.name;
+      if (data.relationship) fsUpdates.relationship = data.relationship;
+      if (nextNotificationSettings) fsUpdates.notificationSettings = nextNotificationSettings;
+      setDoc(docRef, fsUpdates, { merge: true }).catch((err) => {
+        console.warn('[JointSync] Direct Firestore workspace update fallback:', err);
+      });
+    } catch {}
+
+    try {
+      const res = await updateJointWorkspaceApi({
+        workspaceId: activeJointWorkspace.id,
+        name: data.name,
+        relationship: data.relationship,
+        notificationSettings: nextNotificationSettings,
+      });
+      if (res.ok && res.workspace) {
+        setActiveJointWorkspace(res.workspace);
+        saveCachedJointState(activeJointWorkspace.id, { workspace: res.workspace });
+        return true;
+      }
+      return true;
+    } catch (e: any) {
+      console.warn('[JointSync] API workspace update:', e);
+      return true;
+    }
+  };
+
+  const updateJointNotificationSettings = async (
+    updates: Partial<NotificationSettings>
+  ): Promise<boolean> => {
+    if (!activeJointWorkspace) {
+      showToast('No active joint account selected', 'error');
+      return false;
+    }
+    const current = sanitizeNotificationSettings(
+      activeJointWorkspace.notificationSettings || DEFAULT_NOTIFICATION_SETTINGS
+    );
+    const next = sanitizeNotificationSettings({ ...current, ...updates });
+    const ok = await updateJointWorkspace({ notificationSettings: next });
+    if (ok) {
+      showToast('Joint reminder preferences updated and synced with partner!', 'success');
+    }
+    return ok;
+  };
+
+  const testJointLocalNotification = async () => {
+    const wsName = activeJointWorkspace?.name || 'Joint Account';
+    const result = await sendImmediateTestNotification({
+      isJoint: true,
+      workspaceName: wsName,
+    });
+    showToast(result.message, result.ok ? 'success' : 'error');
+    return result;
+  };
+
+  const removeJointMember = async (memberUid: string): Promise<boolean> => {
+    if (!activeJointWorkspace || !currentUser) return false;
+    try {
+      const res = await removeJointMemberApi(
+        activeJointWorkspace.id,
+        memberUid,
+        currentUser.displayName || state.settings.profileName
+      );
+      if (res.ok) {
+        showToast('Member removed from joint workspace.', 'info');
+        refreshJointData();
+        return true;
+      } else {
+        showToast(res.error || 'Failed to remove member.', 'error');
+        return false;
+      }
+    } catch (e: any) {
+      showToast(e?.message || 'Error removing member.', 'error');
+      return false;
+    }
+  };
+
+  const updateJointMemberRole = async (memberUid: string, newRole: string): Promise<boolean> => {
+    if (!activeJointWorkspace || !currentUser) return false;
+    try {
+      const res = await updateJointMemberRoleApi({
+        workspaceId: activeJointWorkspace.id,
+        memberUid,
+        newRole,
+      });
+      if (res.ok) {
+        showToast(`Member role updated to ${newRole}.`, 'success');
+        refreshJointData();
+        return true;
+      } else {
+        showToast(res.error || 'Failed to update member role.', 'error');
+        return false;
+      }
+    } catch (e: any) {
+      showToast(e?.message || 'Error updating member role.', 'error');
+      return false;
+    }
+  };
+
+  const leaveJointWorkspace = async (): Promise<boolean> => {
+    if (!activeJointWorkspace || !currentUser) return false;
+    try {
+      const res = await leaveJointWorkspaceApi(
+        activeJointWorkspace.id,
+        currentUser.displayName || state.settings.profileName
+      );
+      if (res.ok) {
+        setActiveJointWorkspace(null);
+        showToast('You left the joint workspace.', 'info');
+        refreshJointData();
+        return true;
+      } else {
+        showToast(res.error || 'Failed to leave workspace.', 'error');
+        return false;
+      }
+    } catch (e: any) {
+      showToast(e?.message || 'Error leaving workspace.', 'error');
+      return false;
+    }
+  };
 
   // First-time local data migration handlers
   const handleAssociateLocalData = async () => {
@@ -1237,19 +2310,76 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Apply theme to DOM and native Capacitor status bar
   useEffect(() => {
-<<<<<<< HEAD
     applyThemeToDom(isDarkMode, state.settings.themeColor);
     initCapacitorApp(isDarkMode);
   }, [isDarkMode, state.settings.themeColor]);
-=======
-    applyThemeToDom(isDarkMode);
-    initCapacitorApp(isDarkMode);
-  }, [isDarkMode]);
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
+
+  const isJoint = accountMode === 'joint' && Boolean(activeJointWorkspace);
+
+  const effectiveAccounts = useMemo(() => {
+    return isJoint ? jointAccounts : state.accounts;
+  }, [isJoint, jointAccounts, state.accounts]);
+
+  const effectiveTransactions = useMemo(() => {
+    return isJoint ? jointTransactions : state.transactions;
+  }, [isJoint, jointTransactions, state.transactions]);
+
+  const effectiveBills = useMemo(() => {
+    return isJoint ? jointBills : (state.bills || []);
+  }, [isJoint, jointBills, state.bills]);
+
+  const effectiveMonthlyBillEntries = useMemo(() => {
+    return isJoint ? jointMonthlyBillEntries : (state.monthlyBillEntries || {});
+  }, [isJoint, jointMonthlyBillEntries, state.monthlyBillEntries]);
+
+  const effectiveBudgets = useMemo(() => {
+    return isJoint ? jointBudgets : (state.budgets || {});
+  }, [isJoint, jointBudgets, state.budgets]);
+
+  const effectiveGroceryItems = useMemo(() => {
+    return isJoint ? jointGroceryItems : (state.groceryItems || []);
+  }, [isJoint, jointGroceryItems, state.groceryItems]);
+
+  const effectiveRecurringTransactions = useMemo(() => {
+    return isJoint ? jointRecurringTransactions : (state.recurringTransactions || []);
+  }, [isJoint, jointRecurringTransactions, state.recurringTransactions]);
+
+  const activeModeState = useMemo<PesoTrackState>(() => {
+    if (isJoint) {
+      return {
+        version: 1,
+        accounts: jointAccounts,
+        transactions: jointTransactions,
+        bills: jointBills,
+        monthlyBillEntries: jointMonthlyBillEntries,
+        budgets: jointBudgets,
+        customBillNames: state.customBillNames || [],
+        customCategories: state.customCategories,
+        receivables: [],
+        groceryItems: jointGroceryItems,
+        groceryCategories: state.groceryCategories,
+        settings: state.settings,
+        recurringTransactions: jointRecurringTransactions,
+        updatedAt: jointLastSyncTime || new Date().toISOString(),
+      };
+    }
+    return state;
+  }, [
+    isJoint,
+    jointAccounts,
+    jointTransactions,
+    jointBills,
+    jointMonthlyBillEntries,
+    jointBudgets,
+    jointGroceryItems,
+    jointRecurringTransactions,
+    jointLastSyncTime,
+    state,
+  ]);
 
   const reconciledAccounts = useMemo(
-    () => reconcileAllAccounts(state.accounts, state.transactions),
-    [state.accounts, state.transactions]
+    () => reconcileAllAccounts(effectiveAccounts, effectiveTransactions),
+    [effectiveAccounts, effectiveTransactions]
   );
 
   const netWorthSummary = useMemo(
@@ -1258,8 +2388,8 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
   );
 
   const receivables = useMemo(
-    () => state.receivables || [],
-    [state.receivables]
+    () => (isJoint ? [] : state.receivables || []),
+    [isJoint, state.receivables]
   );
 
   const receivablesSummary = useMemo(
@@ -1267,30 +2397,39 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
     [receivables]
   );
 
-  const bills = useMemo(() => state.bills || [], [state.bills]);
-  const monthlyBillEntries = useMemo(
-    () => state.monthlyBillEntries || {},
-    [state.monthlyBillEntries]
-  );
+  const bills = effectiveBills;
+  const monthlyBillEntries = effectiveMonthlyBillEntries;
   const customBillNames = useMemo(
     () => state.customBillNames || [],
     [state.customBillNames]
   );
   const notificationSettings = useMemo(
-<<<<<<< HEAD
     () => sanitizeNotificationSettings(state.settings.notificationSettings),
-=======
-    () => state.settings.notificationSettings || DEFAULT_NOTIFICATION_SETTINGS,
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
     [state.settings.notificationSettings]
   );
 
-  // Sync scheduled local notifications whenever bills, debts, or settings change
+  // Sync scheduled local notifications whenever bills, debts, or settings change (Persists both Personal & Joint reminders)
   useEffect(() => {
+    // 1. Reconcile personal accounts strictly from personal state
+    const personalReconciled = reconcileAllAccounts(state.accounts, state.transactions);
+
+    // 2. Provide joint data if workspace is active (reconciled from joint accounts & transactions)
+    const jointInfo = activeJointWorkspace
+      ? {
+          workspaceId: activeJointWorkspace.id,
+          workspaceName: activeJointWorkspace.name,
+          notificationSettings: activeJointWorkspace.notificationSettings,
+          bills: jointBills,
+          monthlyBillEntries: jointMonthlyBillEntries,
+          accounts: reconcileAllAccounts(jointAccounts, jointTransactions),
+        }
+      : undefined;
+
     reconcileAllLocalReminders(
       state,
-      reconciledAccounts,
-      state.receivables || []
+      personalReconciled,
+      state.receivables || [],
+      jointInfo
     ).catch((err) => {
       console.warn('[FinanceContext] Reminder reconciliation failed:', err);
     });
@@ -1298,8 +2437,16 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
     state.bills,
     state.monthlyBillEntries,
     state.settings.notificationSettings,
-    reconciledAccounts,
+    state.accounts,
+    state.transactions,
     state.receivables,
+    activeJointWorkspace?.id,
+    activeJointWorkspace?.name,
+    activeJointWorkspace?.notificationSettings,
+    jointBills,
+    jointMonthlyBillEntries,
+    jointAccounts,
+    jointTransactions,
   ]);
 
   const toggleHideBalances = () => {
@@ -1345,7 +2492,46 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
       savingsGoal: input.savingsGoal,
       creditInfo: input.creditInfo,
       loanInfo: input.loanInfo,
+      jointWorkspaceId: isJoint && activeJointWorkspace ? activeJointWorkspace.id : undefined,
     };
+
+    if (isJoint && activeJointWorkspace) {
+      const nextAccounts = [...jointAccounts, newAccount];
+      setJointAccounts(nextAccounts);
+      let nextTransactions = [...jointTransactions];
+      if (safeStarting > 0) {
+        const startTx: TransactionRecord = {
+          id: `tx_start_${newId}`,
+          type: 'adjustment',
+          adjustmentSign: 'positive',
+          amount: safeStarting,
+          accountId: newId,
+          category: 'Starting Balance',
+          merchantOrTitle: 'Starting Balance',
+          dateTime: nowIso,
+          notes: `Initial ${input.category.toLowerCase()} balance`,
+          isStartingBalance: true,
+          jointWorkspaceId: activeJointWorkspace.id,
+          paidByUserId: currentUser?.uid,
+          paidByUserName: currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Partner',
+        };
+        nextTransactions = [startTx, ...nextTransactions];
+        setJointTransactions(nextTransactions);
+        writeJointMutation(activeJointWorkspace.id, 'transactions', startTx.id, 'set', startTx, {
+          actorName: currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Partner',
+          actionType: 'account_created',
+          description: `Starting balance for joint account "${cleanName}"`,
+        });
+      }
+      writeJointMutation(activeJointWorkspace.id, 'accounts', newAccount.id, 'set', newAccount, {
+        actorName: currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Partner',
+        actionType: 'account_created',
+        description: `Added joint account "${cleanName}" (${input.category})`,
+      });
+      showToast(`Added ${cleanName} (${input.category}) to Joint`, 'success');
+      const reconciled = reconcileAllAccounts([newAccount], nextTransactions)[0];
+      return reconciled;
+    }
 
     const newTransactions = [...state.transactions];
     if (safeStarting > 0) {
@@ -1385,6 +2571,54 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
     accountId: string,
     updates: Partial<AddAccountInput>
   ): boolean => {
+    if (isJoint && activeJointWorkspace) {
+      const existing = jointAccounts.find((a) => a.id === accountId);
+      if (!existing) return false;
+      const nowIso = new Date().toISOString();
+      const nextStarting =
+        updates.startingBalance !== undefined
+          ? fromCentavos(toCentavos(updates.startingBalance))
+          : existing.startingBalance;
+      const nextTotalRepayment =
+        updates.totalRepayment !== undefined
+          ? updates.totalRepayment
+          : updates.loanInfo?.totalRepayment ??
+            updates.creditInfo?.totalRepayment ??
+            existing.totalRepayment;
+      const updatedAccount: FinancialAccount = {
+        ...existing,
+        providerId: updates.providerId ?? existing.providerId,
+        name: updates.name ? updates.name.trim() : existing.name,
+        category: updates.category ?? existing.category,
+        startingBalance: nextStarting,
+        totalRepayment: nextTotalRepayment,
+        description:
+          updates.description !== undefined
+            ? updates.description.trim() || undefined
+            : existing.description,
+        customColor: updates.customColor ?? existing.customColor,
+        accountNumberMasked:
+          updates.accountNumberMasked !== undefined
+            ? updates.accountNumberMasked.trim() || undefined
+            : existing.accountNumberMasked,
+        savingsGoal:
+          updates.savingsGoal !== undefined
+            ? updates.savingsGoal
+            : existing.savingsGoal,
+        creditInfo:
+          updates.creditInfo !== undefined ? updates.creditInfo : existing.creditInfo,
+        loanInfo: updates.loanInfo !== undefined ? updates.loanInfo : existing.loanInfo,
+      };
+      setJointAccounts((prev) => prev.map((a) => (a.id === accountId ? updatedAccount : a)));
+      writeJointMutation(activeJointWorkspace.id, 'accounts', accountId, 'set', updatedAccount, {
+        actorName: currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Partner',
+        actionType: 'account_updated',
+        description: `Updated joint account "${updatedAccount.name}"`,
+      });
+      showToast(`Updated ${updatedAccount.name}`, 'success');
+      return true;
+    }
+
     const existing = state.accounts.find((a) => a.id === accountId);
     if (!existing) return false;
 
@@ -1469,6 +2703,22 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const deleteAccount = (accountId: string) => {
+    if (isJoint && activeJointWorkspace) {
+      const target = jointAccounts.find((a) => a.id === accountId);
+      if (!target) return;
+      setJointAccounts((prev) => prev.filter((a) => a.id !== accountId));
+      setJointTransactions((prev) =>
+        prev.filter((t) => t.accountId !== accountId && t.destinationAccountId !== accountId)
+      );
+      writeJointMutation(activeJointWorkspace.id, 'accounts', accountId, 'delete', null, {
+        actorName: currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Partner',
+        actionType: 'account_deleted',
+        description: `Deleted joint account "${target.name}"`,
+      });
+      showToast(`Deleted joint account ${target.name}`, 'info');
+      return;
+    }
+
     const target = state.accounts.find((a) => a.id === accountId);
     if (!target) return;
 
@@ -1485,6 +2735,17 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const toggleArchiveAccount = (accountId: string) => {
+    if (isJoint && activeJointWorkspace) {
+      const target = jointAccounts.find((a) => a.id === accountId);
+      if (!target) return;
+      const nextArchived = !target.archived;
+      const updated = { ...target, archived: nextArchived };
+      setJointAccounts((prev) => prev.map((a) => (a.id === accountId ? updated : a)));
+      writeJointMutation(activeJointWorkspace.id, 'accounts', accountId, 'set', updated);
+      showToast(nextArchived ? `Archived ${target.name}` : `Restored ${target.name}`, 'info');
+      return;
+    }
+
     const target = state.accounts.find((a) => a.id === accountId);
     if (!target) return;
 
@@ -1788,11 +3049,11 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
 
     const payDate = payment.date || new Date().toISOString().slice(0, 10);
     const payRecordId = `pay_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+    const txId = `tx_pay_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
     let targetPurchaseName = 'Purchase';
 
-    let txToRecord: TransactionRecord | null = null;
+    let txToRecord: TransactionRecord;
     if (payment.sourceAccountId) {
-      const txId = `tx_pay_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
       txToRecord = {
         id: txId,
         type: 'transfer',
@@ -1803,6 +3064,18 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
         merchantOrTitle: `Payment for ${target.name}`,
         dateTime: new Date(payDate + 'T12:00:00').toISOString(),
         notes: payment.notes || 'Installment payment',
+      };
+    } else {
+      txToRecord = {
+        id: txId,
+        type: 'adjustment',
+        amount: safeAmount,
+        accountId: accountId,
+        adjustmentSign: 'negative',
+        category: target.category === 'Credit' ? 'Credit Payment' : 'Loan Payment',
+        merchantOrTitle: `Payment for ${target.name}`,
+        dateTime: new Date(payDate + 'T12:00:00').toISOString(),
+        notes: payment.notes || 'Direct installment payment',
       };
     }
 
@@ -1829,7 +3102,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
               amount: safeAmount,
               notes: payment.notes,
               sourceAccountId: payment.sourceAccountId,
-              transactionId: txToRecord?.id,
+              transactionId: txId,
             };
             return {
               ...p,
@@ -1865,7 +3138,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
               amount: safeAmount,
               notes: payment.notes,
               sourceAccountId: payment.sourceAccountId,
-              transactionId: txToRecord?.id,
+              transactionId: txId,
             };
             return {
               ...d,
@@ -1886,15 +3159,12 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
         return a;
       });
 
-      const nextTransactions = txToRecord
-        ? [
-            {
-              ...txToRecord,
-              merchantOrTitle: `Payment: ${targetPurchaseName} (${target.name})`,
-            },
-            ...prev.transactions,
-          ]
-        : prev.transactions;
+      const finalTx: TransactionRecord = {
+        ...txToRecord,
+        merchantOrTitle: `Payment: ${targetPurchaseName} (${target.name})`,
+      };
+
+      const nextTransactions = [finalTx, ...prev.transactions];
 
       return {
         ...prev,
@@ -1946,12 +3216,10 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
       return false;
     }
 
-    const txId = payment.sourceAccountId
-      ? `tx_batch_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
-      : undefined;
+    const txId = `tx_batch_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
 
-    let txToRecord: TransactionRecord | null = null;
-    if (payment.sourceAccountId && txId) {
+    let txToRecord: TransactionRecord;
+    if (payment.sourceAccountId) {
       txToRecord = {
         id: txId,
         type: 'transfer',
@@ -1962,6 +3230,18 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
         merchantOrTitle: `Payment to ${target.name} (${allocMap.size} items)`,
         dateTime: new Date(payDate + 'T12:00:00').toISOString(),
         notes: payment.notes || `Allocated payment across ${allocMap.size} items`,
+      };
+    } else {
+      txToRecord = {
+        id: txId,
+        type: 'adjustment',
+        amount: safeTotal,
+        accountId: accountId,
+        adjustmentSign: 'negative',
+        category: target.category === 'Credit' ? 'Credit Payment' : 'Loan Payment',
+        merchantOrTitle: `Payment to ${target.name} (${allocMap.size} items)`,
+        dateTime: new Date(payDate + 'T12:00:00').toISOString(),
+        notes: payment.notes || `Direct allocated payment across ${allocMap.size} items`,
       };
     }
 
@@ -2538,7 +3818,54 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
       adjustmentSign:
         input.type === 'adjustment' ? input.adjustmentSign || 'positive' : undefined,
       interestPortion: computedInterest,
+      jointWorkspaceId: isJoint && activeJointWorkspace ? activeJointWorkspace.id : undefined,
     };
+
+    if (isJoint && activeJointWorkspace) {
+      const jointTx: TransactionRecord = {
+        ...newTx,
+        jointWorkspaceId: activeJointWorkspace.id,
+        paidByUserId: currentUser?.uid,
+        paidByUserName: currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Partner',
+      };
+      const allJointNewTxs = [jointTx];
+      if (input.type === 'transfer' && input.transferFee && input.transferFee > 0) {
+        allJointNewTxs.push({
+          id: `tx_fee_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+          type: 'expense',
+          amount: fromCentavos(toCentavos(input.transferFee)),
+          accountId: input.accountId,
+          category: 'Bills',
+          merchantOrTitle: `Transfer Fee (${jointTx.merchantOrTitle})`,
+          dateTime: input.dateTime || new Date().toISOString(),
+          notes: `Transfer fee of ₱${input.transferFee.toFixed(2)}`,
+          jointWorkspaceId: activeJointWorkspace.id,
+          paidByUserId: currentUser?.uid,
+          paidByUserName: currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Partner',
+        });
+      }
+      const nextJointTxs = [...allJointNewTxs, ...jointTransactions];
+      setJointTransactions(nextJointTxs);
+      allJointNewTxs.forEach((t) => {
+        writeJointMutation(activeJointWorkspace.id, 'transactions', t.id, 'set', t, {
+          actorName: currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Partner',
+          actionType: 'transaction_added',
+          description: `Recorded joint ${t.type}: ${t.merchantOrTitle} (${formatPeso(t.amount)})`,
+          amount: t.amount,
+        });
+      });
+      const sourceAcc = jointAccounts.find((a) => a.id === input.accountId);
+      if (sourceAcc) {
+        const updatedBalance = calculateAccountBalance(sourceAcc, nextJointTxs);
+        showToast(
+          `Recorded ₱${safeAmount.toFixed(2)} ${input.type}. ${sourceAcc.name} balance: ₱${updatedBalance.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+          'success'
+        );
+      } else {
+        showToast('Joint transaction saved', 'success');
+      }
+      return jointTx;
+    }
 
     const newTransactions = [newTx];
     if (input.type === 'transfer' && input.transferFee && input.transferFee > 0) {
@@ -2587,6 +3914,38 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
       return false;
     }
 
+    if (isJoint && activeJointWorkspace) {
+      const existing = jointTransactions.find((t) => t.id === txId);
+      if (!existing) return false;
+      const updated: TransactionRecord = {
+        ...existing,
+        type: input.type,
+        amount: safeAmount,
+        accountId: input.accountId,
+        destinationAccountId:
+          input.type === 'transfer' ? input.destinationAccountId : undefined,
+        category: input.category,
+        merchantOrTitle:
+          input.merchantOrTitle.trim() || input.category || 'Transaction',
+        dateTime: input.dateTime,
+        notes: input.notes?.trim() || undefined,
+        adjustmentSign:
+          input.type === 'adjustment'
+            ? input.adjustmentSign || 'positive'
+            : undefined,
+        interestPortion: input.interestPortion,
+        updatedAt: new Date().toISOString(),
+      };
+      setJointTransactions((prev) => prev.map((t) => (t.id === txId ? updated : t)));
+      writeJointMutation(activeJointWorkspace.id, 'transactions', txId, 'set', updated, {
+        actorName: currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Partner',
+        actionType: 'transaction_updated',
+        description: `Updated joint transaction: ${updated.merchantOrTitle}`,
+      });
+      showToast('Joint transaction updated', 'success');
+      return true;
+    }
+
     let updatedTxObj: TransactionRecord | null = null;
     setState((prev) => ({
       ...prev,
@@ -2626,28 +3985,306 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const deleteTransaction = (txId: string) => {
+    if (isJoint && activeJointWorkspace) {
+      const target = jointTransactions.find((t) => t.id === txId);
+      if (!target) return;
+      setJointTransactions((prev) => prev.filter((t) => t.id !== txId));
+      writeJointMutation(activeJointWorkspace.id, 'transactions', txId, 'delete', null, {
+        actorName: currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Partner',
+        actionType: 'transaction_deleted',
+        description: `Deleted joint transaction: ${target.merchantOrTitle}`,
+      });
+      showToast('Joint transaction deleted', 'info');
+      return;
+    }
+
     const target = state.transactions.find((t) => t.id === txId);
     if (!target) return;
 
-    setState((prev) => {
-      const nextAccounts = target.isStartingBalance
-        ? prev.accounts.map((a) =>
-            a.id === target.accountId ? { ...a, startingBalance: 0 } : a
-          )
-        : prev.accounts;
+    const modifiedAccountIds = new Set<string>();
 
-      return {
+    setState((prev) => {
+      let nextAccounts = prev.accounts.map((a) => {
+        let currentAcc = { ...a };
+        let accChanged = false;
+
+        // 1. If this was a Starting Balance transaction
+        if (target.isStartingBalance && a.id === target.accountId) {
+          accChanged = true;
+          currentAcc = {
+            ...currentAcc,
+            startingBalance: 0,
+            ...(currentAcc.loanInfo
+              ? {
+                  loanInfo: {
+                    ...currentAcc.loanInfo,
+                    originalPrincipal: 0,
+                    totalRepayment: 0,
+                    drawdowns: [],
+                  },
+                }
+              : {}),
+            ...(currentAcc.creditInfo
+              ? {
+                  creditInfo: {
+                    ...currentAcc.creditInfo,
+                    installmentPrincipal: 0,
+                    totalRepayment: 0,
+                    purchases: [],
+                  },
+                }
+              : {}),
+          };
+        }
+
+        // 2. Revert if linked to credit purchases
+        if (currentAcc.creditInfo?.purchases && currentAcc.creditInfo.purchases.length > 0) {
+          const isTargetAccount =
+            target.destinationAccountId === currentAcc.id ||
+            target.accountId === currentAcc.id ||
+            Boolean(currentAcc.name && target.merchantOrTitle?.toLowerCase().includes(currentAcc.name.toLowerCase())) ||
+            Boolean(currentAcc.name && target.notes?.toLowerCase().includes(currentAcc.name.toLowerCase()));
+
+          const nextPurchases = currentAcc.creditInfo.purchases.map((p) => {
+            const isPurchaseNameMatch =
+              p.name &&
+              (target.merchantOrTitle?.toLowerCase().includes(p.name.toLowerCase()) ||
+                target.notes?.toLowerCase().includes(p.name.toLowerCase()));
+
+            const pay = p.payments?.find(
+              (entry) =>
+                entry.transactionId === txId ||
+                entry.id === txId ||
+                ((isTargetAccount || isPurchaseNameMatch) &&
+                  (target.category === 'Credit Payment' ||
+                    target.category === 'Credit Card Payment' ||
+                    target.type === 'transfer' ||
+                    (target.type === 'adjustment' && target.adjustmentSign === 'negative')) &&
+                  Math.abs(entry.amount - target.amount) < 0.05)
+            );
+            if (pay) {
+              accChanged = true;
+              const newTotalPaid = Math.max(0, fromCentavos(toCentavos(p.totalPaid - pay.amount)));
+              const newRemaining = fromCentavos(toCentavos(p.remainingBalance + pay.amount));
+              return {
+                ...p,
+                totalPaid: newTotalPaid,
+                remainingBalance: newRemaining,
+                status: 'active' as const,
+                payments: (p.payments || []).filter(
+                  (entry) => entry.transactionId !== txId && entry.id !== pay.id
+                ),
+              };
+            }
+
+            // Fallback: If payments array is empty or untracked, but totalPaid > 0 and transaction targeted this account/purchase
+            if (
+              (isTargetAccount || isPurchaseNameMatch) &&
+              (p.totalPaid || 0) > 0 &&
+              (target.category === 'Credit Payment' ||
+                target.category === 'Credit Card Payment' ||
+                target.type === 'transfer' ||
+                (target.type === 'adjustment' && target.adjustmentSign === 'negative'))
+            ) {
+              accChanged = true;
+              const revertAmt = Math.min(p.totalPaid, target.amount);
+              const newTotalPaid = Math.max(0, fromCentavos(toCentavos(p.totalPaid - revertAmt)));
+              const newRemaining = fromCentavos(toCentavos(p.remainingBalance + revertAmt));
+              return {
+                ...p,
+                totalPaid: newTotalPaid,
+                remainingBalance: newRemaining,
+                status: 'active' as const,
+                payments: (p.payments || []).filter((entry) => entry.transactionId !== txId),
+              };
+            }
+
+            return p;
+          });
+
+          if (accChanged) {
+            currentAcc = {
+              ...currentAcc,
+              creditInfo: {
+                ...currentAcc.creditInfo!,
+                purchases: nextPurchases,
+              },
+            };
+          }
+        }
+
+        // 3. Revert if linked to loan drawdowns
+        if (currentAcc.loanInfo?.drawdowns && currentAcc.loanInfo.drawdowns.length > 0) {
+          const isTargetAccount =
+            target.destinationAccountId === currentAcc.id ||
+            target.accountId === currentAcc.id ||
+            Boolean(currentAcc.name && target.merchantOrTitle?.toLowerCase().includes(currentAcc.name.toLowerCase())) ||
+            Boolean(currentAcc.name && target.notes?.toLowerCase().includes(currentAcc.name.toLowerCase()));
+
+          const nextDrawdowns = currentAcc.loanInfo.drawdowns.map((d) => {
+            const isDrawdownNameMatch =
+              d.name &&
+              (target.merchantOrTitle?.toLowerCase().includes(d.name.toLowerCase()) ||
+                target.notes?.toLowerCase().includes(d.name.toLowerCase()));
+
+            const pay = d.payments?.find(
+              (entry) =>
+                entry.transactionId === txId ||
+                entry.id === txId ||
+                ((isTargetAccount || isDrawdownNameMatch) &&
+                  (target.category === 'Loan Payment' ||
+                    target.type === 'transfer' ||
+                    (target.type === 'adjustment' && target.adjustmentSign === 'negative')) &&
+                  Math.abs(entry.amount - target.amount) < 0.05)
+            );
+            if (pay) {
+              accChanged = true;
+              const newTotalPaid = Math.max(0, fromCentavos(toCentavos(d.totalPaid - pay.amount)));
+              const newRemaining = fromCentavos(toCentavos(d.remainingBalance + pay.amount));
+              return {
+                ...d,
+                totalPaid: newTotalPaid,
+                remainingBalance: newRemaining,
+                status: 'active' as const,
+                payments: (d.payments || []).filter(
+                  (entry) => entry.transactionId !== txId && entry.id !== pay.id
+                ),
+              };
+            }
+
+            // Fallback: If payments array is empty or untracked, but totalPaid > 0 and transaction targeted this account/drawdown
+            if (
+              (isTargetAccount || isDrawdownNameMatch) &&
+              (d.totalPaid || 0) > 0 &&
+              (target.category === 'Loan Payment' ||
+                target.type === 'transfer' ||
+                (target.type === 'adjustment' && target.adjustmentSign === 'negative'))
+            ) {
+              accChanged = true;
+              const revertAmt = Math.min(d.totalPaid, target.amount);
+              const newTotalPaid = Math.max(0, fromCentavos(toCentavos(d.totalPaid - revertAmt)));
+              const newRemaining = fromCentavos(toCentavos(d.remainingBalance + revertAmt));
+              return {
+                ...d,
+                totalPaid: newTotalPaid,
+                remainingBalance: newRemaining,
+                status: 'active' as const,
+                payments: (d.payments || []).filter((entry) => entry.transactionId !== txId),
+              };
+            }
+
+            return d;
+          });
+
+          if (accChanged) {
+            currentAcc = {
+              ...currentAcc,
+              loanInfo: {
+                ...currentAcc.loanInfo!,
+                drawdowns: nextDrawdowns,
+              },
+            };
+          }
+        }
+
+        if (accChanged) {
+          modifiedAccountIds.add(currentAcc.id);
+        }
+        return currentAcc;
+      });
+
+      // Revert if linked to monthly bill entries
+      const nextMonthlyEntries = { ...(prev.monthlyBillEntries || {}) };
+      Object.keys(nextMonthlyEntries).forEach((k) => {
+        const entry = nextMonthlyEntries[k];
+        if (entry.payments?.some((p) => p.transactionId === txId || p.id === txId)) {
+          const nextPayments = entry.payments.filter((p) => p.transactionId !== txId && p.id !== txId);
+          const totalPaid = nextPayments.reduce((sum, p) => sum + p.amount, 0);
+          nextMonthlyEntries[k] = {
+            ...entry,
+            payments: nextPayments,
+            isPaidManually: totalPaid >= entry.actualAmount && entry.actualAmount > 0,
+            updatedAt: new Date().toISOString(),
+          };
+        }
+      });
+
+      // Revert if linked to receivables
+      const nextReceivables = (prev.receivables || []).map((r) => {
+        const targetPayment = r.payments?.find((p) => p.transactionId === txId || p.id === txId);
+        if (!targetPayment) return r;
+        const nextPayments = r.payments.filter((p) => p.transactionId !== txId && p.id !== txId);
+        const newTotalCollected = fromCentavos(
+          nextPayments.reduce((sum, p) => sum + toCentavos(p.amount), 0)
+        );
+        const newRemaining = Math.max(
+          0,
+          fromCentavos(toCentavos(r.totalExpected - newTotalCollected))
+        );
+        let cumulativePaid = newTotalCollected;
+        let cumDue = 0;
+        const updatedSchedule = r.schedule?.map((item) => {
+          cumDue += item.collectionAmount;
+          const isPaid = newRemaining <= 0 || cumulativePaid >= cumDue - 0.05;
+          return { ...item, isPaid };
+        });
+        return {
+          ...r,
+          payments: nextPayments,
+          totalCollected: newTotalCollected,
+          remainingBalance: newRemaining,
+          schedule: updatedSchedule || r.schedule,
+          updatedAt: new Date().toISOString(),
+        };
+      });
+
+      const nextTransactions = prev.transactions.filter((t) => t.id !== txId);
+      const nextState: PesoTrackState = {
         ...prev,
         accounts: nextAccounts,
-        transactions: prev.transactions.filter((t) => t.id !== txId),
+        monthlyBillEntries: nextMonthlyEntries,
+        receivables: nextReceivables,
+        transactions: nextTransactions,
         updatedAt: new Date().toISOString(),
       };
+
+      try {
+        const userKey = getUserStorageKey(currentUser?.uid);
+        localStorage.setItem(userKey, JSON.stringify(nextState));
+      } catch (err) {
+        console.error('LocalStorage write error in deleteTransaction:', err);
+      }
+
+      return nextState;
     });
+
     queueMutation('transactions', txId, 'delete');
-    showToast('Transaction deleted', 'info');
+    modifiedAccountIds.forEach((accId) => {
+      const accObj = state.accounts.find((a) => a.id === accId);
+      if (accObj) {
+        queueMutation('accounts', accId, 'upsert', accObj);
+      }
+    });
+
+    showToast('Transaction deleted and obligation reverted if linked', 'info');
   };
 
   const saveMonthlyBudget = (monthKey: string, budget: MonthlyBudget) => {
+    if (isJoint && activeJointWorkspace) {
+      const nextBudgets = {
+        ...jointBudgets,
+        [monthKey]: budget,
+      };
+      setJointBudgets(nextBudgets);
+      writeJointMutation(activeJointWorkspace.id, 'budgets', monthKey, 'set', budget, {
+        actorName: currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Partner',
+        actionType: 'budget_updated',
+        description: `Updated joint budget for ${monthKey}`,
+      });
+      showToast(`Joint budget saved for ${monthKey}`, 'success');
+      return;
+    }
+
     setState((prev) => ({
       ...prev,
       budgets: {
@@ -2660,7 +4297,6 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const updateSettings = (updates: Partial<UserSettings>) => {
-<<<<<<< HEAD
     if (updates.themeColor) {
       applyThemeToDom(isDarkMode, updates.themeColor);
     }
@@ -2681,35 +4317,50 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
         updatedAt: new Date().toISOString(),
       };
     });
-=======
-    setState((prev) => ({
-      ...prev,
-      settings: {
-        ...prev.settings,
-        ...updates,
-      },
-      updatedAt: new Date().toISOString(),
-    }));
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
     showToast('Settings updated', 'success');
   };
 
   // Recurring Activities Implementation
-  const recurringTransactions = state.recurringTransactions || [];
+  const recurringTransactions = isJoint ? jointRecurringTransactions : (state.recurringTransactions || []);
 
   const addRecurringTransaction = (
     input: Omit<RecurringTransaction, 'id' | 'createdAt'>
   ): RecurringTransaction => {
+    const id = `rec_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    const nowIso = new Date().toISOString();
     const newItem: RecurringTransaction = {
       ...input,
-      id: `rec_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-      createdAt: new Date().toISOString(),
+      id,
+      createdAt: nowIso,
+      updatedAt: nowIso,
+      jointWorkspaceId: isJoint && activeJointWorkspace ? activeJointWorkspace.id : undefined,
+      createdByUid: currentUser?.uid,
+      createdByName: currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Partner',
     };
+
+    if (isJoint && activeJointWorkspace) {
+      setJointRecurringTransactions((prev) => [...prev, newItem]);
+      writeJointMutation(activeJointWorkspace.id, 'recurringTransactions', newItem.id, 'set', newItem, {
+        actorName: currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Partner',
+        actionType: 'salary_added',
+        description: `Added joint recurring ${newItem.frequency} ${newItem.category?.toLowerCase() || 'income'}: "${newItem.name}" (${formatPeso(newItem.amount)})`,
+        amount: newItem.amount,
+      });
+      showToast(`Added recurring ${newItem.frequency} income: ${newItem.name}`, 'success');
+      return newItem;
+    }
+
     setState((prev) => ({
       ...prev,
       recurringTransactions: [...(prev.recurringTransactions || []), newItem],
-      updatedAt: new Date().toISOString(),
+      updatedAt: nowIso,
     }));
+    if (currentUser?.uid) {
+      enqueueChange(currentUser.uid, 'sync_state', 'state', 'upsert', {
+        settings: state.settings,
+        customCategories: state.customCategories,
+      });
+    }
     showToast(`Scheduled recurring ${input.name}`, 'success');
     return newItem;
   };
@@ -2718,18 +4369,51 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
     id: string,
     updates: Partial<RecurringTransaction>
   ): boolean => {
+    const nowIso = new Date().toISOString();
+
+    if (isJoint && activeJointWorkspace) {
+      const existing = jointRecurringTransactions.find((r) => r.id === id);
+      if (!existing) return false;
+      const updatedItem: RecurringTransaction = {
+        ...existing,
+        ...updates,
+        updatedAt: nowIso,
+      };
+      setJointRecurringTransactions((prev) => prev.map((item) => (item.id === id ? updatedItem : item)));
+      writeJointMutation(activeJointWorkspace.id, 'recurringTransactions', id, 'set', updatedItem, {
+        actorName: currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Partner',
+        actionType: 'salary_updated',
+        description: `Updated recurring income "${updatedItem.name}"`,
+      });
+      showToast('Recurring activity updated', 'success');
+      return true;
+    }
+
     setState((prev) => ({
       ...prev,
       recurringTransactions: (prev.recurringTransactions || []).map((item) =>
-        item.id === id ? { ...item, ...updates } : item
+        item.id === id ? { ...item, ...updates, updatedAt: nowIso } : item
       ),
-      updatedAt: new Date().toISOString(),
+      updatedAt: nowIso,
     }));
     showToast('Recurring activity updated', 'success');
     return true;
   };
 
   const deleteRecurringTransaction = (id: string) => {
+    if (isJoint && activeJointWorkspace) {
+      const target = jointRecurringTransactions.find((r) => r.id === id);
+      if (!target) return;
+      setJointRecurringTransactions((prev) => prev.filter((r) => r.id !== id));
+      writeJointMutation(activeJointWorkspace.id, 'recurringTransactions', id, 'delete', null, {
+        actorName: currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Partner',
+        actionType: 'salary_deleted',
+        description: `Removed recurring income "${target.name}"`,
+      });
+      showToast(`Removed recurring schedule: ${target.name}`, 'info');
+      return;
+    }
+
     setState((prev) => ({
       ...prev,
       recurringTransactions: (prev.recurringTransactions || []).filter(
@@ -2741,6 +4425,23 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const toggleRecurringActive = (id: string) => {
+    const nowIso = new Date().toISOString();
+
+    if (isJoint && activeJointWorkspace) {
+      const target = jointRecurringTransactions.find((r) => r.id === id);
+      if (!target) return;
+      const nextActive = !target.isActive;
+      const updatedItem: RecurringTransaction = {
+        ...target,
+        isActive: nextActive,
+        updatedAt: nowIso,
+      };
+      setJointRecurringTransactions((prev) => prev.map((item) => (item.id === id ? updatedItem : item)));
+      writeJointMutation(activeJointWorkspace.id, 'recurringTransactions', id, 'set', updatedItem);
+      showToast(nextActive ? `Resumed "${target.name}"` : `Paused "${target.name}"`, 'info');
+      return;
+    }
+
     setState((prev) => ({
       ...prev,
       recurringTransactions: (prev.recurringTransactions || []).map((item) => {
@@ -2750,16 +4451,17 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
             nextActive ? `Resumed "${item.name}"` : `Paused "${item.name}"`,
             'info'
           );
-          return { ...item, isActive: nextActive };
+          return { ...item, isActive: nextActive, updatedAt: nowIso };
         }
         return item;
       }),
-      updatedAt: new Date().toISOString(),
+      updatedAt: nowIso,
     }));
   };
 
   const recordRecurringPayment = (id: string): TransactionRecord | null => {
-    const item = (state.recurringTransactions || []).find((r) => r.id === id);
+    const list = isJoint ? jointRecurringTransactions : (state.recurringTransactions || []);
+    const item = list.find((r) => r.id === id);
     if (!item) return null;
 
     const recordedTx = addTransaction({
@@ -2777,19 +4479,33 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
 
     if (recordedTx) {
       const nextDue = advanceDueDate(item.nextDueDate || item.startDate, item.frequency);
-      setState((prev) => ({
-        ...prev,
-        recurringTransactions: (prev.recurringTransactions || []).map((r) =>
-          r.id === id
-            ? {
-                ...r,
-                nextDueDate: nextDue,
-                lastRecordedDate: new Date().toISOString(),
-              }
-            : r
-        ),
-        updatedAt: new Date().toISOString(),
-      }));
+      const nowIso = new Date().toISOString();
+
+      if (isJoint && activeJointWorkspace) {
+        const updatedItem: RecurringTransaction = {
+          ...item,
+          nextDueDate: nextDue,
+          lastRecordedDate: nowIso,
+          updatedAt: nowIso,
+        };
+        setJointRecurringTransactions((prev) => prev.map((r) => (r.id === id ? updatedItem : r)));
+        writeJointMutation(activeJointWorkspace.id, 'recurringTransactions', id, 'set', updatedItem);
+      } else {
+        setState((prev) => ({
+          ...prev,
+          recurringTransactions: (prev.recurringTransactions || []).map((r) =>
+            r.id === id
+              ? {
+                  ...r,
+                  nextDueDate: nextDue,
+                  lastRecordedDate: nowIso,
+                  updatedAt: nowIso,
+                }
+              : r
+          ),
+          updatedAt: nowIso,
+        }));
+      }
     }
 
     return recordedTx;
@@ -3359,7 +5075,26 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
       reminderDaysBefore: input.reminderDaysBefore ?? 1,
       createdAt: nowIso,
       updatedAt: nowIso,
+      jointWorkspaceId: isJoint && activeJointWorkspace ? activeJointWorkspace.id : undefined,
     };
+
+    if (isJoint && activeJointWorkspace) {
+      const jointBill: BillDefinition = {
+        ...newBill,
+        jointWorkspaceId: activeJointWorkspace.id,
+        createdByUid: currentUser?.uid,
+        createdByName: currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Partner',
+      };
+      setJointBills((prev) => [...prev, jointBill]);
+      writeJointMutation(activeJointWorkspace.id, 'bills', jointBill.id, 'set', jointBill, {
+        actorName: currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Partner',
+        actionType: 'bill_added',
+        description: `Added joint bill "${customCategoryName || name}" (${formatPeso(jointBill.defaultAmount)})`,
+        amount: jointBill.defaultAmount,
+      });
+      showToast(`Added joint bill "${customCategoryName || name}"`, 'success');
+      return jointBill;
+    }
 
     setState((prev) => {
       const nextCustomNames =
@@ -3391,6 +5126,24 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
     let updatedBillObj: BillDefinition | null = null;
     const nowIso = new Date().toISOString();
 
+    if (isJoint && activeJointWorkspace) {
+      const existing = jointBills.find((b) => b.id === billId);
+      if (!existing) return false;
+      const up: BillDefinition = {
+        ...existing,
+        ...updates,
+        updatedAt: nowIso,
+      };
+      setJointBills((prev) => prev.map((b) => (b.id === billId ? up : b)));
+      writeJointMutation(activeJointWorkspace.id, 'bills', billId, 'set', up, {
+        actorName: currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Partner',
+        actionType: 'bill_updated',
+        description: `Updated joint bill "${up.name}"`,
+      });
+      showToast('Joint bill updated', 'success');
+      return true;
+    }
+
     setState((prev) => {
       const nextBills = (prev.bills || []).map((b) => {
         if (b.id !== billId) return b;
@@ -3419,6 +5172,19 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const deleteBill = (billId: string) => {
+    if (isJoint && activeJointWorkspace) {
+      const target = jointBills.find((b) => b.id === billId);
+      if (!target) return;
+      setJointBills((prev) => prev.filter((b) => b.id !== billId));
+      writeJointMutation(activeJointWorkspace.id, 'bills', billId, 'delete', null, {
+        actorName: currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Partner',
+        actionType: 'bill_deleted',
+        description: `Deleted joint bill "${target.name}"`,
+      });
+      showToast(`Deleted joint bill "${target.name}"`, 'info');
+      return;
+    }
+
     const target = state.bills?.find((b) => b.id === billId);
     if (!target) return;
 
@@ -3436,11 +5202,39 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
     monthKey: string,
     updates: Partial<MonthlyBillEntry>
   ): boolean => {
-    const targetBill = state.bills?.find((b) => b.id === billId);
-    if (!targetBill) return false;
-
     const entryKey = `${billId}_${monthKey}`;
     const nowIso = new Date().toISOString();
+
+    if (isJoint && activeJointWorkspace) {
+      const targetBill = jointBills.find((b) => b.id === billId);
+      if (!targetBill) return false;
+      const existing = jointMonthlyBillEntries[entryKey] || {
+        id: entryKey,
+        billId,
+        monthKey,
+        dueDay: targetBill.dueDay,
+        dueDate: `${monthKey}-${String(targetBill.dueDay).padStart(2, '0')}`,
+        actualAmount: targetBill.defaultAmount,
+        payments: [],
+        createdAt: nowIso,
+        updatedAt: nowIso,
+      };
+      const updatedEntry: MonthlyBillEntry = {
+        ...existing,
+        ...updates,
+        updatedAt: nowIso,
+      };
+      setJointMonthlyBillEntries((prev) => ({
+        ...prev,
+        [entryKey]: updatedEntry,
+      }));
+      writeJointMutation(activeJointWorkspace.id, 'monthlyBillEntries', entryKey, 'set', updatedEntry);
+      showToast(`Updated joint bill for ${monthKey}`, 'success');
+      return true;
+    }
+
+    const targetBill = state.bills?.find((b) => b.id === billId);
+    if (!targetBill) return false;
 
     setState((prev) => {
       const existing = prev.monthlyBillEntries?.[entryKey] || {
@@ -3476,12 +5270,6 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const recordBillPayment = (input: RecordBillPaymentInput): boolean => {
-    const targetBill = state.bills?.find((b) => b.id === input.billId);
-    if (!targetBill) {
-      showToast('Bill not found.', 'error');
-      return false;
-    }
-
     const safeAmount = fromCentavos(toCentavos(input.amount));
     if (safeAmount <= 0) {
       showToast('Payment amount must be greater than ₱0.00', 'error');
@@ -3491,6 +5279,94 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
     const payDate = input.date || new Date().toISOString().slice(0, 10);
     const payId = `pay_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
     const entryKey = `${input.billId}_${input.monthKey}`;
+
+    if (isJoint && activeJointWorkspace) {
+      const targetBill = jointBills.find((b) => b.id === input.billId);
+      if (!targetBill) {
+        showToast('Joint bill not found.', 'error');
+        return false;
+      }
+
+      let createdTx: TransactionRecord | undefined;
+      if (input.sourceAccountId) {
+        const billDisplayName =
+          targetBill.category === 'Other' && targetBill.customCategoryName
+            ? targetBill.customCategoryName
+            : targetBill.name;
+        createdTx = {
+          id: `tx_bill_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+          type: 'expense',
+          amount: safeAmount,
+          accountId: input.sourceAccountId,
+          category: 'Bills',
+          merchantOrTitle: `Bill: ${billDisplayName} (${input.monthKey})`,
+          dateTime: `${payDate}T12:00:00`,
+          notes: input.notes?.trim() || `Payment for ${billDisplayName}`,
+          jointWorkspaceId: activeJointWorkspace.id,
+          paidByUserId: currentUser?.uid,
+          paidByUserName: currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Partner',
+        };
+        setJointTransactions((prev) => [createdTx!, ...prev]);
+        if (createdTx) {
+          writeJointMutation(activeJointWorkspace.id, 'transactions', createdTx.id, 'set', createdTx);
+        }
+      }
+
+      const newPaymentRecord: BillPaymentRecord = {
+        id: payId,
+        billId: input.billId,
+        monthKey: input.monthKey,
+        amount: safeAmount,
+        date: payDate,
+        paymentMethod: input.paymentMethod,
+        sourceAccountId: input.sourceAccountId,
+        transactionId: createdTx?.id,
+        notes: input.notes?.trim(),
+        createdAt: new Date().toISOString(),
+      };
+
+      const existingEntry = jointMonthlyBillEntries[entryKey] || {
+        id: entryKey,
+        billId: input.billId,
+        monthKey: input.monthKey,
+        dueDay: targetBill.dueDay,
+        dueDate: `${input.monthKey}-${String(targetBill.dueDay).padStart(2, '0')}`,
+        actualAmount: targetBill.defaultAmount,
+        payments: [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      const updatedPayments = [...(existingEntry.payments || []), newPaymentRecord];
+      const totalPaid = updatedPayments.reduce((sum, p) => sum + p.amount, 0);
+      const updatedEntry: MonthlyBillEntry = {
+        ...existingEntry,
+        payments: updatedPayments,
+        isPaidManually: totalPaid >= existingEntry.actualAmount,
+        updatedAt: new Date().toISOString(),
+      };
+
+      setJointMonthlyBillEntries((prev) => ({
+        ...prev,
+        [entryKey]: updatedEntry,
+      }));
+
+      writeJointMutation(activeJointWorkspace.id, 'monthlyBillEntries', entryKey, 'set', updatedEntry, {
+        actorName: currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Partner',
+        actionType: 'bill_paid',
+        description: `${currentUser?.displayName || 'Partner'} paid ₱${safeAmount.toFixed(2)} for ${targetBill.name}.`,
+        amount: safeAmount,
+      });
+
+      showToast(`Recorded ₱${safeAmount.toFixed(2)} joint bill payment for ${targetBill.name}`, 'success');
+      return true;
+    }
+
+    const targetBill = state.bills?.find((b) => b.id === input.billId);
+    if (!targetBill) {
+      showToast('Bill not found.', 'error');
+      return false;
+    }
 
     let createdTx: TransactionRecord | undefined;
     if (input.sourceAccountId) {
@@ -3597,6 +5473,37 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
     paymentId: string
   ): boolean => {
     const entryKey = `${billId}_${monthKey}`;
+
+    if (isJoint && activeJointWorkspace) {
+      const existingEntry = jointMonthlyBillEntries[entryKey];
+      if (!existingEntry) return false;
+      const targetPayment = existingEntry.payments?.find((p) => p.id === paymentId);
+      if (!targetPayment) return false;
+
+      const txIdToDelete = targetPayment.transactionId;
+      if (txIdToDelete) {
+        setJointTransactions((prev) => prev.filter((t) => t.id !== txIdToDelete));
+        writeJointMutation(activeJointWorkspace.id, 'transactions', txIdToDelete, 'delete');
+      }
+
+      const nextPayments = existingEntry.payments.filter((p) => p.id !== paymentId);
+      const totalPaid = nextPayments.reduce((sum, p) => sum + p.amount, 0);
+      const nextEntry: MonthlyBillEntry = {
+        ...existingEntry,
+        payments: nextPayments,
+        isPaidManually: totalPaid >= existingEntry.actualAmount,
+        updatedAt: new Date().toISOString(),
+      };
+
+      setJointMonthlyBillEntries((prev) => ({
+        ...prev,
+        [entryKey]: nextEntry,
+      }));
+      writeJointMutation(activeJointWorkspace.id, 'monthlyBillEntries', entryKey, 'set', nextEntry);
+      showToast('Joint bill payment reverted', 'info');
+      return true;
+    }
+
     let deleted = false;
     let txIdToDelete: string | undefined;
 
@@ -3647,6 +5554,498 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
     return deleted;
   };
 
+  const revertBillPayment = (
+    billId: string,
+    monthKey: string,
+    paymentId?: string
+  ): boolean => {
+    const entryKey = `${billId}_${monthKey}`;
+    let reverted = false;
+
+    setState((prev) => {
+      const existingEntry = prev.monthlyBillEntries?.[entryKey];
+      const targetBill = prev.bills?.find((b) => b.id === billId);
+      const billDisplayName =
+        targetBill?.category === 'Other' && targetBill.customCategoryName
+          ? targetBill.customCategoryName
+          : targetBill?.name || 'Bill';
+
+      const txIdsToDelete: string[] = [];
+      let nextPayments: BillPaymentRecord[] = [];
+
+      if (existingEntry) {
+        if (paymentId) {
+          const targetPayment = existingEntry.payments?.find((p) => p.id === paymentId);
+          if (!targetPayment) return prev;
+          reverted = true;
+          if (targetPayment.transactionId) txIdsToDelete.push(targetPayment.transactionId);
+          nextPayments = (existingEntry.payments || []).filter((p) => p.id !== paymentId);
+        } else {
+          reverted = true;
+          existingEntry.payments?.forEach((p) => {
+            if (p.transactionId) txIdsToDelete.push(p.transactionId);
+          });
+          nextPayments = [];
+        }
+      } else {
+        reverted = true;
+        nextPayments = [];
+      }
+
+      // If no explicit tx ID was found in payments, search transactions for this bill and month
+      if (txIdsToDelete.length === 0) {
+        prev.transactions.forEach((t) => {
+          if (
+            t.dateTime.startsWith(monthKey) &&
+            t.type === 'expense' &&
+            t.category === 'Bills' &&
+            (t.merchantOrTitle?.toLowerCase().includes(billDisplayName.toLowerCase()) ||
+              (t.notes && t.notes.toLowerCase().includes(billDisplayName.toLowerCase())))
+          ) {
+            txIdsToDelete.push(t.id);
+          }
+        });
+      }
+
+      const totalPaid = nextPayments.reduce((sum, p) => sum + p.amount, 0);
+      const defaultAmount = targetBill?.defaultAmount || 0;
+      const actualAmount = existingEntry?.actualAmount ?? defaultAmount;
+      const dueDay = existingEntry?.dueDay ?? targetBill?.dueDay ?? 1;
+
+      const nextEntry: MonthlyBillEntry = {
+        id: entryKey,
+        billId,
+        monthKey,
+        dueDay,
+        dueDate: `${monthKey}-${String(dueDay).padStart(2, '0')}`,
+        actualAmount,
+        payments: nextPayments,
+        isPaidManually: paymentId ? totalPaid >= actualAmount && actualAmount > 0 : false,
+        updatedAt: new Date().toISOString(),
+        createdAt: existingEntry?.createdAt || new Date().toISOString(),
+      };
+
+      const txSet = new Set(txIdsToDelete);
+      const nextTransactions = txIdsToDelete.length > 0
+        ? prev.transactions.filter((t) => !txSet.has(t.id))
+        : prev.transactions;
+
+      txIdsToDelete.forEach((id) => queueMutation('transactions', id, 'delete'));
+      queueMutation('monthlyBillEntries', entryKey, 'upsert', nextEntry);
+
+      return {
+        ...prev,
+        monthlyBillEntries: {
+          ...(prev.monthlyBillEntries || {}),
+          [entryKey]: nextEntry,
+        },
+        transactions: nextTransactions,
+        updatedAt: new Date().toISOString(),
+      };
+    });
+
+    if (reverted) {
+      showToast('Bill payment undone and reverted to unsettled. Wallet balance restored.', 'success');
+    }
+    return reverted;
+  };
+
+  const revertAccountPayment = (
+    accountId: string,
+    transactionIdOrPaymentId?: string,
+    purchaseOrDrawdownId?: string
+  ): boolean => {
+    let reverted = false;
+
+    setState((prev) => {
+      const txIdsToDelete = new Set<string>();
+      let updatedAccountToQueue: FinancialAccount | null = null;
+      const targetAccObj = prev.accounts.find((a) => a.id === accountId);
+
+      // 1. Resolve target transaction or payment
+      let targetIdentifier = transactionIdOrPaymentId;
+
+      // Check if targetIdentifier is an exact transaction in prev.transactions
+      let exactTx = targetIdentifier
+        ? prev.transactions.find((t) => t.id === targetIdentifier)
+        : undefined;
+
+      // Find all possible repayment transactions for this account sorted newest to oldest
+      const sortedRepaymentTxs = prev.transactions
+        .filter(
+          (t) =>
+            !t.isStartingBalance &&
+            ((t.type === 'transfer' && t.destinationAccountId === accountId) ||
+              (t.accountId === accountId &&
+                (t.category === 'Loan Payment' ||
+                  t.category === 'Credit Payment' ||
+                  t.category === 'Credit Card Payment')) ||
+              (t.destinationAccountId === accountId &&
+                (t.category === 'Loan Payment' ||
+                  t.category === 'Credit Payment' ||
+                  t.category === 'Credit Card Payment')) ||
+              (t.accountId === accountId &&
+                t.type === 'adjustment' &&
+                t.adjustmentSign === 'negative') ||
+              (Boolean(targetAccObj?.name) &&
+                (t.category === 'Loan Payment' ||
+                  t.category === 'Credit Payment' ||
+                  t.category === 'Credit Card Payment') &&
+                (t.merchantOrTitle?.toLowerCase().includes(targetAccObj!.name.toLowerCase()) ||
+                  t.notes?.toLowerCase().includes(targetAccObj!.name.toLowerCase()))))
+        )
+        .sort((a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime());
+
+      // If no specific ID provided or 'latest', pick the most recent repayment transaction
+      if ((!targetIdentifier || targetIdentifier === 'latest') && sortedRepaymentTxs.length > 0) {
+        exactTx = sortedRepaymentTxs[0];
+        targetIdentifier = exactTx.id;
+      }
+
+      if (exactTx) {
+        txIdsToDelete.add(exactTx.id);
+      }
+
+      const nextAccounts = prev.accounts.map((acc) => {
+        if (acc.id !== accountId) return acc;
+
+        let accModified = false;
+        let nextAcc = { ...acc };
+
+        // 1. Handle Credit Purchases
+        if (acc.creditInfo?.purchases && acc.creditInfo.purchases.length > 0) {
+          const nextPurchases = acc.creditInfo.purchases.map((p) => {
+            const isPurchaseTargeted = !purchaseOrDrawdownId || p.id === purchaseOrDrawdownId;
+
+            // Find payment in p.payments
+            let payEntry = p.payments?.find(
+              (pay) =>
+                pay.id === targetIdentifier ||
+                (targetIdentifier && pay.transactionId === targetIdentifier) ||
+                (pay.transactionId && txIdsToDelete.has(pay.transactionId)) ||
+                (exactTx && (pay.transactionId === exactTx.id || (isPurchaseTargeted && Math.abs(pay.amount - exactTx.amount) < 0.05)))
+            );
+
+            // If not found yet, but this specific purchase was targeted and has payments:
+            if (!payEntry && isPurchaseTargeted && p.payments && p.payments.length > 0) {
+              payEntry = p.payments[p.payments.length - 1];
+            }
+
+            if (payEntry) {
+              reverted = true;
+              accModified = true;
+              if (payEntry.transactionId) {
+                txIdsToDelete.add(payEntry.transactionId);
+              }
+              // Also find matching transaction in prev.transactions if transactionId wasn't explicit
+              const matchedTx = prev.transactions.find(
+                (t) =>
+                  !t.isStartingBalance &&
+                  (t.id === payEntry!.transactionId ||
+                    t.id === payEntry!.id ||
+                    ((t.destinationAccountId === accountId || t.accountId === accountId) &&
+                      (t.category === 'Credit Payment' ||
+                        t.category === 'Credit Card Payment' ||
+                        t.type === 'transfer' ||
+                        (t.type === 'adjustment' && t.adjustmentSign === 'negative')) &&
+                      Math.abs(t.amount - payEntry!.amount) < 0.05))
+              );
+              if (matchedTx) {
+                txIdsToDelete.add(matchedTx.id);
+              }
+
+              const newTotalPaid = Math.max(0, fromCentavos(toCentavos(p.totalPaid - payEntry.amount)));
+              const newRemaining = fromCentavos(toCentavos(p.remainingBalance + payEntry.amount));
+              return {
+                ...p,
+                totalPaid: newTotalPaid,
+                remainingBalance: newRemaining,
+                status: 'active' as const,
+                payments: (p.payments || []).filter((pay) => pay.id !== payEntry!.id),
+              };
+            }
+
+            // Fallback: If this purchase is targeted and totalPaid > 0, but payments array is empty
+            if (isPurchaseTargeted && (p.totalPaid || 0) > 0 && (!p.payments || p.payments.length === 0)) {
+              reverted = true;
+              accModified = true;
+              const revertAmt = p.monthlyPayment > 0 ? Math.min(p.totalPaid, p.monthlyPayment) : p.totalPaid;
+              const newTotalPaid = Math.max(0, fromCentavos(toCentavos(p.totalPaid - revertAmt)));
+              const newRemaining = fromCentavos(toCentavos(p.remainingBalance + revertAmt));
+              return {
+                ...p,
+                totalPaid: newTotalPaid,
+                remainingBalance: newRemaining,
+                status: 'active' as const,
+              };
+            }
+
+            return p;
+          });
+
+          nextAcc = {
+            ...nextAcc,
+            creditInfo: {
+              ...nextAcc.creditInfo!,
+              purchases: nextPurchases,
+            },
+          };
+        }
+
+        // 2. Handle Loan Drawdowns
+        if (acc.loanInfo?.drawdowns && acc.loanInfo.drawdowns.length > 0) {
+          const nextDrawdowns = acc.loanInfo.drawdowns.map((d) => {
+            const isDrawdownTargeted = !purchaseOrDrawdownId || d.id === purchaseOrDrawdownId;
+
+            let payEntry = d.payments?.find(
+              (pay) =>
+                pay.id === targetIdentifier ||
+                (targetIdentifier && pay.transactionId === targetIdentifier) ||
+                (pay.transactionId && txIdsToDelete.has(pay.transactionId)) ||
+                (exactTx && (pay.transactionId === exactTx.id || (isDrawdownTargeted && Math.abs(pay.amount - exactTx.amount) < 0.05)))
+            );
+
+            if (!payEntry && isDrawdownTargeted && d.payments && d.payments.length > 0) {
+              payEntry = d.payments[d.payments.length - 1];
+            }
+
+            if (payEntry) {
+              reverted = true;
+              accModified = true;
+              if (payEntry.transactionId) {
+                txIdsToDelete.add(payEntry.transactionId);
+              }
+              const matchedTx = prev.transactions.find(
+                (t) =>
+                  !t.isStartingBalance &&
+                  (t.id === payEntry!.transactionId ||
+                    t.id === payEntry!.id ||
+                    ((t.destinationAccountId === accountId || t.accountId === accountId) &&
+                      (t.category === 'Loan Payment' ||
+                        t.type === 'transfer' ||
+                        (t.type === 'adjustment' && t.adjustmentSign === 'negative')) &&
+                      Math.abs(t.amount - payEntry!.amount) < 0.05))
+              );
+              if (matchedTx) {
+                txIdsToDelete.add(matchedTx.id);
+              }
+
+              const newTotalPaid = Math.max(0, fromCentavos(toCentavos(d.totalPaid - payEntry.amount)));
+              const newRemaining = fromCentavos(toCentavos(d.remainingBalance + payEntry.amount));
+              return {
+                ...d,
+                totalPaid: newTotalPaid,
+                remainingBalance: newRemaining,
+                status: 'active' as const,
+                payments: (d.payments || []).filter((pay) => pay.id !== payEntry!.id),
+              };
+            }
+
+            if (isDrawdownTargeted && (d.totalPaid || 0) > 0 && (!d.payments || d.payments.length === 0)) {
+              reverted = true;
+              accModified = true;
+              const revertAmt = d.monthlyPayment > 0 ? Math.min(d.totalPaid, d.monthlyPayment) : d.totalPaid;
+              const newTotalPaid = Math.max(0, fromCentavos(toCentavos(d.totalPaid - revertAmt)));
+              const newRemaining = fromCentavos(toCentavos(d.remainingBalance + revertAmt));
+              return {
+                ...d,
+                totalPaid: newTotalPaid,
+                remainingBalance: newRemaining,
+                status: 'active' as const,
+              };
+            }
+
+            return d;
+          });
+
+          nextAcc = {
+            ...nextAcc,
+            loanInfo: {
+              ...nextAcc.loanInfo!,
+              drawdowns: nextDrawdowns,
+            },
+          };
+        }
+
+        // 3. Single loan or credit account balance restoration fallback if no drawdowns or purchases exist
+        const hasInstallments =
+          (acc.creditInfo?.purchases && acc.creditInfo.purchases.length > 0) ||
+          (acc.loanInfo?.drawdowns && acc.loanInfo.drawdowns.length > 0);
+
+        if (!hasInstallments && (!exactTx && sortedRepaymentTxs.length === 0)) {
+          const baseline =
+            acc.totalRepayment ||
+            acc.loanInfo?.totalRepayment ||
+            acc.creditInfo?.totalRepayment ||
+            acc.loanInfo?.originalPrincipal ||
+            acc.creditInfo?.installmentPrincipal ||
+            0;
+          if (baseline > (acc.startingBalance || 0)) {
+            const monthlyAmt =
+              (acc.loanInfo?.isManualPayment ? acc.loanInfo?.customMonthlyPayment : undefined) ||
+              (acc.creditInfo?.isManualPayment ? acc.creditInfo?.customMonthlyPayment : undefined) ||
+              (acc.loanInfo?.termMonths ? baseline / acc.loanInfo.termMonths : 0) ||
+              (acc.creditInfo?.termMonths ? baseline / acc.creditInfo.termMonths : 0);
+            if (monthlyAmt > 0) {
+              const restoredStarting = Math.min(
+                baseline,
+                fromCentavos(toCentavos((nextAcc.startingBalance || 0) + monthlyAmt))
+              );
+              nextAcc = {
+                ...nextAcc,
+                startingBalance: restoredStarting,
+              };
+              accModified = true;
+              reverted = true;
+            }
+          }
+        }
+
+        if (accModified) {
+          updatedAccountToQueue = nextAcc;
+        }
+        return nextAcc;
+      });
+
+      // If txIdsToDelete is still empty, search for any repayment transaction linked to this account
+      if (txIdsToDelete.size === 0 && sortedRepaymentTxs.length > 0) {
+        txIdsToDelete.add(sortedRepaymentTxs[0].id);
+      }
+
+      if (txIdsToDelete.size > 0) {
+        reverted = true;
+      }
+
+      const nextTransactions = txIdsToDelete.size > 0
+        ? prev.transactions.filter((t) => !txIdsToDelete.has(t.id))
+        : prev.transactions;
+
+      txIdsToDelete.forEach((id) => queueMutation('transactions', id, 'delete'));
+      if (updatedAccountToQueue) {
+        queueMutation('accounts', accountId, 'upsert', updatedAccountToQueue);
+      }
+
+      const nextState: PesoTrackState = {
+        ...prev,
+        accounts: nextAccounts,
+        transactions: nextTransactions,
+        updatedAt: new Date().toISOString(),
+      };
+
+      try {
+        const userKey = getUserStorageKey(currentUser?.uid);
+        localStorage.setItem(userKey, JSON.stringify(nextState));
+      } catch (err) {
+        console.error('LocalStorage write error in revertAccountPayment:', err);
+      }
+
+      return nextState;
+    });
+
+    if (reverted) {
+      showToast('Repayment undone and deleted. Debt and wallet balance restored.', 'success');
+    } else {
+      showToast('No payment record found to revert.', 'info');
+    }
+    return reverted;
+  };
+
+  const revertSalaryDeposit = (
+    recurringId: string,
+    monthKey: string,
+    transactionId?: string
+  ): boolean => {
+    const list = isJoint ? jointRecurringTransactions : (state.recurringTransactions || []);
+    const targetRec = list.find((r) => r.id === recurringId);
+    if (!targetRec) return false;
+
+    if (isJoint && activeJointWorkspace) {
+      const txsToRemove = jointTransactions.filter((t) => {
+        if (!t.dateTime.startsWith(monthKey)) return false;
+        if (transactionId) {
+          return t.id === transactionId;
+        }
+        if (t.type !== targetRec.type && !(targetRec.type === 'income' && t.type === 'income')) return false;
+
+        const matchesName =
+          t.merchantOrTitle?.toLowerCase().trim() === targetRec.name.toLowerCase().trim() ||
+          (t.notes && t.notes.toLowerCase().includes(targetRec.name.toLowerCase()));
+        const matchesCategory =
+          t.category?.toLowerCase().trim() === targetRec.category.toLowerCase().trim();
+        return matchesName || (matchesCategory && Math.abs(t.amount - targetRec.amount) < 0.01);
+      });
+
+      if (txsToRemove.length === 0) {
+        showToast('No recorded transaction found for this month.', 'info');
+        return false;
+      }
+
+      const removeIds = new Set(txsToRemove.map((t) => t.id));
+      const nextTxs = jointTransactions.filter((t) => !removeIds.has(t.id));
+      setJointTransactions(nextTxs);
+
+      txsToRemove.forEach((t) => {
+        writeJointMutation(activeJointWorkspace.id, 'transactions', t.id, 'delete', null, {
+          actorName: currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Partner',
+          actionType: 'salary_reverted',
+          description: `Reverted recurring deposit for "${targetRec.name}" (${formatPeso(t.amount)})`,
+          amount: t.amount,
+        });
+      });
+
+      showToast(
+        `Reverted ${targetRec.name}. Wallet balance restored and marked as unsettled.`,
+        'success'
+      );
+      return true;
+    }
+
+    let removedCount = 0;
+    const removedTxIds: string[] = [];
+
+    setState((prev) => {
+      const txsToRemove = prev.transactions.filter((t) => {
+        if (!t.dateTime.startsWith(monthKey)) return false;
+        if (transactionId) {
+          return t.id === transactionId;
+        }
+        // Match income or expense according to recurring activity type
+        if (t.type !== targetRec.type && !(targetRec.type === 'income' && t.type === 'income')) return false;
+
+        const matchesName =
+          t.merchantOrTitle?.toLowerCase().trim() === targetRec.name.toLowerCase().trim() ||
+          (t.notes && t.notes.toLowerCase().includes(targetRec.name.toLowerCase()));
+        const matchesCategory =
+          t.category?.toLowerCase().trim() === targetRec.category.toLowerCase().trim();
+        return matchesName || (matchesCategory && Math.abs(t.amount - targetRec.amount) < 0.01);
+      });
+
+      if (txsToRemove.length === 0) return prev;
+      removedCount = txsToRemove.length;
+      txsToRemove.forEach((t) => removedTxIds.push(t.id));
+      const removeIds = new Set(removedTxIds);
+
+      removedTxIds.forEach((id) => queueMutation('transactions', id, 'delete'));
+
+      return {
+        ...prev,
+        transactions: prev.transactions.filter((t) => !removeIds.has(t.id)),
+        updatedAt: new Date().toISOString(),
+      };
+    });
+
+    if (removedCount > 0) {
+      showToast(
+        `Reverted ${targetRec.name}. Wallet balance restored and marked as unsettled.`,
+        'success'
+      );
+      return true;
+    } else {
+      showToast('No recorded transaction found for this month.', 'info');
+      return false;
+    }
+  };
+
   const saveCustomBillName = (name: string) => {
     const clean = name.trim();
     if (!clean) return;
@@ -3673,19 +6072,11 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
       ...prev,
       settings: {
         ...prev.settings,
-<<<<<<< HEAD
         notificationSettings: sanitizeNotificationSettings({
           ...(prev.settings.notificationSettings ||
             DEFAULT_NOTIFICATION_SETTINGS),
           ...updates,
         }),
-=======
-        notificationSettings: {
-          ...(prev.settings.notificationSettings ||
-            DEFAULT_NOTIFICATION_SETTINGS),
-          ...updates,
-        },
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
       },
       updatedAt: new Date().toISOString(),
     }));
@@ -3848,13 +6239,12 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
     showToast('All accounts, transactions, and bills cleared', 'info');
   };
 
-<<<<<<< HEAD
   // ==========================================
   // Grocery List Feature Implementation
   // ==========================================
   const groceryItems: GroceryItem[] = useMemo(() => {
-    return (state.groceryItems || []).filter((item) => !item.isDeleted);
-  }, [state.groceryItems]);
+    return (effectiveGroceryItems || []).filter((item) => !item.isDeleted);
+  }, [effectiveGroceryItems]);
 
   const groceryCategories: GroceryCategory[] = useMemo(() => {
     return state.groceryCategories && state.groceryCategories.length > 0
@@ -3889,6 +6279,17 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
       updatedAt: now,
     };
 
+    if (isJoint && activeJointWorkspace) {
+      setJointGroceryItems((prev) => [newItem, ...prev]);
+      writeJointMutation(activeJointWorkspace.id, 'groceries', newItem.id, 'set', newItem, {
+        actorName: currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Partner',
+        actionType: 'grocery_added',
+        description: `Added "${newItem.name}" to joint grocery list`,
+      });
+      showToast(`Added "${newItem.name}" to grocery list`, 'success');
+      return newItem;
+    }
+
     setState((prev) => {
       const nextItems = [newItem, ...(prev.groceryItems || [])];
       return {
@@ -3910,7 +6311,8 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
     id: string,
     updates: Partial<AddGroceryItemInput>
   ): boolean => {
-    const existing = (state.groceryItems || []).find((i) => i.id === id);
+    const currentList = isJoint ? jointGroceryItems : (state.groceryItems || []);
+    const existing = currentList.find((i) => i.id === id);
     if (!existing) return false;
 
     const now = new Date().toISOString();
@@ -3949,6 +6351,13 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
       updatedAt: now,
     };
 
+    if (isJoint && activeJointWorkspace) {
+      setJointGroceryItems((prev) => prev.map((i) => (i.id === id ? updatedItem : i)));
+      writeJointMutation(activeJointWorkspace.id, 'groceries', id, 'set', updatedItem);
+      showToast(`Updated "${updatedItem.name}"`, 'success');
+      return true;
+    }
+
     setState((prev) => {
       const nextItems = (prev.groceryItems || []).map((i) =>
         i.id === id ? updatedItem : i
@@ -3969,8 +6378,16 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const deleteGroceryItem = (id: string): boolean => {
-    const existing = (state.groceryItems || []).find((i) => i.id === id);
+    const currentList = isJoint ? jointGroceryItems : (state.groceryItems || []);
+    const existing = currentList.find((i) => i.id === id);
     if (!existing) return false;
+
+    if (isJoint && activeJointWorkspace) {
+      setJointGroceryItems((prev) => prev.filter((i) => i.id !== id));
+      writeJointMutation(activeJointWorkspace.id, 'groceries', id, 'delete');
+      showToast(`Removed "${existing.name}"`, 'info');
+      return true;
+    }
 
     const now = new Date().toISOString();
     setState((prev) => {
@@ -3991,7 +6408,8 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const toggleGroceryPurchased = (id: string): boolean => {
-    const existing = (state.groceryItems || []).find((i) => i.id === id);
+    const currentList = isJoint ? jointGroceryItems : (state.groceryItems || []);
+    const existing = currentList.find((i) => i.id === id);
     if (!existing) return false;
 
     const nextPurchased = !existing.isPurchased;
@@ -4004,6 +6422,18 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
       purchasedDate: nextPurchased ? today : undefined,
       updatedAt: now,
     };
+
+    if (isJoint && activeJointWorkspace) {
+      setJointGroceryItems((prev) => prev.map((i) => (i.id === id ? updatedItem : i)));
+      writeJointMutation(activeJointWorkspace.id, 'groceries', id, 'set', updatedItem, {
+        actorName: currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Partner',
+        actionType: 'grocery_purchased',
+        description: nextPurchased
+          ? `Checked off "${existing.name}" as bought`
+          : `Marked "${existing.name}" as unbought`,
+      });
+      return true;
+    }
 
     setState((prev) => {
       const nextItems = (prev.groceryItems || []).map((i) =>
@@ -4024,7 +6454,8 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const duplicateGroceryItem = (id: string): GroceryItem | null => {
-    const existing = (state.groceryItems || []).find((i) => i.id === id);
+    const currentList = isJoint ? jointGroceryItems : (state.groceryItems || []);
+    const existing = currentList.find((i) => i.id === id);
     if (!existing) return null;
 
     const now = new Date().toISOString();
@@ -4039,6 +6470,13 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
       createdAt: now,
       updatedAt: now,
     };
+
+    if (isJoint && activeJointWorkspace) {
+      setJointGroceryItems((prev) => [newItem, ...prev]);
+      writeJointMutation(activeJointWorkspace.id, 'groceries', newItem.id, 'set', newItem);
+      showToast(`Duplicated "${existing.name}"`, 'success');
+      return newItem;
+    }
 
     setState((prev) => {
       const nextItems = [newItem, ...(prev.groceryItems || [])];
@@ -4235,7 +6673,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
       return { success: false, message: 'No grocery items selected.' };
     }
 
-    const allItems = state.groceryItems || [];
+    const allItems = isJoint ? jointGroceryItems : (state.groceryItems || []);
     const targetItems = allItems.filter(
       (item) => input.itemIds.includes(item.id) && !item.isDeleted
     );
@@ -4294,7 +6732,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
           expenseTransactionId: tx.id,
           updatedAt: now,
         };
-        if (currentUser?.uid) {
+        if (currentUser?.uid && !isJoint) {
           enqueueChange(currentUser.uid, 'groceries', item.id, 'upsert', updated);
         }
         return updated;
@@ -4302,23 +6740,176 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
       return item;
     });
 
-    setState((prev) => ({
-      ...prev,
-      groceryItems: updatedItems,
-      updatedAt: now,
-    }));
+    if (isJoint && activeJointWorkspace) {
+      setJointGroceryItems(updatedItems);
+      targetItems.forEach((item) => {
+        const up = updatedItems.find((i) => i.id === item.id);
+        if (up) {
+          writeJointMutation(activeJointWorkspace.id, 'groceries', up.id, 'set', up);
+        }
+      });
+    } else {
+      setState((prev) => ({
+        ...prev,
+        groceryItems: updatedItems,
+        updatedAt: now,
+      }));
+    }
 
     showToast(`Recorded ₱${totalAmount.toLocaleString()} grocery expense to ${tx.category}`, 'success');
 
     return { success: true, transaction: tx };
   };
 
-=======
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
+  // ---------------------------------------------------------------------------
+  // Personal Activity Stream (computed exclusively from authenticated user's personal records)
+  const personalActivities = useMemo(() => {
+    return derivePersonalActivities({
+      transactions: state.transactions || [],
+      accounts: state.accounts || [],
+      bills: state.bills || [],
+      monthlyBillEntries: state.monthlyBillEntries || {},
+      receivables: state.receivables || [],
+      groceryItems: state.groceryItems || [],
+      budgets: state.budgets || {},
+      currentUserName: currentUser?.displayName || currentUser?.email?.split('@')[0] || state.settings?.profileName || 'You',
+      currentUserUid: currentUser?.uid || 'personal_user',
+    });
+  }, [
+    state.transactions,
+    state.accounts,
+    state.bills,
+    state.monthlyBillEntries,
+    state.receivables,
+    state.groceryItems,
+    state.budgets,
+    state.settings?.profileName,
+    currentUser,
+  ]);
+
+  // Dual In-App Notification Center Implementation
+  // ---------------------------------------------------------------------------
+  const personalNotifications = useMemo(() => {
+    return (state.notifications || []).slice().sort(
+      (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    );
+  }, [state.notifications]);
+
+  const allNotifications = useMemo(() => {
+    const combined = [...personalNotifications, ...jointNotifications];
+    const map = new Map<string, AppNotification>();
+    combined.forEach((n) => {
+      map.set(n.id, n);
+    });
+    return Array.from(map.values()).sort(
+      (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    );
+  }, [personalNotifications, jointNotifications]);
+
+  const personalUnreadCount = useMemo(
+    () => personalNotifications.filter((n) => !n.isRead).length,
+    [personalNotifications]
+  );
+
+  const jointUnreadCount = useMemo(
+    () => jointNotifications.filter((n) => !n.isRead).length,
+    [jointNotifications]
+  );
+
+  const unreadNotificationsCount = personalUnreadCount + jointUnreadCount;
+
+  const markNotificationAsRead = async (id: string, scope?: NotificationScope) => {
+    const targetScope = scope || (jointNotifications.some((n) => n.id === id) ? 'joint' : 'personal');
+
+    if (targetScope === 'joint') {
+      setJointNotifications((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
+      );
+      if (activeJointWorkspace) {
+        saveCachedJointState(activeJointWorkspace.id, {
+          notifications: jointNotifications.map((n) => (n.id === id ? { ...n, isRead: true } : n)),
+        });
+        writeJointMutation(activeJointWorkspace.id, 'notifications', id, 'update', { isRead: true }).catch(() => {});
+      }
+    } else {
+      setState((prev) => ({
+        ...prev,
+        notifications: (prev.notifications || []).map((n) =>
+          n.id === id ? { ...n, isRead: true } : n
+        ),
+        updatedAt: new Date().toISOString(),
+      }));
+    }
+  };
+
+  const markAllNotificationsAsRead = async (scope: 'all' | 'personal' | 'joint' = 'all') => {
+    if (scope === 'all' || scope === 'joint') {
+      const unreadJointIds = jointNotifications.filter((n) => !n.isRead).map((n) => n.id);
+      setJointNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+      if (activeJointWorkspace && unreadJointIds.length > 0) {
+        saveCachedJointState(activeJointWorkspace.id, {
+          notifications: jointNotifications.map((n) => ({ ...n, isRead: true })),
+        });
+        unreadJointIds.forEach((nId) => {
+          writeJointMutation(activeJointWorkspace.id, 'notifications', nId, 'update', { isRead: true }).catch(() => {});
+        });
+      }
+    }
+
+    if (scope === 'all' || scope === 'personal') {
+      setState((prev) => ({
+        ...prev,
+        notifications: (prev.notifications || []).map((n) => ({ ...n, isRead: true })),
+        updatedAt: new Date().toISOString(),
+      }));
+    }
+  };
+
+  const deleteNotification = (id: string, scope?: NotificationScope) => {
+    const targetScope = scope || (jointNotifications.some((n) => n.id === id) ? 'joint' : 'personal');
+    if (targetScope === 'joint') {
+      setJointNotifications((prev) => prev.filter((n) => n.id !== id));
+      if (activeJointWorkspace) {
+        saveCachedJointState(activeJointWorkspace.id, {
+          notifications: jointNotifications.filter((n) => n.id !== id),
+        });
+        writeJointMutation(activeJointWorkspace.id, 'notifications', id, 'delete').catch(() => {});
+      }
+    } else {
+      setState((prev) => ({
+        ...prev,
+        notifications: (prev.notifications || []).filter((n) => n.id !== id),
+        updatedAt: new Date().toISOString(),
+      }));
+    }
+  };
+
+  const createInAppNotification = (item: Omit<AppNotification, 'id' | 'timestamp' | 'isRead'>) => {
+    const newNotif: AppNotification = {
+      ...item,
+      id: `notif_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      timestamp: new Date().toISOString(),
+      isRead: false,
+    };
+
+    if (item.scope === 'joint') {
+      setJointNotifications((prev) => [newNotif, ...prev]);
+      if (activeJointWorkspace) {
+        writeJointNotification(activeJointWorkspace.id, newNotif).catch(() => {});
+      }
+    } else {
+      setState((prev) => ({
+        ...prev,
+        notifications: [newNotif, ...(prev.notifications || [])].slice(0, 100),
+        updatedAt: new Date().toISOString(),
+      }));
+    }
+  };
+
   return (
     <FinanceContext.Provider
       value={{
-        state,
+        state: activeModeState,
         reconciledAccounts,
         netWorthSummary,
         receivables,
@@ -4332,6 +6923,9 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
         updateMonthlyBillEntry,
         recordBillPayment,
         deleteBillPayment,
+        revertBillPayment,
+        revertAccountPayment,
+        revertSalaryDeposit,
         saveCustomBillName,
         notificationSettings,
         updateNotificationSettings,
@@ -4402,7 +6996,6 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
         restoreFromCloudVault,
         getCloudBackupOverview,
         getLocalSafetyBackupInfo,
-<<<<<<< HEAD
         // Grocery List Provider Exports
         groceryItems,
         groceryCategories,
@@ -4416,8 +7009,69 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
         updateGroceryCategory,
         deleteGroceryCategory,
         convertGroceriesToExpense,
-=======
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
+        // Joint Collaboration State & Actions
+        accountMode,
+        setAccountMode,
+        activeJointWorkspace,
+        myJointWorkspaces,
+        jointAccounts,
+        setJointAccounts,
+        jointTransactions,
+        setJointTransactions,
+        jointBills,
+        setJointBills,
+        jointMonthlyBillEntries,
+        setJointMonthlyBillEntries,
+        jointBudgets,
+        setJointBudgets,
+        jointGroceryItems,
+        setJointGroceryItems,
+        jointRecurringTransactions,
+        jointActivities,
+        setJointActivities,
+        personalActivities,
+        jointInvitations,
+        jointSentInvitations,
+        workspacePendingInvitations,
+        isJointRealtimeActive,
+        jointPendingMutationCount,
+        jointLastSyncTime,
+        createJointWorkspace,
+        invitePartnerToJoint,
+        acceptJointInvitation,
+        declineJointInvitation,
+        revokeJointInvitation,
+        updateJointWorkspace,
+        updateJointNotificationSettings,
+        testJointLocalNotification,
+        removeJointMember,
+        updateJointMemberRole,
+        leaveJointWorkspace,
+        refreshJointData,
+        // Dual In-App Notification Center
+        personalNotifications,
+        jointNotifications,
+        allNotifications,
+        unreadNotificationsCount,
+        personalUnreadCount,
+        jointUnreadCount,
+        markNotificationAsRead,
+        markAllNotificationsAsRead,
+        deleteNotification,
+        createInAppNotification,
+        // Joint Chat, Offline Messaging & Ring Partner
+        jointMessages,
+        jointUnreadMessagesCount,
+        activeIncomingRing,
+        sendJointChatMessage,
+        retryJointMessage,
+        markJointMessagesAsRead,
+        ringPartner,
+        respondToIncomingRing,
+        cancelMyRing,
+        clearJointChat,
+        deleteJointMessageForMe,
+        unsendJointMessage,
       }}
     >
       {children}

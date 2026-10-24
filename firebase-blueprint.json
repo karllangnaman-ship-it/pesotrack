@@ -163,7 +163,6 @@
         "updatedAt": { "type": "string", "description": "Last modified timestamp" }
       },
       "required": ["userId", "version", "updatedAt"]
-<<<<<<< HEAD
     },
     "GroceryItem": {
       "title": "GroceryItem",
@@ -203,8 +202,113 @@
         "createdAt": { "type": "string", "description": "Creation timestamp" }
       },
       "required": ["id", "name"]
-=======
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
+    },
+    "JointWorkspace": {
+      "title": "JointWorkspace",
+      "description": "Collaborative shared household or partner workspace",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique joint workspace identifier" },
+        "name": { "type": "string", "description": "Joint workspace display name", "maxLength": 100 },
+        "relationship": { "type": "string", "description": "Relationship type: Partner (2), Spouse (2), Family (10), Housemate (10), Other (10)", "maxLength": 50 },
+        "memberLimit": { "type": "number", "description": "Maximum members allowed in this workspace (2 for partner/spouse, 10 for family/housemate/other)" },
+        "ownerUid": { "type": "string", "description": "Creator user UID" },
+        "ownerEmail": { "type": "string", "description": "Creator email" },
+        "clearedAtByMember": { "type": "object", "description": "Map of user UID to ISO timestamp when chat was cleared for them" },
+        "chatClearedForEveryoneAt": { "type": "string", "description": "ISO timestamp when chat was cleared for all members" },
+        "createdAt": { "type": "string", "description": "Creation timestamp" },
+        "updatedAt": { "type": "string", "description": "Last modified timestamp" }
+      },
+      "required": ["id", "name", "ownerUid", "ownerEmail"]
+    },
+    "JointInvitation": {
+      "title": "JointInvitation",
+      "description": "Joint workspace partner invitation document",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique invitation identifier" },
+        "jointWorkspaceId": { "type": "string", "description": "Target joint workspace ID" },
+        "jointWorkspaceName": { "type": "string", "description": "Workspace name", "maxLength": 100 },
+        "inviterUid": { "type": "string", "description": "Inviter user UID" },
+        "inviterEmail": { "type": "string", "description": "Inviter email" },
+        "inviterName": { "type": "string", "description": "Inviter name", "maxLength": 100 },
+        "inviteeEmail": { "type": "string", "description": "Target invitee email address" },
+        "relationship": { "type": "string", "description": "Relationship label", "maxLength": 50 },
+        "message": { "type": "string", "description": "Optional invitation note", "maxLength": 500 },
+        "status": { "type": "string", "description": "Status: pending, accepted, declined, revoked" },
+        "createdAt": { "type": "string", "description": "Creation timestamp" },
+        "respondedAt": { "type": "string", "description": "Response timestamp" }
+      },
+      "required": ["id", "jointWorkspaceId", "inviterUid", "inviterEmail", "inviteeEmail", "status"]
+    },
+    "JointActivityItem": {
+      "title": "JointActivityItem",
+      "description": "Activity audit log record in a joint workspace",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique activity identifier" },
+        "jointWorkspaceId": { "type": "string", "description": "Target workspace ID" },
+        "actorUid": { "type": "string", "description": "Actor user UID" },
+        "actorName": { "type": "string", "description": "Actor display name", "maxLength": 100 },
+        "actionType": { "type": "string", "description": "Type of financial or member action" },
+        "description": { "type": "string", "description": "Human-readable activity summary", "maxLength": 500 },
+        "amount": { "type": "number", "description": "Optional associated PHP amount" },
+        "timestamp": { "type": "string", "description": "Activity timestamp" }
+      },
+      "required": ["id", "jointWorkspaceId", "actorUid", "actorName", "actionType", "description", "timestamp"]
+    },
+    "JointMessage": {
+      "title": "JointMessage",
+      "description": "Secure encrypted or plain chat message exchanged between joint workspace partners",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Client-generated unique message identifier" },
+        "workspaceId": { "type": "string", "description": "Target joint workspace identifier" },
+        "senderUid": { "type": "string", "description": "Sender user UID" },
+        "senderName": { "type": "string", "description": "Sender display name", "maxLength": 100 },
+        "senderEmail": { "type": "string", "description": "Sender email address" },
+        "recipientUid": { "type": "string", "description": "Recipient partner user UID" },
+        "text": { "type": "string", "description": "Message content", "maxLength": 2000 },
+        "timestamp": { "type": "string", "description": "Message creation ISO timestamp" },
+        "status": { "type": "string", "description": "Delivery status: pending, sent, delivered, read, failed" },
+        "readAt": { "type": "string", "description": "Read receipt timestamp" },
+        "deliveredAt": { "type": "string", "description": "Delivered receipt timestamp" },
+        "deletedForUserIds": { "type": "array", "description": "List of user UIDs who deleted message for themselves" },
+        "isUnsent": { "type": "boolean", "description": "Whether message has been unsent for everyone" },
+        "unsentAt": { "type": "string", "description": "Timestamp when message was unsent" },
+        "unsentByUid": { "type": "string", "description": "UID of sender who unsent message" }
+      },
+      "required": ["id", "workspaceId", "senderUid", "recipientUid", "timestamp", "status"]
+    },
+    "JointRingRequest": {
+      "title": "JointRingRequest",
+      "description": "Real-time ring partner alert event and connection request",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique ring request identifier" },
+        "workspaceId": { "type": "string", "description": "Target joint workspace identifier" },
+        "callerUid": { "type": "string", "description": "Caller user UID" },
+        "callerName": { "type": "string", "description": "Caller display name", "maxLength": 100 },
+        "targetUid": { "type": "string", "description": "Target partner user UID" },
+        "status": { "type": "string", "description": "Ring status: ringing, accepted, dismissed, cancelled, expired" },
+        "createdAt": { "type": "string", "description": "Creation timestamp" },
+        "expiresAt": { "type": "string", "description": "Expiration timestamp" },
+        "respondedAt": { "type": "string", "description": "Response timestamp" }
+      },
+      "required": ["id", "workspaceId", "callerUid", "targetUid", "status", "createdAt", "expiresAt"]
+    },
+    "UserDeviceToken": {
+      "title": "UserDeviceToken",
+      "description": "Registered push notification and device token for mobile and web push",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique device token identifier" },
+        "userId": { "type": "string", "description": "Owner user UID" },
+        "token": { "type": "string", "description": "FCM or web push device token", "maxLength": 500 },
+        "platform": { "type": "string", "description": "Platform: web, android, ios" },
+        "updatedAt": { "type": "string", "description": "Last updated timestamp" }
+      },
+      "required": ["id", "userId", "token", "platform", "updatedAt"]
     }
   },
   "firestore": {
@@ -236,7 +340,6 @@
       "schema": "MonthlyBudget",
       "description": "User monthly budgets"
     },
-<<<<<<< HEAD
     "/users/{userId}/groceries/{groceryId}": {
       "schema": "GroceryItem",
       "description": "User grocery items"
@@ -245,11 +348,57 @@
       "schema": "GroceryCategory",
       "description": "User custom grocery categories"
     },
-=======
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
     "/users/{userId}/sync/state": {
       "schema": "UserWorkspaceSync",
       "description": "User workspace sync snapshot"
+    },
+    "/jointWorkspaces/{workspaceId}": {
+      "schema": "JointWorkspace",
+      "description": "Collaborative joint workspace metadata"
+    },
+    "/jointWorkspaces/{workspaceId}/accounts/{accountId}": {
+      "schema": "FinancialAccount",
+      "description": "Joint shared financial accounts"
+    },
+    "/jointWorkspaces/{workspaceId}/transactions/{transactionId}": {
+      "schema": "TransactionRecord",
+      "description": "Joint shared transactions"
+    },
+    "/jointWorkspaces/{workspaceId}/bills/{billId}": {
+      "schema": "BillDefinition",
+      "description": "Joint shared bills"
+    },
+    "/jointWorkspaces/{workspaceId}/monthlyBillEntries/{entryId}": {
+      "schema": "MonthlyBillEntry",
+      "description": "Joint monthly bill instances"
+    },
+    "/jointWorkspaces/{workspaceId}/budgets/{budgetId}": {
+      "schema": "MonthlyBudget",
+      "description": "Joint shared budgets"
+    },
+    "/jointWorkspaces/{workspaceId}/groceries/{groceryId}": {
+      "schema": "GroceryItem",
+      "description": "Joint shared grocery items"
+    },
+    "/jointWorkspaces/{workspaceId}/activity/{activityId}": {
+      "schema": "JointActivityItem",
+      "description": "Joint shared activity timeline records"
+    },
+    "/jointInvitations/{invitationId}": {
+      "schema": "JointInvitation",
+      "description": "Joint invitations between users"
+    },
+    "/jointWorkspaces/{workspaceId}/messages/{messageId}": {
+      "schema": "JointMessage",
+      "description": "Chat messages exchanged between joint workspace partners"
+    },
+    "/jointWorkspaces/{workspaceId}/ringRequests/{ringId}": {
+      "schema": "JointRingRequest",
+      "description": "Ring partner alert signals and call requests"
+    },
+    "/users/{userId}/deviceTokens/{tokenId}": {
+      "schema": "UserDeviceToken",
+      "description": "Registered push notification and device tokens"
     }
   }
 }

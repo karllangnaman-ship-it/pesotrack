@@ -56,7 +56,7 @@ export const SyncStatusBadge: React.FC<SyncStatusBadgeProps> = ({
       onClick={onSyncClick}
       title={tooltipText}
       aria-label={tooltipText}
-      className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full text-[11px] font-bold transition-all min-h-[32px] cursor-pointer active:scale-95 ${
+      className={`inline-flex items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-[11px] font-bold transition-all min-h-[28px] sm:min-h-[32px] cursor-pointer active:scale-95 shrink-0 ${
         isEffectiveOffline
           ? 'bg-neutral-200/90 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border border-neutral-300/60 dark:border-neutral-700/60'
           : status === 'syncing'
@@ -71,7 +71,7 @@ export const SyncStatusBadge: React.FC<SyncStatusBadgeProps> = ({
       {isEffectiveOffline ? (
         <>
           <CloudOff className="w-3.5 h-3.5 text-neutral-500 shrink-0" />
-          <span className="truncate">Offline</span>
+          <span className="hidden sm:inline truncate">Offline</span>
           {pendingCount > 0 && (
             <span
               className="px-1.5 py-0.2 rounded-full bg-neutral-300 dark:bg-neutral-700 text-[10px] font-extrabold text-neutral-800 dark:text-neutral-200"
@@ -84,12 +84,12 @@ export const SyncStatusBadge: React.FC<SyncStatusBadgeProps> = ({
       ) : status === 'syncing' ? (
         <>
           <RefreshCw className="w-3.5 h-3.5 animate-spin text-blue-500 shrink-0" />
-          <span className="truncate">Syncing...</span>
+          <span className="hidden sm:inline truncate">Syncing...</span>
         </>
       ) : status === 'error' ? (
         <>
           <AlertCircle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
-          <span className="truncate">{isRulesNeeded ? 'Rules Needed' : 'Sync Notice'}</span>
+          <span className="hidden sm:inline truncate">{isRulesNeeded ? 'Rules' : 'Notice'}</span>
           {pendingCount > 0 && (
             <span className="px-1.5 py-0.2 rounded-full bg-amber-200 dark:bg-amber-800 text-[10px] font-extrabold">
               {pendingCount}
@@ -99,7 +99,7 @@ export const SyncStatusBadge: React.FC<SyncStatusBadgeProps> = ({
       ) : pendingCount > 0 ? (
         <>
           <Cloud className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-          <span className="truncate">Pending</span>
+          <span className="hidden sm:inline truncate">Pending</span>
           <span className="px-1.5 py-0.2 rounded-full bg-amber-200 dark:bg-amber-800/80 text-amber-900 dark:text-amber-100 text-[10px] font-extrabold">
             {pendingCount}
           </span>
@@ -107,7 +107,7 @@ export const SyncStatusBadge: React.FC<SyncStatusBadgeProps> = ({
       ) : (
         <>
           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-          <span className="truncate">Synced</span>
+          <span className="hidden sm:inline truncate">Synced</span>
         </>
       )}
     </button>

@@ -120,6 +120,9 @@ export interface FinancialAccount {
   savingsGoal?: SavingsGoalInfo;
   creditInfo?: CreditAccountInfo;
   loanInfo?: LoanAccountInfo;
+  createdByUid?: string;
+  createdByName?: string;
+  jointWorkspaceId?: string;
 }
 
 export interface TransactionRecord {
@@ -136,6 +139,11 @@ export interface TransactionRecord {
   interestPortion?: number;
   isStartingBalance?: boolean;
   updatedAt?: string;
+  createdByUid?: string;
+  createdByName?: string;
+  paidByUserId?: string;
+  paidByUserName?: string;
+  jointWorkspaceId?: string;
 }
 
 export interface CategoryBudget {
@@ -152,7 +160,6 @@ export interface MonthlyBudget {
 }
 
 export type ThemeMode = 'light' | 'dark' | 'system';
-<<<<<<< HEAD
 export type ThemeColor =
   | 'forest'
   | 'ocean'
@@ -163,25 +170,17 @@ export type ThemeColor =
   | 'crimson'
   | 'amber'
   | 'monochrome';
-=======
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
 
 // ==========================================
 // Notification Settings Types (Offline Local)
 // ==========================================
 export interface NotificationSettings {
   enabled: boolean;
-<<<<<<< HEAD
   reminderTime: string; // "HH:mm" (e.g. "09:00") - Reminder Time 1 (preserved for backwards compatibility)
   reminderTimes: string[]; // [Reminder Time 1, Reminder Time 2, Reminder Time 3], e.g. ["09:00", "13:00", "19:00"]
   remindOnDueDate: boolean;
   remindDaysBeforeList: number[]; // e.g. [0, 3, 7] (1 is removed)
   remindEveryDay: boolean; // Daily reminder for upcoming obligations
-=======
-  reminderTime: string; // "HH:mm" (e.g. "09:00")
-  remindOnDueDate: boolean;
-  remindDaysBeforeList: number[]; // e.g. [0, 1, 3, 7]
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
   billsEnabled: boolean;
   creditEnabled: boolean;
   loanEnabled: boolean;
@@ -192,15 +191,10 @@ export interface NotificationSettings {
 export const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettings = {
   enabled: true,
   reminderTime: '09:00',
-<<<<<<< HEAD
   reminderTimes: ['09:00', '13:00', '19:00'],
   remindOnDueDate: true,
   remindDaysBeforeList: [0, 3],
   remindEveryDay: false,
-=======
-  remindOnDueDate: true,
-  remindDaysBeforeList: [0, 1],
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
   billsEnabled: true,
   creditEnabled: true,
   loanEnabled: true,
@@ -284,6 +278,9 @@ export interface BillDefinition {
   reminderDaysBefore: number; // 0, 1, 3, 7
   createdAt: string;
   updatedAt: string;
+  createdByUid?: string;
+  createdByName?: string;
+  jointWorkspaceId?: string;
 }
 
 export interface AddBillInput {
@@ -319,10 +316,7 @@ export interface UserSettings {
   hideBalances: boolean;
   darkMode: boolean; // Backwards compatible boolean
   themeMode?: ThemeMode; // 'light' | 'dark' | 'system'
-<<<<<<< HEAD
   themeColor?: ThemeColor; // Custom theme color preference ('forest' default)
-=======
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
   startOfMonthDay: number;
   budgetReminders: boolean;
   dueReminders: boolean;
@@ -330,7 +324,13 @@ export interface UserSettings {
   notificationSettings?: NotificationSettings;
 }
 
-export type RecurrenceFrequency = 'daily' | 'weekly' | 'monthly' | 'annually';
+export type RecurrenceFrequency =
+  | 'daily'
+  | 'weekly'
+  | 'biweekly'
+  | 'semimonthly'
+  | 'monthly'
+  | 'annually';
 
 export interface RecurringTransaction {
   id: string;
@@ -349,7 +349,11 @@ export interface RecurringTransaction {
   isActive: boolean;
   autoRecord?: boolean;
   createdAt: string;
+  updatedAt?: string;
   lastRecordedDate?: string;
+  createdByUid?: string;
+  createdByName?: string;
+  jointWorkspaceId?: string;
 }
 
 // ==========================================
@@ -448,7 +452,6 @@ export interface RecordReceivablePaymentInput {
   notes?: string;
 }
 
-<<<<<<< HEAD
 // ==========================================
 // Grocery List Types & Categories
 // ==========================================
@@ -504,6 +507,9 @@ export interface GroceryItem {
   createdAt: string;
   updatedAt: string;
   isDeleted?: boolean;
+  jointWorkspaceId?: string;
+  createdByUid?: string;
+  createdByName?: string;
 }
 
 export interface AddGroceryItemInput {
@@ -525,13 +531,242 @@ export interface ConvertGroceriesToExpenseInput {
   description: string;
 }
 
-=======
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
+// ==========================================
+// Joint Account & Multi-User Collaboration Types
+// ==========================================
+export type AccountMode = 'personal' | 'joint';
+
+export type JointActiveTab =
+  | 'home'
+  | 'overview'
+  | 'bills'
+  | 'calendar'
+  | 'debt-planner'
+  | 'debt'
+  | 'transactions'
+  | 'budgets'
+  | 'accounts'
+  | 'reports'
+  | 'grocery-list'
+  | 'groceries'
+  | 'activity'
+  | 'messages'
+  | 'notifications'
+  | 'members'
+  | 'settings';
+
+// ==========================================
+// Joint Chat, Offline Messaging & Ring Partner Types
+// ==========================================
+export type MessageDeliveryStatus = 'pending' | 'sent' | 'delivered' | 'read' | 'failed';
+
+export interface JointMessage {
+  id: string; // Client-generated unique ID (survives offline restart)
+  workspaceId: string;
+  senderUid: string;
+  senderName: string;
+  senderEmail?: string;
+  senderAvatarColor?: string;
+  recipientUid: string;
+  text: string;
+  timestamp: string; // ISO string
+  status: MessageDeliveryStatus;
+  readAt?: string | null;
+  deliveredAt?: string | null;
+  retryCount?: number;
+  errorMessage?: string;
+  isDeleted?: boolean;
+  mediaUrl?: string;
+  mediaType?: 'image' | 'file';
+  mediaName?: string;
+  deletedForUserIds?: string[];
+  isUnsent?: boolean;
+  unsentAt?: string;
+  unsentByUid?: string;
+  replyTo?: {
+    id: string;
+    senderName: string;
+    text: string;
+  };
+  replyToMessageId?: string;
+  replyToSenderId?: string;
+  replyToSenderName?: string;
+  replyToPreview?: string;
+  fileSize?: number;
+}
+
+export type ChatTextSize = 'small' | 'medium' | 'large';
+
+export type RingRequestStatus = 'ringing' | 'accepted' | 'dismissed' | 'cancelled' | 'expired';
+
+export interface JointRingRequest {
+  id: string;
+  workspaceId: string;
+  callerUid: string;
+  callerName: string;
+  callerEmail?: string;
+  callerAvatarColor?: string;
+  targetUid: string;
+  targetName?: string;
+  status: RingRequestStatus;
+  createdAt: string; // ISO string
+  expiresAt: string; // ISO string (e.g., createdAt + 45s)
+  respondedAt?: string | null;
+}
+
+export interface UserDeviceToken {
+  id: string;
+  userId: string;
+  token: string;
+  platform: 'web' | 'android' | 'ios';
+  updatedAt: string;
+  userAgent?: string;
+}
+
+export type NotificationScope = 'personal' | 'joint' | 'system';
+export type NotificationType =
+  | 'bill_due'
+  | 'bill_paid'
+  | 'debt_due'
+  | 'debt_paid'
+  | 'transaction_added'
+  | 'transaction_deleted'
+  | 'salary_deposited'
+  | 'account_created'
+  | 'account_updated'
+  | 'budget_alert'
+  | 'grocery_added'
+  | 'grocery_purchased'
+  | 'member_invited'
+  | 'member_joined'
+  | 'workspace_settings'
+  | 'general';
+
+export interface AppNotification {
+  id: string;
+  scope: NotificationScope;
+  type: NotificationType;
+  title: string;
+  message: string;
+  timestamp: string; // ISO string
+  isRead: boolean;
+  actorUid?: string;
+  actorName?: string;
+  workspaceId?: string;
+  workspaceName?: string;
+  targetTab?: JointActiveTab | ActiveTab;
+  targetId?: string;
+  metadata?: Record<string, any>;
+}
+
+export type JointRole = 'owner' | 'admin' | 'member';
+
+export interface JointMember {
+  uid: string;
+  email: string;
+  displayName: string;
+  role: JointRole;
+  joinedAt: string;
+  avatarColor?: string;
+  avatarUrl?: string;
+}
+
+export type WorkspaceRelationshipType =
+  | 'Partner'
+  | 'Spouse'
+  | 'Family'
+  | 'Housemate'
+  | 'Other';
+
+export function getWorkspaceMemberLimit(relationship?: string): number {
+  const rel = (relationship || '').toLowerCase().trim();
+  if (rel === 'partner' || rel.startsWith('partner') || rel.includes('spouse') || rel.includes('married')) {
+    return 2;
+  }
+  return 10;
+}
+
+export interface JointWorkspace {
+  id: string;
+  name: string;
+  relationship?: WorkspaceRelationshipType | string;
+  memberLimit?: number;
+  ownerUid: string;
+  ownerEmail: string;
+  ownerName: string;
+  memberUids: string[];
+  members: JointMember[];
+  notificationSettings?: NotificationSettings;
+  clearedAtByMember?: Record<string, string>;
+  chatClearedForEveryoneAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type JointInvitationStatus = 'pending' | 'accepted' | 'declined' | 'revoked';
+
+export interface JointInvitation {
+  id: string;
+  jointWorkspaceId: string;
+  jointWorkspaceName: string;
+  inviterUid: string;
+  inviterEmail: string;
+  inviterName: string;
+  inviteeEmail: string;
+  relationship?: string;
+  message?: string;
+  status: JointInvitationStatus;
+  createdAt: string;
+  respondedAt?: string;
+}
+
+export type JointActivityActionType =
+  | 'workspace_created'
+  | 'member_invited'
+  | 'member_joined'
+  | 'member_left'
+  | 'member_removed'
+  | 'account_created'
+  | 'account_updated'
+  | 'account_archived'
+  | 'transaction_added'
+  | 'transaction_updated'
+  | 'transaction_deleted'
+  | 'bill_created'
+  | 'bill_paid'
+  | 'grocery_added'
+  | 'grocery_purchased'
+  | 'grocery_to_expense'
+  | 'budget_updated'
+  | 'salary_added'
+  | 'salary_deposited'
+  | 'settings_updated';
+
+export interface JointActivityItem {
+  id: string;
+  jointWorkspaceId: string;
+  actorUid: string;
+  actorName: string;
+  actorEmail?: string;
+  actorAvatarColor?: string;
+  actionType: JointActivityActionType;
+  description: string;
+  amount?: number;
+  entityType?: 'transaction' | 'account' | 'bill' | 'grocery' | 'budget' | 'member' | 'workspace' | 'receivable';
+  entityId?: string;
+  entityName?: string;
+  category?: string;
+  changeSummary?: string;
+  timestamp: string;
+  metadata?: Record<string, any>;
+}
+
 export interface PesoTrackState {
   version: number;
   accounts: FinancialAccount[];
   transactions: TransactionRecord[];
   budgets: Record<string, MonthlyBudget>;
+  notifications?: AppNotification[];
   recurringTransactions?: RecurringTransaction[];
   bills?: BillDefinition[];
   monthlyBillEntries?: Record<string, MonthlyBillEntry>;
@@ -541,18 +776,15 @@ export interface PesoTrackState {
     income: string[];
   };
   receivables?: ReceivableRecord[]; // Dedicated Money Owed to Me records
-<<<<<<< HEAD
   groceryItems?: GroceryItem[]; // Dedicated Grocery List items
   groceryCategories?: GroceryCategory[]; // Built-in and custom grocery categories
-=======
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
   settings: UserSettings;
   updatedAt: string;
 }
 
 export type ActiveTab =
   | 'home'
-<<<<<<< HEAD
+  | 'overview'
   | 'bills'
   | 'calendar'
   | 'debt-planner'
@@ -561,15 +793,9 @@ export type ActiveTab =
   | 'accounts'
   | 'reports'
   | 'grocery-list'
-=======
-  | 'transactions'
-  | 'bills'
-  | 'calendar'
-  | 'debt-planner'
-  | 'budgets'
-  | 'accounts'
-  | 'reports'
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
+  | 'activity'
+  | 'messages'
+  | 'notifications'
   | 'settings';
 
 export const DEFAULT_EXPENSE_CATEGORIES: string[] = [

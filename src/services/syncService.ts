@@ -13,11 +13,8 @@ import {
   MonthlyBillEntry,
   MonthlyBudget,
   ReceivableRecord,
-<<<<<<< HEAD
   GroceryItem,
   GroceryCategory,
-=======
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
   PesoTrackState,
 } from '../types/finance';
 import firebaseConfig from '../../firebase-applet-config.json';
@@ -38,11 +35,8 @@ export interface SyncQueueItem {
     | 'monthlyBillEntries'
     | 'budgets'
     | 'receivables'
-<<<<<<< HEAD
     | 'groceries'
     | 'grocery_categories'
-=======
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
     | 'sync_state';
   entityId: string;
   action: 'upsert' | 'delete';
@@ -148,16 +142,12 @@ export async function flushSyncQueue(
 
   for (const item of queue) {
     try {
-<<<<<<< HEAD
       const collectionName =
         item.entityType === 'sync_state'
           ? 'sync'
           : item.entityType === 'grocery_categories'
           ? 'groceryCategories'
           : item.entityType;
-=======
-      const collectionName = item.entityType === 'sync_state' ? 'sync' : item.entityType;
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
       const docRef = doc(db, 'users', uid, collectionName, item.entityId);
       if (item.action === 'delete') {
         // Soft tombstone with isDeleted to prevent resurrecting on other devices
@@ -215,7 +205,6 @@ export async function restoreAccountDataFromCloud(
   transactionsCount: number;
 }> {
   // Query remote collections for this user
-<<<<<<< HEAD
   const [
     accSnap,
     txSnap,
@@ -255,32 +244,6 @@ export async function restoreAccountDataFromCloud(
       handleFirestoreError(e, OperationType.GET, `users/${uid}/sync/state`)
     ),
   ]);
-=======
-  const [accSnap, txSnap, billSnap, entriesSnap, budSnap, recSnap, syncDocSnap] =
-    await Promise.all([
-      getDocs(collection(db, 'users', uid, 'accounts')).catch((e) =>
-        handleFirestoreError(e, OperationType.LIST, `users/${uid}/accounts`)
-      ),
-      getDocs(collection(db, 'users', uid, 'transactions')).catch((e) =>
-        handleFirestoreError(e, OperationType.LIST, `users/${uid}/transactions`)
-      ),
-      getDocs(collection(db, 'users', uid, 'bills')).catch((e) =>
-        handleFirestoreError(e, OperationType.LIST, `users/${uid}/bills`)
-      ),
-      getDocs(collection(db, 'users', uid, 'monthlyBillEntries')).catch((e) =>
-        handleFirestoreError(e, OperationType.LIST, `users/${uid}/monthlyBillEntries`)
-      ),
-      getDocs(collection(db, 'users', uid, 'budgets')).catch((e) =>
-        handleFirestoreError(e, OperationType.LIST, `users/${uid}/budgets`)
-      ),
-      getDocs(collection(db, 'users', uid, 'receivables')).catch((e) =>
-        handleFirestoreError(e, OperationType.LIST, `users/${uid}/receivables`)
-      ),
-      getDoc(doc(db, 'users', uid, 'sync', 'state')).catch((e) =>
-        handleFirestoreError(e, OperationType.GET, `users/${uid}/sync/state`)
-      ),
-    ]);
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
 
   const remoteAccounts: FinancialAccount[] = [];
   accSnap.forEach((d) => {
@@ -321,7 +284,6 @@ export async function restoreAccountDataFromCloud(
     if (!data.isDeleted) remoteReceivables.push(data as ReceivableRecord);
   });
 
-<<<<<<< HEAD
   const remoteGroceries: GroceryItem[] = [];
   grocSnap.forEach((d) => {
     const data = d.data();
@@ -334,8 +296,6 @@ export async function restoreAccountDataFromCloud(
     if (!data.isDeleted) remoteGroceryCategories.push(data as GroceryCategory);
   });
 
-=======
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
   const remoteSyncData = syncDocSnap.exists() ? syncDocSnap.data() : null;
 
   const hasCloudData =
@@ -343,10 +303,7 @@ export async function restoreAccountDataFromCloud(
     remoteTransactions.length > 0 ||
     remoteBills.length > 0 ||
     remoteReceivables.length > 0 ||
-<<<<<<< HEAD
     remoteGroceries.length > 0 ||
-=======
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
     Boolean(remoteSyncData);
 
   const totalRecordsCount =
@@ -355,13 +312,9 @@ export async function restoreAccountDataFromCloud(
     remoteBills.length +
     Object.keys(remoteEntries).length +
     remoteReceivables.length +
-<<<<<<< HEAD
     Object.keys(remoteBudgets).length +
     remoteGroceries.length +
     remoteGroceryCategories.length;
-=======
-    Object.keys(remoteBudgets).length;
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
 
   if (!hasCloudData) {
     return {
@@ -382,14 +335,11 @@ export async function restoreAccountDataFromCloud(
     receivables: remoteReceivables,
     budgets: Object.keys(remoteBudgets).length > 0 ? remoteBudgets : baseState.budgets,
     recurringTransactions: baseState.recurringTransactions || [],
-<<<<<<< HEAD
     groceryItems: remoteGroceries.length > 0 ? remoteGroceries : baseState.groceryItems || [],
     groceryCategories:
       remoteGroceryCategories.length > 0
         ? remoteGroceryCategories
         : baseState.groceryCategories,
-=======
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
     customBillNames: remoteSyncData?.customBillNames || baseState.customBillNames || [],
     customCategories: remoteSyncData?.customCategories || baseState.customCategories,
     settings: remoteSyncData?.settings
@@ -548,7 +498,6 @@ export async function performFullSync(
   const flushRes = await flushSyncQueue(uid);
 
   // 2. Fetch remote documents for this user
-<<<<<<< HEAD
   const [
     accSnap,
     txSnap,
@@ -588,32 +537,6 @@ export async function performFullSync(
       handleFirestoreError(e, OperationType.GET, `users/${uid}/sync/state`)
     ),
   ]);
-=======
-  const [accSnap, txSnap, billSnap, entriesSnap, budSnap, recSnap, syncDocSnap] =
-    await Promise.all([
-      getDocs(collection(db, 'users', uid, 'accounts')).catch((e) =>
-        handleFirestoreError(e, OperationType.LIST, `users/${uid}/accounts`)
-      ),
-      getDocs(collection(db, 'users', uid, 'transactions')).catch((e) =>
-        handleFirestoreError(e, OperationType.LIST, `users/${uid}/transactions`)
-      ),
-      getDocs(collection(db, 'users', uid, 'bills')).catch((e) =>
-        handleFirestoreError(e, OperationType.LIST, `users/${uid}/bills`)
-      ),
-      getDocs(collection(db, 'users', uid, 'monthlyBillEntries')).catch((e) =>
-        handleFirestoreError(e, OperationType.LIST, `users/${uid}/monthlyBillEntries`)
-      ),
-      getDocs(collection(db, 'users', uid, 'budgets')).catch((e) =>
-        handleFirestoreError(e, OperationType.LIST, `users/${uid}/budgets`)
-      ),
-      getDocs(collection(db, 'users', uid, 'receivables')).catch((e) =>
-        handleFirestoreError(e, OperationType.LIST, `users/${uid}/receivables`)
-      ),
-      getDoc(doc(db, 'users', uid, 'sync', 'state')).catch((e) =>
-        handleFirestoreError(e, OperationType.GET, `users/${uid}/sync/state`)
-      ),
-    ]);
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
 
   // Remote collections map
   const remoteAccounts = new Map<string, any>();
@@ -634,28 +557,21 @@ export async function performFullSync(
   const remoteReceivables = new Map<string, any>();
   recSnap.forEach((d) => remoteReceivables.set(d.id, d.data()));
 
-<<<<<<< HEAD
   const remoteGroceries = new Map<string, any>();
   grocSnap.forEach((d) => remoteGroceries.set(d.id, d.data()));
 
   const remoteGroceryCategories = new Map<string, any>();
   catSnap.forEach((d) => remoteGroceryCategories.set(d.id, d.data()));
 
-=======
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
   const totalDownloaded =
     remoteAccounts.size +
     remoteTransactions.size +
     remoteBills.size +
     remoteEntries.size +
     remoteBudgets.size +
-<<<<<<< HEAD
     remoteReceivables.size +
     remoteGroceries.size +
     remoteGroceryCategories.size;
-=======
-    remoteReceivables.size;
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
 
   // Merge Accounts
   const mergedAccounts: FinancialAccount[] = [];
@@ -911,7 +827,6 @@ export async function performFullSync(
     );
   }
 
-<<<<<<< HEAD
   // Merge Groceries
   const mergedGroceries: GroceryItem[] = [];
   const localGrocMap = new Map((localState.groceryItems || []).map((g) => [g.id, g]));
@@ -993,8 +908,6 @@ export async function performFullSync(
     );
   }
 
-=======
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
   // Also update user sync state doc
   uploadPromises.push(
     setDoc(
@@ -1030,12 +943,9 @@ export async function performFullSync(
     receivables: mergedReceivables,
     budgets: Object.keys(mergedBudgets).length > 0 ? mergedBudgets : localState.budgets,
     recurringTransactions: localState.recurringTransactions || [],
-<<<<<<< HEAD
     groceryItems: mergedGroceries,
     groceryCategories:
       mergedCategories.length > 0 ? mergedCategories : localState.groceryCategories,
-=======
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
     customBillNames: remoteSyncData?.customBillNames || localState.customBillNames || [],
     customCategories: remoteSyncData?.customCategories || localState.customCategories,
     settings: finalSettings,

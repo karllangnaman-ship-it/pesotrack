@@ -1,63 +1,68 @@
 import React, { useEffect, useState } from 'react';
 import {
+  AlertCircle,
   Calendar,
   CheckCircle2,
-<<<<<<< HEAD
+  Info,
   Leaf,
-=======
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
+  Mail,
   Menu,
   Plus,
   Receipt,
   Search,
   TrendingDown,
+  UserCheck,
+  Users,
 } from 'lucide-react';
 import { AccountDetailModal } from './components/AccountDetailModal';
 import { AddAccountModal } from './components/AddAccountModal';
+import { CreateJointModal } from './components/CreateJointModal';
+import { JointInvitationsModal } from './components/JointInvitationsModal';
 import { GlobalSearchModal } from './components/GlobalSearchModal';
 import { NavigationSidebar } from './components/NavigationSidebar';
+import { JointNavigationSidebar } from './components/JointNavigationSidebar';
 import { TransactionDetailModal } from './components/TransactionDetailModal';
 import { TransactionModal } from './components/TransactionModal';
 import { EmailVerificationScreen } from './components/EmailVerificationScreen';
+import { NotificationCenterModal } from './components/NotificationCenterModal';
+import { JointActivityView } from './components/JointActivityView';
 import { FinanceProvider, useFinance } from './context/FinanceContext';
 import { AccountsPage } from './pages/AccountsPage';
 import { BillCalendarPage } from './pages/BillCalendarPage';
 import { BudgetsPage } from './pages/BudgetsPage';
 import { DebtPayoffPlannerPage } from './pages/DebtPayoffPlannerPage';
 import { HomePage } from './pages/HomePage';
+import { JointFinancesPage } from './pages/JointFinancesPage';
 import { MonthlyBillsPage } from './pages/MonthlyBillsPage';
 import { ReportsPage } from './pages/ReportsPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { JointSettingsPage } from './pages/JointSettingsPage';
 import { TransactionsPage } from './pages/TransactionsPage';
-<<<<<<< HEAD
 import { GroceryListPage } from './pages/GroceryListPage';
-=======
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
+import { NotificationsPage } from './pages/NotificationsPage';
+import { JointChatPage } from './pages/JointChatPage';
+import { IncomingRingModal } from './components/IncomingRingModal';
 import { SyncStatusBadge } from './components/SyncStatusBadge';
+import { JointModeSwitch } from './components/JointModeSwitch';
 import {
   AccountCategory,
   ActiveTab,
+  JointActiveTab,
   TransactionRecord,
   TransactionType,
 } from './types/finance';
 import { ReconciledAccount } from './utils/financeEngine';
-<<<<<<< HEAD
 import {
   getPendingWidgetAction,
   registerWidgetActionListener,
   WidgetActionData,
 } from './services/widgetBridgeService';
-=======
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
 
 const PesoTrackAppContent: React.FC = () => {
   const {
     toastMessage,
     clearToast,
-<<<<<<< HEAD
     showToast,
-=======
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
     syncStatus,
     isOnline,
     pendingSyncCount,
@@ -68,9 +73,46 @@ const PesoTrackAppContent: React.FC = () => {
     unverifiedUser,
     handleVerifiedUser,
     logout,
+    accountMode,
+    setAccountMode,
+    activeJointWorkspace,
+    jointAccounts,
+    jointTransactions,
+    jointBills,
+    jointMonthlyBillEntries,
+    jointBudgets,
+    jointGroceryItems,
+    jointActivities,
+    jointInvitations,
+    jointSentInvitations,
+    isJointRealtimeActive,
+    jointPendingMutationCount,
+    jointLastSyncTime,
+    createJointWorkspace,
+    invitePartnerToJoint,
+    acceptJointInvitation,
+    declineJointInvitation,
+    revokeJointInvitation,
+    updateJointWorkspace,
+    removeJointMember,
+    leaveJointWorkspace,
+    refreshJointData,
+    openAuthModal,
+    unreadNotificationsCount,
+    activeIncomingRing,
+    respondToIncomingRing,
   } = useFinance();
 
   const [activeTab, setActiveTab] = useState<ActiveTab>('home');
+  const [jointActiveTab, setJointActiveTab] = useState<JointActiveTab>('overview');
+  const [isNotificationCenterOpen, setIsNotificationCenterOpen] = useState(false);
+
+  // Safeguard: When switching back to Personal Account mode, Joint Chat is strictly hidden
+  useEffect(() => {
+    if (accountMode === 'personal' && activeTab === 'messages') {
+      setActiveTab('home');
+    }
+  }, [accountMode, activeTab]);
   const [accountsSubTab, setAccountsSubTab] = useState<'accounts' | 'receivables'>('accounts');
   const [accountsCategoryFilter, setAccountsCategoryFilter] = useState<'All' | AccountCategory>('All');
   const [reportsSection, setReportsSection] = useState<'analytics' | 'cashflow' | 'breakdown' | undefined>(undefined);
@@ -106,15 +148,14 @@ const PesoTrackAppContent: React.FC = () => {
   const [txInitialType, setTxInitialType] = useState<TransactionType>('expense');
   const [txInitialAccountId, setTxInitialAccountId] = useState<string | undefined>(undefined);
   const [txInitialDestAccountId, setTxInitialDestAccountId] = useState<string | undefined>(undefined);
-<<<<<<< HEAD
   const [txInitialAmount, setTxInitialAmount] = useState<number | string | undefined>(undefined);
   const [txInitialCategory, setTxInitialCategory] = useState<string | undefined>(undefined);
-=======
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
   const [editingTransaction, setEditingTransaction] = useState<TransactionRecord | null>(null);
   const [selectedTransaction, setSelectedTransaction] = useState<TransactionRecord | null>(null);
 
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isCreateJointOpen, setIsCreateJointOpen] = useState(false);
+  const [isJointInvitationsOpen, setIsJointInvitationsOpen] = useState(false);
 
   const handleOpenAddAccount = (category: AccountCategory = 'Wallet') => {
     setEditingAccount(null);
@@ -131,23 +172,16 @@ const PesoTrackAppContent: React.FC = () => {
   const handleOpenAddTransaction = (
     type: TransactionType = 'expense',
     accountId?: string,
-<<<<<<< HEAD
     destinationAccountId?: string,
     amount?: number | string,
     category?: string
-=======
-    destinationAccountId?: string
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
   ) => {
     setEditingTransaction(null);
     setTxInitialType(type);
     setTxInitialAccountId(accountId);
     setTxInitialDestAccountId(destinationAccountId);
-<<<<<<< HEAD
     setTxInitialAmount(amount);
     setTxInitialCategory(category);
-=======
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
     setIsTransactionModalOpen(true);
   };
 
@@ -161,7 +195,6 @@ const PesoTrackAppContent: React.FC = () => {
     setActiveTab(tab);
   };
 
-<<<<<<< HEAD
   const handleNavigateToAccountsCategory = (category: AccountCategory) => {
     setAccountsSubTab('accounts');
     setAccountsCategoryFilter(category);
@@ -228,8 +261,6 @@ const PesoTrackAppContent: React.FC = () => {
     };
   }, []);
 
-=======
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
   // Block dashboard & cloud sync if email is unverified
   if (unverifiedUser) {
     return (
@@ -241,82 +272,98 @@ const PesoTrackAppContent: React.FC = () => {
     );
   }
 
+  const isChatActive = activeTab === 'messages' && accountMode === 'joint';
+
   return (
-<<<<<<< HEAD
-    <div className="min-h-screen min-h-[100dvh] w-full max-w-full bg-[#F6F4EE] dark:bg-[#0D1410] text-[#252923] dark:text-[#F3F4F1] flex overflow-x-hidden">
-=======
-    <div className="min-h-screen min-h-[100dvh] w-full max-w-full bg-[#F3F0F5] dark:bg-[#0E0F14] text-neutral-950 dark:text-neutral-100 flex overflow-x-hidden">
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
+    <div
+      className={
+        isChatActive
+          ? 'h-[100dvh] max-h-[100dvh] w-full max-w-full bg-[#F6F4EE] dark:bg-[#0D1410] text-[#252923] dark:text-[#F3F4F1] flex overflow-hidden'
+          : 'min-h-screen min-h-[100dvh] w-full max-w-full bg-[#F6F4EE] dark:bg-[#0D1410] text-[#252923] dark:text-[#F3F4F1] flex overflow-x-hidden'
+      }
+    >
       {/* 1. Centralized Responsive Navigation: Desktop Permanent/Rail Sidebar + Mobile/Tablet Slide-out Drawer */}
-      <NavigationSidebar
-        activeTab={activeTab}
-        onNavigate={handleNavigate}
-        isOpenMobile={isOpenMobileDrawer}
-        onCloseMobile={() => setIsOpenMobileDrawer(false)}
-        isCollapsedDesktop={isCollapsedDesktop}
-        onToggleCollapseDesktop={handleToggleCollapseDesktop}
-      />
+      {accountMode === 'joint' ? (
+        <JointNavigationSidebar
+          activeTab={activeTab as JointActiveTab}
+          onNavigate={(tab) => {
+            handleNavigate(tab as ActiveTab);
+            setIsOpenMobileDrawer(false);
+          }}
+          isOpenMobile={isOpenMobileDrawer}
+          onCloseMobile={() => setIsOpenMobileDrawer(false)}
+          isCollapsedDesktop={isCollapsedDesktop}
+          onToggleCollapseDesktop={handleToggleCollapseDesktop}
+        />
+      ) : (
+        <NavigationSidebar
+          activeTab={activeTab}
+          onNavigate={(tab) => {
+            handleNavigate(tab);
+            setIsOpenMobileDrawer(false);
+          }}
+          isOpenMobile={isOpenMobileDrawer}
+          onCloseMobile={() => setIsOpenMobileDrawer(false)}
+          isCollapsedDesktop={isCollapsedDesktop}
+          onToggleCollapseDesktop={handleToggleCollapseDesktop}
+        />
+      )}
 
       {/* 2. Main Application Canvas Container */}
-      <div className="flex-1 min-w-0 flex flex-col min-h-screen min-h-[100dvh] transition-all">
+      <div
+        className={
+          isChatActive
+            ? 'flex-1 min-w-0 flex flex-col h-[100dvh] max-h-[100dvh] overflow-hidden'
+            : 'flex-1 min-w-0 flex flex-col min-h-screen min-h-[100dvh] transition-all'
+        }
+      >
         {/* Top Header */}
-<<<<<<< HEAD
-        <header className="sticky top-0 z-30 w-full bg-[#F6F4EE]/90 dark:bg-[#0D1410]/90 backdrop-blur-md border-b border-[#E5E1D8] dark:border-[#223528] pt-[env(safe-area-inset-top,0px)]">
-=======
-        <header className="sticky top-0 z-30 w-full bg-[#F3F0F5]/90 dark:bg-[#0E0F14]/90 backdrop-blur-md border-b border-black/[0.04] dark:border-white/[0.06] pt-[env(safe-area-inset-top,0px)]">
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
-          <div className="w-full max-w-7xl mx-auto flex items-center justify-between gap-2.5 sm:gap-6 px-3.5 sm:px-6 lg:px-8 h-14 sm:h-16 min-w-0">
+        <header
+          className={
+            isChatActive
+              ? 'shrink-0 z-30 w-full bg-[#F6F4EE]/90 dark:bg-[#0D1410]/90 backdrop-blur-md border-b border-[#E5E1D8] dark:border-[#223528] pt-[env(safe-area-inset-top,0px)]'
+              : 'sticky top-0 z-30 w-full bg-[#F6F4EE]/90 dark:bg-[#0D1410]/90 backdrop-blur-md border-b border-[#E5E1D8] dark:border-[#223528] pt-[env(safe-area-inset-top,0px)]'
+          }
+        >
+          <div className="w-full max-w-7xl mx-auto flex items-center justify-between gap-1.5 sm:gap-6 px-2 sm:px-6 lg:px-8 h-14 sm:h-16 min-w-0">
             {/* Left Zone: Hamburger Menu on Mobile/Tablet + Brand Wordmark */}
-            <div className="flex items-center gap-2 sm:gap-3 min-w-0 shrink-0">
+            <div className="flex items-center gap-1 sm:gap-3 min-w-0 shrink">
               <button
                 type="button"
                 onClick={() => setIsOpenMobileDrawer(true)}
                 aria-label="Open navigation menu"
-<<<<<<< HEAD
-                className="lg:hidden p-2 -ml-1 rounded-xl text-[#777D75] hover:text-[#174F32] dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
-=======
-                className="lg:hidden p-2 -ml-1 rounded-xl text-neutral-700 dark:text-neutral-300 hover:bg-black/5 dark:hover:bg-white/5 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
+                className="lg:hidden p-1.5 sm:p-2 -ml-1 rounded-xl text-[#777D75] hover:text-[#174F32] dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 transition-colors min-h-[38px] min-w-[38px] flex items-center justify-center shrink-0"
               >
                 <Menu className="w-5 h-5" />
               </button>
 
               <button
                 type="button"
-                onClick={() => handleNavigate('home')}
-<<<<<<< HEAD
-                className="flex items-center gap-2 text-base sm:text-xl font-extrabold tracking-tight text-[#174F32] dark:text-white whitespace-nowrap hover:opacity-85 transition-opacity"
+                onClick={() => {
+                  handleNavigate('home');
+                }}
+                className="flex items-center gap-1.5 sm:gap-2 text-sm sm:text-xl font-extrabold tracking-tight text-[#174F32] dark:text-white whitespace-nowrap hover:opacity-85 transition-opacity shrink-0"
               >
-                <div className="w-7 h-7 rounded-lg bg-[#174F32] dark:bg-[#1E382A] text-[#83C95B] flex items-center justify-center shadow-2xs">
-                  <Leaf className="w-4 h-4 fill-[#83C95B]/30 stroke-[2.4]" />
+                <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-[#174F32] dark:bg-[#1E382A] text-[#83C95B] flex items-center justify-center shadow-2xs shrink-0">
+                  <Leaf className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-[#83C95B]/30 stroke-[2.4]" />
                 </div>
                 <span>PesoTrack</span>
-=======
-                className="text-base sm:text-xl font-extrabold tracking-tight text-black dark:text-white whitespace-nowrap hover:opacity-85 transition-opacity"
-              >
-                PesoTrack
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
               </button>
             </div>
 
             {/* Center Zone: Active Section Title / Breadcrumb (hidden on narrow screens) */}
-<<<<<<< HEAD
             <div className="hidden md:flex items-center gap-2 text-xs font-bold text-[#777D75] dark:text-[#8FA095] uppercase tracking-wider truncate">
-              <span>Vault</span>
+              <span>{accountMode === 'joint' ? 'Joint Finances' : 'Personal Vault'}</span>
               <span>/</span>
               <span className="text-[#252923] dark:text-white capitalize">
-=======
-            <div className="hidden md:flex items-center gap-2 text-xs font-bold text-neutral-400 uppercase tracking-wider truncate">
-              <span>Vault</span>
-              <span>/</span>
-              <span className="text-neutral-900 dark:text-white capitalize">
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
-                {activeTab.replace('-', ' ')}
+                {accountMode === 'joint'
+                  ? (activeJointWorkspace?.name ? `${activeJointWorkspace.name} • ${activeTab.replace('-', ' ')}` : 'Shared Finances')
+                  : activeTab.replace('-', ' ')}
               </span>
             </div>
 
-            {/* Right Zone: Primary Actions (Search & Add Account & Sync Status) */}
-            <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+            {/* Right Zone: Primary Actions (Mode Switch & Sync Status) */}
+            <div className="flex items-center gap-1 sm:gap-2 shrink-0 ml-auto">
               <SyncStatusBadge
                 status={syncStatus}
                 isOnline={isOnline}
@@ -329,30 +376,14 @@ const PesoTrackAppContent: React.FC = () => {
                 }}
               />
 
-              <button
-                type="button"
-                onClick={() => setIsSearchOpen(true)}
-                aria-label="Search transactions"
-<<<<<<< HEAD
-                className="p-2 sm:p-2.5 rounded-full text-[#777D75] dark:text-[#8FA095] hover:text-[#174F32] dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
-=======
-                className="p-2 sm:p-2.5 rounded-full text-neutral-600 dark:text-neutral-300 hover:bg-black/5 dark:hover:bg-white/5 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
-              >
-                <Search className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleOpenAddAccount('Wallet')}
-<<<<<<< HEAD
-                className="px-3.5 sm:px-4 py-2 rounded-xl bg-[#174F32] hover:bg-[#123E27] text-white text-xs sm:text-sm font-bold transition-all whitespace-nowrap shrink-0 shadow-xs min-h-[38px] flex items-center justify-center"
-=======
-                className="px-3.5 sm:px-4 py-2 rounded-full bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 text-xs sm:text-sm font-bold hover:opacity-90 transition-opacity whitespace-nowrap shrink-0 shadow-xs min-h-[38px] flex items-center justify-center"
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
-              >
-                + Account
-              </button>
+              {/* Dedicated Personal / Joint Account Mode Selector */}
+              <JointModeSwitch
+                mode={accountMode}
+                onChangeMode={setAccountMode}
+                pendingInvitationsCount={
+                  jointInvitations.filter((i) => i.status === 'pending').length
+                }
+              />
             </div>
           </div>
         </header>
@@ -380,183 +411,267 @@ const PesoTrackAppContent: React.FC = () => {
         )}
 
         {/* Main Content Area */}
-        <main className="flex-1 w-full max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 pt-3 sm:pt-4 pb-16 min-w-0 overflow-hidden">
-          {/* Contextual Search & Quick Action Toolbar */}
-          <div className="flex items-center gap-2 sm:gap-2.5 mb-3.5 sm:mb-4 w-full min-w-0 max-w-full overflow-hidden">
-            <button
-              type="button"
-              onClick={() => setIsSearchOpen(true)}
-<<<<<<< HEAD
-              className="flex-1 min-w-0 max-w-[calc(100%-140px)] sm:max-w-none flex items-center gap-2 px-3.5 sm:px-4 py-2.5 rounded-2xl bg-white dark:bg-[#15221B] border border-[#E5E1D8] dark:border-[#223528] text-xs sm:text-sm font-medium text-[#777D75] dark:text-[#8FA095] hover:bg-[#F9F8F5] dark:hover:bg-[#1A2A20] transition-colors shadow-[0_1px_6px_rgba(0,0,0,0.02)] min-h-[44px] overflow-hidden"
-            >
-              <Search className="w-4 h-4 text-[#777D75] dark:text-[#8FA095] shrink-0" />
-=======
-              className="flex-1 min-w-0 max-w-[calc(100%-140px)] sm:max-w-none flex items-center gap-2 px-3 sm:px-4 py-2.5 rounded-full bg-white dark:bg-[#12131A] border border-neutral-200/80 dark:border-white/[0.06] text-xs sm:text-sm font-medium text-neutral-400 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors shadow-[0_1px_6px_rgba(0,0,0,0.02)] min-h-[44px] overflow-hidden"
-            >
-              <Search className="w-4 h-4 text-neutral-400 shrink-0" />
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
-              <span className="truncate">Search transactions, bills, accounts...</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleOpenAddTransaction('expense')}
-<<<<<<< HEAD
-              className="px-3.5 sm:px-4 py-2.5 rounded-2xl bg-white dark:bg-[#15221B] border border-[#E5E1D8] dark:border-[#223528] text-[#252923] dark:text-white text-xs sm:text-sm font-bold flex items-center gap-1.5 shadow-[0_1px_6px_rgba(0,0,0,0.02)] hover:border-[#174F32]/40 hover:bg-[#F9F8F5] dark:hover:bg-[#1A2A20] transition-colors whitespace-nowrap shrink-0 min-h-[44px]"
-            >
-              <Plus className="w-4 h-4 stroke-[2.5] text-[#174F32] dark:text-[#83C95B] shrink-0" />
-=======
-              className="px-3.5 sm:px-4 py-2.5 rounded-full bg-white dark:bg-[#12131A] border border-neutral-200/80 dark:border-white/[0.06] text-black dark:text-white text-xs sm:text-sm font-bold flex items-center gap-1.5 shadow-[0_1px_6px_rgba(0,0,0,0.02)] hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors whitespace-nowrap shrink-0 min-h-[44px]"
-            >
-              <Plus className="w-4 h-4 stroke-[2.5] shrink-0" />
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
-              <span>Add Record</span>
-            </button>
-          </div>
-
-          {/* Sub-navigation Switcher for Obligations & Schedules */}
-          {(activeTab === 'bills' || activeTab === 'calendar' || activeTab === 'debt-planner') && (
-<<<<<<< HEAD
-            <div className="flex items-center gap-1 sm:gap-1.5 p-1 mb-4 rounded-2xl bg-white dark:bg-[#15221B] border border-[#E5E1D8] dark:border-[#223528] shadow-[0_1px_6px_rgba(0,0,0,0.02)] overflow-x-auto no-scrollbar">
-=======
-            <div className="flex items-center gap-1 sm:gap-1.5 p-1 mb-4 rounded-2xl bg-white dark:bg-[#12131A] border border-neutral-200/80 dark:border-white/[0.06] shadow-[0_1px_6px_rgba(0,0,0,0.02)] overflow-x-auto no-scrollbar">
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
-              <button
-                type="button"
-                onClick={() => handleNavigate('bills')}
-                className={`flex-1 min-w-[100px] py-2 px-3 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-1.5 whitespace-nowrap ${
-                  activeTab === 'bills'
-<<<<<<< HEAD
-                    ? 'bg-[#174F32] text-white dark:bg-[#1E3B2B] dark:text-[#86EFAC] shadow-xs'
-                    : 'text-[#61685D] dark:text-[#9EA59B] hover:text-[#174F32] dark:hover:text-white'
-=======
-                    ? 'bg-neutral-950 text-white dark:bg-white dark:text-neutral-950 shadow-xs'
-                    : 'text-neutral-600 dark:text-neutral-400 hover:text-black dark:hover:text-white'
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
-                }`}
-              >
-                <Receipt className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-                <span>Monthly Bills</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleNavigate('calendar')}
-                className={`flex-1 min-w-[100px] py-2 px-3 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-1.5 whitespace-nowrap ${
-                  activeTab === 'calendar'
-<<<<<<< HEAD
-                    ? 'bg-[#174F32] text-white dark:bg-[#1E3B2B] dark:text-[#86EFAC] shadow-xs'
-                    : 'text-[#61685D] dark:text-[#9EA59B] hover:text-[#174F32] dark:hover:text-white'
-=======
-                    ? 'bg-neutral-950 text-white dark:bg-white dark:text-neutral-950 shadow-xs'
-                    : 'text-neutral-600 dark:text-neutral-400 hover:text-black dark:hover:text-white'
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
-                }`}
-              >
-                <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-                <span>Bill Calendar</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleNavigate('debt-planner')}
-                className={`flex-1 min-w-[100px] py-2 px-3 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-1.5 whitespace-nowrap ${
-                  activeTab === 'debt-planner'
-<<<<<<< HEAD
-                    ? 'bg-[#174F32] text-white dark:bg-[#1E3B2B] dark:text-[#86EFAC] shadow-xs'
-                    : 'text-[#61685D] dark:text-[#9EA59B] hover:text-[#174F32] dark:hover:text-white'
-=======
-                    ? 'bg-neutral-950 text-white dark:bg-white dark:text-neutral-950 shadow-xs'
-                    : 'text-neutral-600 dark:text-neutral-400 hover:text-black dark:hover:text-white'
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
-                }`}
-              >
-                <TrendingDown className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-                <span>Debt Payoff</span>
-              </button>
+        <main
+          className={
+            activeTab === 'messages' && accountMode === 'joint'
+              ? 'flex-1 w-full flex flex-col p-0 min-w-0 min-h-0 h-full overflow-hidden'
+              : 'flex-1 w-full max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 pt-3 sm:pt-4 pb-16 min-w-0 overflow-hidden'
+          }
+        >
+          {accountMode === 'joint' && !currentUser ? (
+            <div className="max-w-xl mx-auto py-12 px-4 text-center space-y-6">
+              <div className="w-16 h-16 mx-auto rounded-3xl bg-[#174F32] text-[#83C95B] flex items-center justify-center shadow-md">
+                <Users className="w-8 h-8 stroke-[2.2]" />
+              </div>
+              <div className="space-y-2">
+                <h1 className="text-2xl sm:text-3xl font-extrabold text-[#252923] dark:text-white tracking-tight">
+                  PesoTrack Joint Finances
+                </h1>
+                <p className="text-sm text-[#777D75] dark:text-[#8FA095] leading-relaxed">
+                  Manage shared finances, household budgets, recurring bills, and grocery shopping in real-time with your partner or family.
+                </p>
+              </div>
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={() => openAuthModal('login')}
+                  className="px-6 py-3 rounded-2xl bg-[#174F32] hover:bg-[#123E27] text-white text-sm font-extrabold shadow-sm transition-all flex items-center justify-center gap-2 mx-auto cursor-pointer"
+                >
+                  <UserCheck className="w-4 h-4 text-[#83C95B]" />
+                  <span>Sign In or Register to Use Joint Account</span>
+                </button>
+              </div>
             </div>
-          )}
+          ) : accountMode === 'joint' && !activeJointWorkspace ? (
+            <div className="max-w-xl mx-auto py-12 px-4 text-center space-y-6">
+              <div className="w-16 h-16 mx-auto rounded-3xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shadow-xs">
+                <Users className="w-8 h-8 stroke-[2.2]" />
+              </div>
+              <div className="space-y-2">
+                <h1 className="text-2xl sm:text-3xl font-extrabold text-[#252923] dark:text-white tracking-tight">
+                  Start Your Joint Finances
+                </h1>
+                <p className="text-sm text-[#777D75] dark:text-[#8FA095] leading-relaxed">
+                  Create a workspace to share balances, record shared bills, track bill calendars, sync grocery lists, and collaborate in real-time with your partner.
+                </p>
+              </div>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsCreateJointOpen(true)}
+                  className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-[#174F32] hover:bg-[#123E27] text-white text-sm font-extrabold shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Plus className="w-4 h-4 text-[#83C95B]" />
+                  <span>Create Joint Account</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsJointInvitationsOpen(true)}
+                  className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-white dark:bg-[#15221B] border border-[#E5E1D8] dark:border-[#223528] text-[#252923] dark:text-white text-sm font-bold shadow-xs hover:bg-[#F9F8F5] dark:hover:bg-[#1A2A20] transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Mail className="w-4 h-4 text-[#174F32] dark:text-[#83C95B]" />
+                  <span>Check Invitations ({jointInvitations.filter((i) => i.status === 'pending').length})</span>
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Contextual Search & Quick Action Toolbar (Hidden when on Messages tab to allow Messenger full-height experience) */}
+              {activeTab !== 'messages' && (
+                <div className="flex items-center gap-2 sm:gap-2.5 mb-3.5 sm:mb-4 w-full min-w-0 max-w-full overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setIsSearchOpen(true)}
+                    className="flex-1 min-w-0 max-w-[calc(100%-140px)] sm:max-w-none flex items-center gap-2 px-3.5 sm:px-4 py-2.5 rounded-2xl bg-white dark:bg-[#15221B] border border-[#E5E1D8] dark:border-[#223528] text-xs sm:text-sm font-medium text-[#777D75] dark:text-[#8FA095] hover:bg-[#F9F8F5] dark:hover:bg-[#1A2A20] transition-colors shadow-[0_1px_6px_rgba(0,0,0,0.02)] min-h-[44px] overflow-hidden"
+                  >
+                    <Search className="w-4 h-4 text-[#777D75] dark:text-[#8FA095] shrink-0" />
+                    <span className="truncate">Search transactions, bills, accounts...</span>
+                  </button>
 
-          {/* Active View */}
-          {activeTab === 'home' && (
-            <HomePage
-              onNavigate={(tab) => {
-                if (tab === 'accounts') {
-                  setAccountsSubTab('accounts');
-                }
-                setActiveTab(tab);
-              }}
-              onOpenAddAccount={() => handleOpenAddAccount('Wallet')}
-              onSelectAccount={(id) => setSelectedAccountId(id)}
-              onOpenAddTransaction={handleOpenAddTransaction}
-              onSelectTransaction={(tx) => setSelectedTransaction(tx)}
-<<<<<<< HEAD
-              onSelectCategory={handleNavigateToAccountsCategory}
-=======
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
-            />
-          )}
+                  <button
+                    type="button"
+                    onClick={() => handleOpenAddTransaction('expense')}
+                    className="px-3.5 sm:px-4 py-2.5 rounded-2xl bg-white dark:bg-[#15221B] border border-[#E5E1D8] dark:border-[#223528] text-[#252923] dark:text-white text-xs sm:text-sm font-bold flex items-center gap-1.5 shadow-[0_1px_6px_rgba(0,0,0,0.02)] hover:border-[#174F32]/40 hover:bg-[#F9F8F5] dark:hover:bg-[#1A2A20] transition-colors whitespace-nowrap shrink-0 min-h-[44px]"
+                  >
+                    <Plus className="w-4 h-4 stroke-[2.5] text-[#174F32] dark:text-[#83C95B] shrink-0" />
+                    <span>Add Record</span>
+                  </button>
+                </div>
+              )}
 
-          {activeTab === 'bills' && (
-            <MonthlyBillsPage
-              onOpenCalendar={() => handleNavigate('calendar')}
-              onOpenDebtPlanner={() => handleNavigate('debt-planner')}
-            />
-          )}
+              {/* Sub-navigation Switcher for Obligations & Schedules (Identical in Personal & Joint) */}
+              {(activeTab === 'bills' || activeTab === 'calendar' || activeTab === 'debt-planner') && (
+                <div className="flex items-center gap-1 sm:gap-1.5 p-1 mb-4 rounded-2xl bg-white dark:bg-[#15221B] border border-[#E5E1D8] dark:border-[#223528] shadow-[0_1px_6px_rgba(0,0,0,0.02)] overflow-x-auto no-scrollbar">
+                  <button
+                    type="button"
+                    onClick={() => handleNavigate('bills')}
+                    className={`flex-1 min-w-[100px] py-2 px-3 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-1.5 whitespace-nowrap ${
+                      activeTab === 'bills'
+                        ? 'bg-[#174F32] text-white dark:bg-[#1E3B2B] dark:text-[#86EFAC] shadow-xs'
+                        : 'text-[#61685D] dark:text-[#9EA59B] hover:text-[#174F32] dark:hover:text-white'
+                    }`}
+                  >
+                    <Receipt className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+                    <span>Bills & Salary</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleNavigate('calendar')}
+                    className={`flex-1 min-w-[100px] py-2 px-3 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-1.5 whitespace-nowrap ${
+                      activeTab === 'calendar'
+                        ? 'bg-[#174F32] text-white dark:bg-[#1E3B2B] dark:text-[#86EFAC] shadow-xs'
+                        : 'text-[#61685D] dark:text-[#9EA59B] hover:text-[#174F32] dark:hover:text-white'
+                    }`}
+                  >
+                    <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+                    <span>Bill Calendar</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleNavigate('debt-planner')}
+                    className={`flex-1 min-w-[100px] py-2 px-3 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-1.5 whitespace-nowrap ${
+                      activeTab === 'debt-planner'
+                        ? 'bg-[#174F32] text-white dark:bg-[#1E3B2B] dark:text-[#86EFAC] shadow-xs'
+                        : 'text-[#61685D] dark:text-[#9EA59B] hover:text-[#174F32] dark:hover:text-white'
+                    }`}
+                  >
+                    <TrendingDown className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+                    <span>Debt Payoff</span>
+                  </button>
+                </div>
+              )}
 
-          {activeTab === 'calendar' && <BillCalendarPage />}
+              {/* Active Views: Render dedicated Joint Finances Workspace in joint mode, HomePage in personal mode */}
+              {(activeTab === 'home' || activeTab === 'overview') && (
+                accountMode === 'joint' ? (
+                  <JointFinancesPage
+                    currentUser={currentUser}
+                    onOpenAuthModal={() => openAuthModal('login')}
+                    workspace={activeJointWorkspace}
+                    accounts={jointAccounts}
+                    transactions={jointTransactions}
+                    bills={jointBills}
+                    monthlyBillEntries={jointMonthlyBillEntries}
+                    budgets={jointBudgets}
+                    groceryItems={jointGroceryItems}
+                    activities={jointActivities}
+                    invitations={jointInvitations}
+                    sentInvitations={jointSentInvitations}
+                    isRealtimeActive={isJointRealtimeActive}
+                    isOnline={isOnline}
+                    lastSyncTime={jointLastSyncTime}
+                    pendingMutationCount={jointPendingMutationCount}
+                    onCreateWorkspace={createJointWorkspace}
+                    onInvitePartner={invitePartnerToJoint}
+                    onAcceptInvitation={acceptJointInvitation}
+                    onDeclineInvitation={declineJointInvitation}
+                    onRevokeInvitation={revokeJointInvitation}
+                    onUpdateWorkspace={updateJointWorkspace}
+                    onRemoveMember={removeJointMember}
+                    onLeaveWorkspace={leaveJointWorkspace}
+                    onRefreshData={refreshJointData}
+                    showToast={showToast}
+                    activeTab="overview"
+                    onNavigateTab={(tab) => handleNavigate(tab as ActiveTab)}
+                  />
+                ) : (
+                  <HomePage
+                    onNavigate={(tab) => {
+                      if (tab === 'accounts') {
+                        setAccountsSubTab('accounts');
+                      }
+                      setActiveTab(tab);
+                    }}
+                    onOpenAddAccount={() => handleOpenAddAccount('Wallet')}
+                    onSelectAccount={(id) => setSelectedAccountId(id)}
+                    onOpenAddTransaction={handleOpenAddTransaction}
+                    onSelectTransaction={(tx) => setSelectedTransaction(tx)}
+                    onSelectCategory={handleNavigateToAccountsCategory}
+                  />
+                )
+              )}
 
-          {activeTab === 'debt-planner' && <DebtPayoffPlannerPage />}
+              {activeTab === 'bills' && (
+                <MonthlyBillsPage
+                  onOpenCalendar={() => handleNavigate('calendar')}
+                  onOpenDebtPlanner={() => handleNavigate('debt-planner')}
+                />
+              )}
 
-          {activeTab === 'transactions' && (
-            <TransactionsPage
-              onOpenAddTransaction={handleOpenAddTransaction}
-              onSelectTransaction={(tx) => setSelectedTransaction(tx)}
-            />
-          )}
+              {activeTab === 'calendar' && <BillCalendarPage />}
 
-          {activeTab === 'budgets' && <BudgetsPage />}
+              {activeTab === 'debt-planner' && <DebtPayoffPlannerPage />}
 
-          {activeTab === 'accounts' && (
-            <AccountsPage
-<<<<<<< HEAD
-              key={`accounts-${accountsSubTab}-${accountsCategoryFilter}`}
-=======
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
-              initialSubTab={accountsSubTab}
-              initialCategoryFilter={accountsCategoryFilter}
-              onOpenAddAccount={handleOpenAddAccount}
-              onSelectAccount={(id) => setSelectedAccountId(id)}
-            />
-          )}
+              {activeTab === 'transactions' && (
+                <TransactionsPage
+                  onOpenAddTransaction={handleOpenAddTransaction}
+                  onSelectTransaction={(tx) => setSelectedTransaction(tx)}
+                />
+              )}
 
-          {activeTab === 'reports' && (
-<<<<<<< HEAD
-            <ReportsPage
-              initialSection={reportsSection}
-              onNavigate={handleNavigate}
-              onOpenAddTransaction={handleOpenAddTransaction}
-              onSelectTransaction={(tx) => setSelectedTransaction(tx)}
-            />
-          )}
+              {activeTab === 'budgets' && <BudgetsPage />}
 
-          {activeTab === 'grocery-list' && (
-            <GroceryListPage
-              onNavigate={handleNavigate}
-              onOpenAddTransaction={handleOpenAddTransaction}
-            />
-=======
-            <ReportsPage initialSection={reportsSection} />
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
-          )}
+              {activeTab === 'accounts' && (
+                <AccountsPage
+                  key={`accounts-${accountsSubTab}-${accountsCategoryFilter}`}
+                  initialSubTab={accountsSubTab}
+                  initialCategoryFilter={accountsCategoryFilter}
+                  onOpenAddAccount={handleOpenAddAccount}
+                  onSelectAccount={(id) => setSelectedAccountId(id)}
+                />
+              )}
 
-          {activeTab === 'settings' && (
-            <SettingsPage initialSection={settingsSection} />
+              {activeTab === 'reports' && (
+                <ReportsPage
+                  initialSection={reportsSection}
+                  onNavigate={handleNavigate}
+                  onOpenAddTransaction={handleOpenAddTransaction}
+                  onSelectTransaction={(tx) => setSelectedTransaction(tx)}
+                />
+              )}
+
+              {activeTab === 'grocery-list' && (
+                <GroceryListPage
+                  onNavigate={handleNavigate}
+                  onOpenAddTransaction={handleOpenAddTransaction}
+                />
+              )}
+
+              {activeTab === 'activity' && (
+                <JointActivityView mode={accountMode} />
+              )}
+
+              {activeTab === 'notifications' && (
+                <NotificationsPage
+                  mode={accountMode}
+                  onNavigate={(tab) => handleNavigate(tab)}
+                />
+              )}
+
+              {activeTab === 'messages' && accountMode === 'joint' && (
+                <JointChatPage
+                  onBackToOverview={() => handleNavigate('overview')}
+                  onOpenMobileMenu={() => setIsOpenMobileDrawer(true)}
+                />
+              )}
+
+              {activeTab === 'settings' && (
+                accountMode === 'joint' ? (
+                  <JointSettingsPage
+                    onOpenCreateWorkspace={() => setIsCreateJointOpen(true)}
+                    onOpenInvitations={() => setIsJointInvitationsOpen(true)}
+                  />
+                ) : (
+                  <SettingsPage initialSection={settingsSection} />
+                )
+              )}
+            </>
           )}
         </main>
       </div>
 
-<<<<<<< HEAD
-      {/* Floating Add Transaction CTA (hidden on grocery-list where dedicated Grocery FAB is shown) */}
-      {activeTab !== 'grocery-list' && (
+      {/* Floating Add Transaction CTA (available in both Personal and Joint mode when not on grocery list or messages) */}
+      {activeTab !== 'grocery-list' && activeTab !== 'messages' && (
         <button
           type="button"
           onClick={() => handleOpenAddTransaction('expense')}
@@ -569,29 +684,30 @@ const PesoTrackAppContent: React.FC = () => {
 
       {/* Toast Banner */}
       {toastMessage && (
-        <div className="fixed top-[calc(4.5rem+env(safe-area-inset-top,0px))] left-1/2 -translate-x-1/2 z-50 px-4 py-2 sm:py-2.5 rounded-full bg-[#174F32] dark:bg-[#163825] text-white text-xs font-semibold shadow-lg border border-[#83C95B]/30 flex items-center gap-2 max-w-[90vw] truncate">
-          <CheckCircle2 className="w-4 h-4 text-[#83C95B] shrink-0" />
-=======
-      {/* Floating Add Transaction CTA (Positioned cleanly above system safe area, NO bottom bar) */}
-      <button
-        type="button"
-        onClick={() => handleOpenAddTransaction('expense')}
-        aria-label="Add transaction"
-        className="fixed bottom-[max(env(safe-area-inset-bottom,0px),1.25rem)] right-4 sm:right-6 md:right-8 z-30 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 shadow-xl flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
-      >
-        <Plus className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.6]" />
-      </button>
-
-      {/* Toast Banner */}
-      {toastMessage && (
-        <div className="fixed top-[calc(4.5rem+env(safe-area-inset-top,0px))] left-1/2 -translate-x-1/2 z-50 px-4 py-2 sm:py-2.5 rounded-full bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 text-xs font-semibold shadow-lg flex items-center gap-2 max-w-[90vw] truncate">
-          <CheckCircle2 className="w-4 h-4 text-[#2CE59B] dark:text-[#2E9E6B] shrink-0" />
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
+        <div
+          role="status"
+          aria-live="polite"
+          className={`fixed top-[calc(4.5rem+env(safe-area-inset-top,0px))] left-1/2 -translate-x-1/2 z-50 px-4 py-2 sm:py-2.5 rounded-full text-white text-xs font-semibold shadow-lg flex items-center gap-2 max-w-[90vw] truncate ${
+            toastMessage.type === 'error'
+              ? 'bg-red-800 dark:bg-red-900 border border-red-500/50 shadow-red-950/40'
+              : toastMessage.type === 'info'
+              ? 'bg-slate-800 dark:bg-slate-900 border border-slate-600/40 shadow-slate-950/40'
+              : 'bg-[#174F32] dark:bg-[#163825] border border-[#83C95B]/30'
+          }`}
+        >
+          {toastMessage.type === 'error' ? (
+            <AlertCircle className="w-4 h-4 text-red-300 shrink-0" />
+          ) : toastMessage.type === 'info' ? (
+            <Info className="w-4 h-4 text-sky-300 shrink-0" />
+          ) : (
+            <CheckCircle2 className="w-4 h-4 text-[#83C95B] shrink-0" />
+          )}
           <span className="truncate">{toastMessage.text}</span>
           <button
             type="button"
             onClick={clearToast}
-            className="ml-1 opacity-70 hover:opacity-100 shrink-0"
+            className="ml-1 opacity-70 hover:opacity-100 shrink-0 cursor-pointer"
+            aria-label="Dismiss message"
           >
             ✕
           </button>
@@ -622,21 +738,20 @@ const PesoTrackAppContent: React.FC = () => {
         onClose={() => {
           setIsTransactionModalOpen(false);
           setEditingTransaction(null);
-<<<<<<< HEAD
           setTxInitialAmount(undefined);
           setTxInitialCategory(undefined);
-=======
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
         }}
         initialType={txInitialType}
         initialAccountId={txInitialAccountId}
         initialDestinationAccountId={txInitialDestAccountId}
-<<<<<<< HEAD
         initialAmount={txInitialAmount}
         initialCategory={txInitialCategory}
-=======
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
         editingTransaction={editingTransaction}
+        mode={accountMode}
+        onOpenCreateAccount={() => {
+          setIsTransactionModalOpen(false);
+          handleOpenAddAccount();
+        }}
       />
 
       <TransactionDetailModal
@@ -650,6 +765,49 @@ const PesoTrackAppContent: React.FC = () => {
         onClose={() => setIsSearchOpen(false)}
         onSelectAccount={(id) => setSelectedAccountId(id)}
         onSelectTransaction={(tx) => setSelectedTransaction(tx)}
+      />
+
+      <CreateJointModal
+        isOpen={isCreateJointOpen}
+        onClose={() => setIsCreateJointOpen(false)}
+        onSubmit={createJointWorkspace}
+        userEmail={currentUser?.email}
+      />
+
+      <JointInvitationsModal
+        isOpen={isJointInvitationsOpen}
+        onClose={() => setIsJointInvitationsOpen(false)}
+        invitations={jointInvitations}
+        sentInvitations={jointSentInvitations}
+        onAccept={acceptJointInvitation}
+        onDecline={declineJointInvitation}
+        onRevoke={revokeJointInvitation}
+        currentUserEmail={currentUser?.email}
+      />
+
+      <NotificationCenterModal
+        isOpen={isNotificationCenterOpen}
+        onClose={() => setIsNotificationCenterOpen(false)}
+        onNavigateTab={(tab, mode) => {
+          if (mode === 'joint') {
+            setAccountMode('joint');
+          } else {
+            setAccountMode('personal');
+          }
+          handleNavigate(tab as ActiveTab);
+        }}
+      />
+
+      <IncomingRingModal
+        ringRequest={activeIncomingRing}
+        onAccept={() => {
+          respondToIncomingRing('accepted');
+          setAccountMode('joint');
+          handleNavigate('messages');
+        }}
+        onDismiss={() => {
+          respondToIncomingRing('dismissed');
+        }}
       />
     </div>
   );

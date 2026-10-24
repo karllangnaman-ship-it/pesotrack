@@ -1,41 +1,94 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   AlertCircle,
   Calendar,
   CheckCircle2,
   Coins,
+  RotateCcw,
   Wallet,
   X,
 } from 'lucide-react';
 import { useFinance } from '../context/FinanceContext';
+import { CreditPurchaseOrDrawdown } from '../types/finance';
 import { formatPeso, roundPHP } from '../utils/currency';
 import { ReconciledAccount } from '../utils/financeEngine';
+import { formatFriendlyDate } from '../utils/loanCalculations';
 import { ProviderLogo } from './ProviderLogo';
 
-interface RecordLoanPaymentModalProps {
+export interface RecordLoanPaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
   account: ReconciledAccount;
+  targetPurchase?: CreditPurchaseOrDrawdown;
+  initialAmount?: number;
+  initialDate?: string;
+  installmentNumber?: number;
+  totalInstallments?: number;
+  dueDate?: string;
 }
 
 export const RecordLoanPaymentModal: React.FC<RecordLoanPaymentModalProps> = ({
   isOpen,
   onClose,
   account,
+  targetPurchase,
+  initialAmount,
+  initialDate,
+  installmentNumber,
+  totalInstallments,
+  dueDate,
 }) => {
-  const { reconciledAccounts, recordLoanPayment, showToast } = useFinance();
+  const {
+    reconciledAccounts,
+    recordLoanPayment,
+    recordPurchasePayment,
+    revertAccountPayment,
+    state,
+    showToast,
+  } = useFinance();
 
-  const remainingBalance = Math.max(0, account.currentBalance);
+  const isDrawdown = !!targetPurchase;
+  const loanItemName = targetPurchase ? targetPurchase.name : account.name;
+  const remainingBalance = Math.max(
+    0,
+    targetPurchase ? targetPurchase.remainingBalance : account.currentBalance
+  );
+
+  const recentPayments = useMemo(() => {
+    return state.transactions
+      .filter(
+        (t) =>
+          (t.type === 'transfer' && t.destinationAccountId === account.id) ||
+          (t.accountId === account.id && t.category === 'Loan Payment') ||
+          (t.accountId === account.id &&
+            t.type === 'adjustment' &&
+            t.adjustmentSign === 'negative')
+      )
+      .slice(0, 4);
+  }, [state.transactions, account.id]);
+
   const monthlyInstallment =
-    account.loanInfo?.customMonthlyPayment ||
-    account.loanInfo?.monthlyInstallmentEstimate ||
-    (account.loanInfo?.drawdowns && account.loanInfo.drawdowns.length > 0
-      ? account.loanInfo.drawdowns
-          .filter((d) => d.status === 'active' && d.remainingBalance > 0)
-          .reduce((sum, d) => sum + d.monthlyPayment, 0)
-      : 0);
+    initialAmount && initialAmount > 0 && (initialAmount <= remainingBalance || remainingBalance === 0)
+      ? initialAmount
+      : targetPurchase
+      ? targetPurchase.monthlyPayment > 0
+        ? targetPurchase.monthlyPayment
+        : Math.round(
+            targetPurchase.totalRepayment / Math.max(1, targetPurchase.termMonths || 1)
+          )
+      : account.loanInfo?.customMonthlyPayment ||
+        account.loanInfo?.monthlyInstallmentEstimate ||
+        (account.loanInfo?.drawdowns && account.loanInfo.drawdowns.length > 0
+          ? account.loanInfo.drawdowns
+              .filter((d) => d.status === 'active' && d.remainingBalance > 0)
+              .reduce((sum, d) => sum + d.monthlyPayment, 0)
+          : 0);
 
-  const dueDayText = account.loanInfo?.dueDay
+  const dueDayText = dueDate
+    ? `Due on ${formatFriendlyDate(dueDate)}`
+    : targetPurchase?.dueDay
+    ? `Due on day ${targetPurchase.dueDay} of each month`
+    : account.loanInfo?.dueDay
     ? `Due on day ${account.loanInfo.dueDay} of each month`
     : 'Monthly repayment';
 
@@ -43,14 +96,16 @@ export const RecordLoanPaymentModal: React.FC<RecordLoanPaymentModalProps> = ({
     (a) => !a.isLiability && a.id !== account.id && !a.archived
   );
 
-  const initialAmount =
-    monthlyInstallment > 0 && monthlyInstallment <= remainingBalance
+  const defaultAmountToPrefill =
+    initialAmount !== undefined && initialAmount > 0 && (initialAmount <= remainingBalance || remainingBalance === 0)
+      ? String(initialAmount)
+      : monthlyInstallment > 0 && monthlyInstallment <= remainingBalance
       ? String(monthlyInstallment)
-      : String(remainingBalance);
+      : String(remainingBalance > 0 ? remainingBalance : 0);
 
-  const [amount, setAmount] = useState<string>(initialAmount);
+  const [amount, setAmount] = useState<string>(defaultAmountToPrefill);
   const [date, setDate] = useState<string>(
-    new Date().toISOString().slice(0, 10)
+    initialDate || new Date().toISOString().slice(0, 10)
   );
   const [sourceAccountId, setSourceAccountId] = useState<string>(
     availableSources[0]?.id || ''
@@ -62,15 +117,15 @@ export const RecordLoanPaymentModal: React.FC<RecordLoanPaymentModalProps> = ({
 
   React.useEffect(() => {
     if (isOpen) {
-      setAmount(initialAmount);
-      setDate(new Date().toISOString().slice(0, 10));
+      setAmount(defaultAmountToPrefill);
+      setDate(initialDate || new Date().toISOString().slice(0, 10));
       setSourceAccountId(availableSources[0]?.id || '');
       setNotes('');
       setError(null);
       setIsSubmitting(false);
       setAllowAdvancePayment(false);
     }
-  }, [isOpen, account.id, remainingBalance, initialAmount]);
+  }, [isOpen, account.id, targetPurchase?.id, remainingBalance, defaultAmountToPrefill, initialDate]);
 
   if (!isOpen) return null;
 
@@ -105,12 +160,22 @@ export const RecordLoanPaymentModal: React.FC<RecordLoanPaymentModalProps> = ({
 
     setIsSubmitting(true);
     try {
-      const ok = recordLoanPayment(account.id, {
-        amount: roundPHP(numAmount),
-        date,
-        sourceAccountId: sourceAccountId || undefined,
-        notes: notes.trim() || undefined,
-      });
+      let ok = false;
+      if (targetPurchase) {
+        ok = recordPurchasePayment(account.id, targetPurchase.id, {
+          amount: roundPHP(numAmount),
+          date,
+          sourceAccountId: sourceAccountId || undefined,
+          notes: notes.trim() || undefined,
+        });
+      } else {
+        ok = recordLoanPayment(account.id, {
+          amount: roundPHP(numAmount),
+          date,
+          sourceAccountId: sourceAccountId || undefined,
+          notes: notes.trim() || undefined,
+        });
+      }
 
       if (ok) {
         onClose();
@@ -139,10 +204,11 @@ export const RecordLoanPaymentModal: React.FC<RecordLoanPaymentModalProps> = ({
             />
             <div className="min-w-0 flex-1">
               <h3 className="text-base font-bold text-black dark:text-white truncate">
-                Record Loan Payment
+                {isDrawdown ? 'Record Loan Installment' : 'Record Loan Payment'}
               </h3>
               <p className="text-[11px] text-neutral-500 dark:text-neutral-400 truncate">
-                {account.name} · {dueDayText}
+                {loanItemName} · {dueDayText}
+                {installmentNumber ? ` · #${installmentNumber}${totalInstallments ? ' of ' + totalInstallments : ''}` : ''}
               </p>
             </div>
           </div>
@@ -176,13 +242,59 @@ export const RecordLoanPaymentModal: React.FC<RecordLoanPaymentModalProps> = ({
               </div>
             </div>
             <div className="text-right">
-              <span className="text-neutral-500 dark:text-neutral-400">Due Day:</span>
+              <span className="text-neutral-500 dark:text-neutral-400">
+                {dueDate ? 'Due Date:' : 'Due Day:'}
+              </span>
               <div className="font-bold text-neutral-800 dark:text-neutral-200">
-                {account.loanInfo?.dueDay ? `Day ${account.loanInfo.dueDay}` : 'Not set'}
+                {dueDate
+                  ? formatFriendlyDate(dueDate)
+                  : targetPurchase?.dueDay
+                  ? `Day ${targetPurchase.dueDay}`
+                  : account.loanInfo?.dueDay
+                  ? `Day ${account.loanInfo.dueDay}`
+                  : 'Flexible'}
               </div>
             </div>
           </div>
         </div>
+
+        {/* Recent Repayments with Undo / Revert to Unsettled Option */}
+        {recentPayments.length > 0 && (
+          <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 space-y-1.5">
+            <div className="text-[11px] font-bold text-amber-700 dark:text-amber-400 flex items-center justify-between">
+              <span>Recent Repayments ({recentPayments.length})</span>
+              <span className="text-[10px] font-normal">Misclicked? Click Undo to revert</span>
+            </div>
+            <div className="space-y-1.5">
+              {recentPayments.map((tx) => (
+                <div
+                  key={tx.id}
+                  className="flex items-center justify-between text-xs bg-white/70 dark:bg-neutral-800/70 p-2 rounded-xl"
+                >
+                  <div className="min-w-0 flex-1 pr-2">
+                    <div className="font-bold text-black dark:text-white tabular-nums">
+                      {formatPeso(tx.amount)}
+                    </div>
+                    <div className="text-[10px] text-neutral-500 truncate">
+                      {formatFriendlyDate(tx.dateTime.slice(0, 10))} · {tx.merchantOrTitle}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      revertAccountPayment(account.id, tx.id, targetPurchase?.id);
+                    }}
+                    className="px-2.5 py-1 rounded-lg border border-red-500/20 text-red-600 dark:text-red-400 text-[11px] font-bold hover:bg-red-500/10 active:scale-95 transition-all flex items-center gap-1 shrink-0 cursor-pointer"
+                    title="Bawiin payment / Revert to unsettled"
+                  >
+                    <RotateCcw className="w-3 h-3" />
+                    <span>Undo</span>
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {error && (
           <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 text-xs flex items-center gap-2">

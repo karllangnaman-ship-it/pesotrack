@@ -6,6 +6,7 @@ import {
   Clock,
   DollarSign,
   Edit2,
+  RotateCcw,
   Trash2,
   X,
 } from 'lucide-react';
@@ -33,29 +34,38 @@ export const BillDetailModal: React.FC<BillDetailModalProps> = ({
   monthKey,
   entry,
 }) => {
-  const { deleteBill, updateMonthlyBillEntry, deleteBillPayment } = useFinance();
+  const {
+    deleteBill,
+    updateMonthlyBillEntry,
+    deleteBillPayment,
+    revertBillPayment,
+    monthlyBillEntries,
+  } = useFinance();
+
+  const entryKey = `${bill.id}_${monthKey}`;
+  const liveEntry = monthlyBillEntries[entryKey] || entry;
 
   const [isRecordModalOpen, setIsRecordModalOpen] = useState(false);
   const [isEditingAmount, setIsEditingAmount] = useState(false);
   const [editAmountValue, setEditAmountValue] = useState<string>(
-    (entry?.actualAmount ?? bill.defaultAmount).toString()
+    (liveEntry?.actualAmount ?? bill.defaultAmount).toString()
   );
   const [editDueDayValue, setEditDueDayValue] = useState<number>(
-    entry?.dueDay ?? bill.dueDay
+    liveEntry?.dueDay ?? bill.dueDay
   );
 
   if (!isOpen) return null;
 
-  const billedAmount = entry?.actualAmount ?? bill.defaultAmount;
-  const payments = entry?.payments || [];
-  const totalPaid = entry?.isPaidManually
+  const billedAmount = liveEntry?.actualAmount ?? bill.defaultAmount;
+  const payments = liveEntry?.payments || [];
+  const totalPaid = liveEntry?.isPaidManually
     ? billedAmount
     : payments.reduce((sum, p) => sum + p.amount, 0);
   const remaining = Math.max(0, billedAmount - totalPaid);
 
   const [year, month] = monthKey.split('-').map(Number);
   const daysInMonth = new Date(year, month, 0).getDate();
-  const effectiveDueDay = Math.min(entry?.dueDay ?? bill.dueDay, daysInMonth);
+  const effectiveDueDay = Math.min(liveEntry?.dueDay ?? bill.dueDay, daysInMonth);
   const dueDateStr = `${monthKey}-${String(effectiveDueDay).padStart(2, '0')}`;
   const todayStr = new Date().toISOString().slice(0, 10);
   const isOverdue = remaining > 0 && dueDateStr < todayStr;
@@ -282,11 +292,22 @@ export const BillDetailModal: React.FC<BillDetailModalProps> = ({
                       </div>
                       <button
                         type="button"
-                        onClick={() => deleteBillPayment(bill.id, monthKey, p.id)}
-                        className="p-1.5 rounded-lg text-neutral-400 hover:text-red-500 hover:bg-red-500/10 transition-colors"
-                        title="Delete payment"
+                        onClick={() => {
+                          if (
+                            window.confirm(
+                              `Undo this payment of ${formatPeso(
+                                p.amount
+                              )} for "${displayName}"? This will revert the payment and restore your wallet balance.`
+                            )
+                          ) {
+                            revertBillPayment(bill.id, monthKey, p.id);
+                          }
+                        }}
+                        className="px-2 py-1 rounded-lg text-neutral-500 hover:text-red-500 hover:bg-red-500/10 transition-colors flex items-center gap-1 text-[11px] font-bold shrink-0"
+                        title="Bawiin payment / Undo payment"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <RotateCcw className="w-3.5 h-3.5 text-red-500" />
+                        <span className="text-red-600 dark:text-red-400">Undo</span>
                       </button>
                     </div>
                   ))}
@@ -307,18 +328,60 @@ export const BillDetailModal: React.FC<BillDetailModalProps> = ({
             {/* Action Buttons */}
             <div className="flex flex-col gap-2 pt-2 border-t border-neutral-100 dark:border-neutral-800">
               {remaining > 0 ? (
-                <button
-                  type="button"
-                  onClick={() => setIsRecordModalOpen(true)}
-                  className="w-full py-2.5 rounded-full bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 text-xs font-bold hover:opacity-90 transition-opacity flex items-center justify-center gap-1.5"
-                >
-                  <DollarSign className="w-4 h-4" />
-                  <span>Record Payment for {formatMonthLabel(monthKey)}</span>
-                </button>
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setIsRecordModalOpen(true)}
+                    className="w-full py-2.5 rounded-full bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 text-xs font-bold hover:opacity-90 transition-opacity flex items-center justify-center gap-1.5"
+                  >
+                    <DollarSign className="w-4 h-4" />
+                    <span>Record Payment for {formatMonthLabel(monthKey)}</span>
+                  </button>
+                  {totalPaid > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (
+                          window.confirm(
+                            `Undo all recorded payments for "${displayName}" for ${formatMonthLabel(
+                              monthKey
+                            )}? This will revert this bill to completely unsettled and restore your wallet balance.`
+                          )
+                        ) {
+                          revertBillPayment(bill.id, monthKey);
+                        }
+                      }}
+                      className="w-full py-2 rounded-full border border-red-500/30 text-red-600 dark:text-red-400 text-xs font-bold hover:bg-red-500/10 transition-colors flex items-center justify-center gap-1.5"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      <span>Undo All Payments for this Month</span>
+                    </button>
+                  )}
+                </>
               ) : (
-                <div className="p-2.5 rounded-full bg-emerald-500/10 text-[#2E9E6B] text-xs font-bold text-center flex items-center justify-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>Fully Paid for {formatMonthLabel(monthKey)}</span>
+                <div className="space-y-2">
+                  <div className="p-2.5 rounded-full bg-emerald-500/10 text-[#2E9E6B] text-xs font-bold text-center flex items-center justify-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>Fully Paid for {formatMonthLabel(monthKey)}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (
+                        window.confirm(
+                          `Undo payment and revert "${displayName}" to unsettled for ${formatMonthLabel(
+                            monthKey
+                          )}? This will restore your wallet balance.`
+                        )
+                      ) {
+                        revertBillPayment(bill.id, monthKey);
+                      }
+                    }}
+                    className="w-full py-2.5 rounded-full border border-red-500/30 text-red-600 dark:text-red-400 text-xs font-bold hover:bg-red-500/10 transition-colors flex items-center justify-center gap-1.5"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span>Undo Payment & Revert to Unsettled</span>
+                  </button>
                 </div>
               )}
 
@@ -348,9 +411,13 @@ export const BillDetailModal: React.FC<BillDetailModalProps> = ({
         <RecordBillPaymentModal
           isOpen={isRecordModalOpen}
           onClose={() => setIsRecordModalOpen(false)}
+          onSuccess={() => {
+            setIsRecordModalOpen(false);
+            onClose(); // Automatically close bill detail modal and return to calendar!
+          }}
           bill={bill}
           monthKey={monthKey}
-          entry={entry}
+          entry={liveEntry}
         />
       )}
     </>

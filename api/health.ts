@@ -1,5 +1,10 @@
-import { handleCors } from './_lib/cors';
-import firebaseConfig from '../firebase-applet-config.json';
+import { handleCors } from './_lib/cors.ts';
+import fs from 'node:fs';
+
+let firebaseConfig: any = {};
+try {
+  firebaseConfig = JSON.parse(fs.readFileSync(new URL('../firebase-applet-config.json', import.meta.url), 'utf8'));
+} catch {}
 
 export default async function handler(req: any, res: any) {
   if (handleCors(req, res)) return;
@@ -23,7 +28,7 @@ export default async function handler(req: any, res: any) {
     service: 'PesoTrack Online Backend',
     mode: 'online-only',
     timestamp: new Date().toISOString(),
-    projectId: process.env.FIREBASE_PROJECT_ID || firebaseConfig.projectId || 'pesotrack-51670',
+    projectId: process.env.FIREBASE_PROJECT_ID || firebaseConfig.projectId || 'ai-studio-applet-webapp-bd7cc',
     adminConfigured: hasServiceAccount,
     features: {
       healthCheck: true,

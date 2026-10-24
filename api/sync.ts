@@ -1,5 +1,5 @@
-import { handleCors } from './_lib/cors';
-import { authenticateRequest, getAdminFirestore } from './_lib/firebaseAdmin';
+import { handleCors } from './_lib/cors.ts';
+import { authenticateRequest, getAdminFirestore } from './_lib/firebaseAdmin.ts';
 
 export default async function handler(req: any, res: any) {
   if (handleCors(req, res)) return;
@@ -58,15 +58,11 @@ export default async function handler(req: any, res: any) {
         if (!item.entityId || !item.entityType) continue;
 
         const collectionName =
-<<<<<<< HEAD
           item.entityType === 'sync_state'
             ? 'sync'
             : item.entityType === 'grocery_categories'
             ? 'groceryCategories'
             : item.entityType;
-=======
-          item.entityType === 'sync_state' ? 'sync' : item.entityType;
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
 
         // CRITICAL: Strictly isolate path to users/{uid}/... derived from verified token
         const docRef = firestore
@@ -228,7 +224,6 @@ export default async function handler(req: any, res: any) {
         }
       }
 
-<<<<<<< HEAD
       // 7. Grocery Items
       if (Array.isArray(fullState.groceryItems)) {
         for (const item of fullState.groceryItems) {
@@ -268,9 +263,6 @@ export default async function handler(req: any, res: any) {
       }
 
       // 9. Workspace Settings & Sync State
-=======
-      // 7. Workspace Settings & Sync State
->>>>>>> 90065d3217f1c06a23bd91165016176faa350fce
       const syncDocRef = firestore
         .collection('users')
         .doc(uid)
@@ -309,7 +301,9 @@ export default async function handler(req: any, res: any) {
     // If Admin SDK credentials are not present in server environment, return informative guidance
     if (
       dbErr?.code === 'app/no-options' ||
-      dbErr?.message?.includes('Could not load the default credentials')
+      dbErr?.code === 7 ||
+      dbErr?.message?.includes('Could not load the default credentials') ||
+      dbErr?.message?.includes('Missing or insufficient permissions')
     ) {
       return res.status(200).json({
         ok: true,

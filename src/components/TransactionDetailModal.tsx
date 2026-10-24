@@ -17,6 +17,7 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
   onEdit,
 }) => {
   const { reconciledAccounts, deleteTransaction, state } = useFinance();
+  const [confirmDelete, setConfirmDelete] = React.useState(false);
 
   if (!transaction) return null;
 
@@ -150,17 +151,37 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
 
         {/* Actions */}
         <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3">
-          <button
-            type="button"
-            onClick={() => {
-              deleteTransaction(transaction.id);
-              onClose();
-            }}
-            className="w-full sm:flex-1 py-3 px-4 rounded-2xl bg-red-50 dark:bg-red-950/50 text-red-600 dark:text-red-400 text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 hover:bg-red-100 transition-colors"
-          >
-            <Trash2 className="w-4 h-4" />
-            <span>Delete</span>
-          </button>
+          {confirmDelete ? (
+            <div className="w-full sm:flex-1 flex items-center gap-2 animate-in fade-in">
+              <button
+                type="button"
+                onClick={() => {
+                  deleteTransaction(transaction.id);
+                  onClose();
+                }}
+                className="flex-1 py-3 px-3 rounded-2xl bg-red-600 hover:bg-red-700 text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition-all cursor-pointer"
+              >
+                <Trash2 className="w-4 h-4 shrink-0" />
+                <span>Yes, Delete & Undo</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmDelete(false)}
+                className="py-3 px-3.5 rounded-2xl bg-neutral-200 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 text-xs sm:text-sm font-semibold hover:bg-neutral-300 active:scale-95 transition-all cursor-pointer"
+              >
+                Cancel
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setConfirmDelete(true)}
+              className="w-full sm:flex-1 py-3 px-4 rounded-2xl bg-red-50 dark:bg-red-950/50 text-red-600 dark:text-red-400 text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 hover:bg-red-100 dark:hover:bg-red-950/70 active:scale-95 transition-all cursor-pointer"
+            >
+              <Trash2 className="w-4 h-4" />
+              <span>Delete / Undo</span>
+            </button>
+          )}
 
           <button
             type="button"

@@ -1,4 +1,4 @@
-import { handleCors } from './_lib/cors';
+import { handleCors } from './_lib/cors.ts';
 
 export default async function handler(req: any, res: any) {
   if (handleCors(req, res)) return;

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AlertCircle, CheckCircle2, DollarSign, Wallet, X } from 'lucide-react';
+import { AlertCircle, CheckCircle2, DollarSign, RotateCcw, Wallet, X } from 'lucide-react';
 import { useFinance } from '../context/FinanceContext';
 import { BillDefinition, MonthlyBillEntry } from '../types/finance';
 import { formatMonthLabel, formatPeso, fromCentavos, toCentavos } from '../utils/currency';
@@ -7,6 +7,7 @@ import { formatMonthLabel, formatPeso, fromCentavos, toCentavos } from '../utils
 interface RecordBillPaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSuccess?: () => void;
   bill: BillDefinition;
   monthKey: string; // YYYY-MM
   entry?: MonthlyBillEntry;
@@ -15,14 +16,17 @@ interface RecordBillPaymentModalProps {
 export const RecordBillPaymentModal: React.FC<RecordBillPaymentModalProps> = ({
   isOpen,
   onClose,
+  onSuccess,
   bill,
   monthKey,
   entry,
 }) => {
-  const { reconciledAccounts, recordBillPayment } = useFinance();
+  const { reconciledAccounts, recordBillPayment, revertBillPayment, monthlyBillEntries } =
+    useFinance();
 
-  const billedAmount = entry?.actualAmount ?? bill.defaultAmount;
-  const alreadyPaid = entry?.payments?.reduce((s, p) => s + p.amount, 0) || 0;
+  const liveEntry = monthlyBillEntries[`${bill.id}_${monthKey}`] || entry;
+  const billedAmount = liveEntry?.actualAmount ?? bill.defaultAmount;
+  const alreadyPaid = liveEntry?.payments?.reduce((s, p) => s + p.amount, 0) || 0;
   const remaining = Math.max(0, billedAmount - alreadyPaid);
 
   const [amount, setAmount] = useState<string>(remaining > 0 ? remaining.toString() : billedAmount.toString());
@@ -70,7 +74,11 @@ export const RecordBillPaymentModal: React.FC<RecordBillPaymentModalProps> = ({
     });
 
     if (success) {
-      onClose();
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        onClose();
+      }
     }
   };
 
@@ -129,6 +137,73 @@ export const RecordBillPaymentModal: React.FC<RecordBillPaymentModalProps> = ({
               </span>
             </div>
           </div>
+
+          {/* Recent Payments with Undo / Revert Option */}
+          {liveEntry?.payments && liveEntry.payments.length > 0 && (
+            <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 space-y-1.5">
+              <div className="text-[11px] font-bold text-amber-800 dark:text-amber-300 flex items-center justify-between">
+                <span>Recorded This Month ({liveEntry.payments.length})</span>
+                <span className="text-[10px] font-normal text-amber-700 dark:text-amber-400">
+                  Misclicked? Click Undo to revert
+                </span>
+              </div>
+              <div className="space-y-1.5 max-h-32 overflow-y-auto">
+                {liveEntry.payments.map((p) => (
+                  <div
+                    key={p.id}
+                    className="flex items-center justify-between text-xs bg-white/70 dark:bg-neutral-800/70 p-2 rounded-xl"
+                  >
+                    <div className="min-w-0 flex-1 pr-2">
+                      <div className="font-bold text-black dark:text-white tabular-nums">
+                        {formatPeso(p.amount)}
+                      </div>
+                      <div className="text-[10px] text-neutral-500 truncate">
+                        {p.date} · {p.paymentMethod} {p.notes ? `· ${p.notes}` : ''}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (
+                          window.confirm(
+                            `Undo payment of ${formatPeso(
+                              p.amount
+                            )} for "${displayName}"? This will revert this payment and refund your wallet.`
+                          )
+                        ) {
+                          revertBillPayment(bill.id, monthKey, p.id);
+                        }
+                      }}
+                      className="px-2 py-1 rounded-lg border border-red-500/20 text-red-600 dark:text-red-400 text-[11px] font-bold hover:bg-red-500/10 transition-colors flex items-center gap-1 shrink-0"
+                      title="Bawiin payment / Revert to unsettled"
+                    >
+                      <RotateCcw className="w-3 h-3" />
+                      <span>Undo</span>
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  if (
+                    window.confirm(
+                      `Undo all recorded payments for "${displayName}" for ${formatMonthLabel(
+                        monthKey
+                      )}? This will revert this bill to completely unsettled and restore your wallet balance.`
+                    )
+                  ) {
+                    revertBillPayment(bill.id, monthKey);
+                    onClose();
+                  }
+                }}
+                className="w-full py-1.5 px-2.5 rounded-lg border border-red-500/20 text-red-600 dark:text-red-400 text-[11px] font-bold hover:bg-red-500/10 transition-colors flex items-center justify-center gap-1"
+              >
+                <RotateCcw className="w-3 h-3" />
+                <span>Undo All Payments for {formatMonthLabel(monthKey)}</span>
+              </button>
+            </div>
+          )}
 
           {/* Payment Amount Input */}
           <div className="space-y-1.5">

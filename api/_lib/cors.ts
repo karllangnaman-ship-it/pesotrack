@@ -22,9 +22,12 @@ export function handleCors(req: any, res: any): boolean {
     origin.startsWith('http://localhost:') ||
     origin.startsWith('http://127.0.0.1:');
 
-  // Allow Vercel preview & production deployments
-  const isVercelDomain =
+  // Allow Vercel preview & production deployments, and AI Studio run.app preview domains
+  const isVercelOrCloudRun =
     origin.endsWith('.vercel.app') ||
+    origin.endsWith('.run.app') ||
+    origin.endsWith('.google.com') ||
+    origin.endsWith('.aistudio.google') ||
     (appUrl && origin === appUrl);
 
   const isExplicitlyAllowed = envAllowed.includes(origin);
@@ -33,7 +36,7 @@ export function handleCors(req: any, res: any): boolean {
     !origin || // Non-browser / same-origin / server-to-server requests
     isCapacitorOrigin ||
     isLocalDev ||
-    isVercelDomain ||
+    isVercelOrCloudRun ||
     isExplicitlyAllowed;
 
   if (origin && isAllowed) {

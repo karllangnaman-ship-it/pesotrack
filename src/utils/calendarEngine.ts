@@ -1,12 +1,20 @@
 import {
   BillDefinition,
+  CreditPurchaseOrDrawdown,
   MonthlyBillEntry,
   ReceivableRecord,
   RecurringTransaction,
   TransactionRecord,
 } from '../types/finance';
 import { ReconciledAccount } from './financeEngine';
-import { roundPHP, subPHP } from './currency';
+import { addPHP, formatPeso, roundPHP, subPHP } from './currency';
+import {
+  addMonthsToDate,
+  calculateRepaymentDetails,
+  generatePurchaseInstallmentSchedule,
+  generateSingleLoanSchedule,
+  generateSingleCreditSchedule,
+} from './loanCalculations';
 
 export type CalendarEventType =
   | 'bill'
@@ -46,6 +54,9 @@ export interface CalendarEvent {
   };
   receivableData?: ReceivableRecord;
   accountData?: ReconciledAccount;
+  purchaseData?: CreditPurchaseOrDrawdown;
+  installmentIndex?: number;
+  totalInstallments?: number;
   recurringData?: RecurringTransaction;
 }
 
@@ -66,6 +77,7 @@ export interface MonthCalendarMetrics {
   totalBillsPaid: number;
   remainingBillsToPay: number;
   upcomingCreditAndLoans: number;
+  creditAndLoansPaid?: number;
   overdueCount: number;
   overdueAmount: number;
   expectedCollections: number;
@@ -97,6 +109,36 @@ export function determineEventStatus(
 }
 
 /**
+ * Helper to gather all repayments (transfers in or direct adjustment payments) for a liability account.
+ */
+function getAccountPayments(
+  accountId: string,
+  transactions: TransactionRecord[],
+  monthKey?: string
+): TransactionRecord[] {
+  return transactions.filter((tx) => {
+    if (tx.isStartingBalance) return false;
+    if (monthKey && !tx.dateTime.startsWith(monthKey)) return false;
+
+    // 1. Transfer into this liability account
+    if (tx.type === 'transfer' && tx.destinationAccountId === accountId) return true;
+
+    // 2. Direct payment or adjustment on this account
+    if (
+      tx.accountId === accountId &&
+      (tx.category === 'Loan Payment' ||
+        tx.category === 'Credit Payment' ||
+        (tx.type === 'adjustment' && tx.adjustmentSign === 'negative') ||
+        tx.type === 'income')
+    ) {
+      return true;
+    }
+
+    return false;
+  });
+}
+
+/**
  * Builds all unified calendar events for a specific monthKey (YYYY-MM).
  */
 export function getCalendarEventsForMonth(
@@ -111,6 +153,7 @@ export function getCalendarEventsForMonth(
   const events: CalendarEvent[] = [];
   const [targetYear, targetMonth] = monthKey.split('-').map(Number);
   const daysInMonth = new Date(targetYear, targetMonth, 0).getDate();
+  const currentMonthKey = new Date().toISOString().slice(0, 7);
 
   // 1. MONTHLY BILLS (Fixed & Variable)
   for (const bill of bills) {
@@ -174,40 +217,172 @@ export function getCalendarEventsForMonth(
   // 2. CREDIT CARDS & CREDIT ACCOUNTS
   const creditAccounts = reconciledAccounts.filter((a) => !a.archived && a.category === 'Credit');
   for (const acc of creditAccounts) {
-    if (acc.currentBalance <= 0) continue;
-
-    // Multiple installments support
+    // Case 2A: Multiple Installments / Purchases on this credit card
     if (
       acc.creditInfo?.enableMultipleInstallments &&
       acc.creditInfo.purchases &&
       acc.creditInfo.purchases.length > 0
     ) {
       for (const p of acc.creditInfo.purchases) {
-        if (p.remainingBalance <= 0) continue;
-        const dueDay = p.dueDay || acc.creditInfo.dueDay || 15;
-        const validDueDay = Math.min(Math.max(1, dueDay), daysInMonth);
-        const dueDateStr = `${monthKey}-${String(validDueDay).padStart(2, '0')}`;
-        const installmentAmt = p.customMonthlyPayment || p.monthlyPayment || roundPHP(p.remainingBalance / Math.max(1, p.termMonths || 12));
+        const schedule = generatePurchaseInstallmentSchedule(p);
+        const matchingItem = schedule.find((it) => it.monthKey === monthKey);
+        const isCurrentMonth = monthKey === currentMonthKey;
+        const lastItem = schedule[schedule.length - 1];
+        const isPastSchedule = lastItem && monthKey > lastItem.monthKey;
 
-        // Check if any payment was made this month for this purchase
-        const monthPaid = p.payments
-          ?.filter((pm) => pm.date.startsWith(monthKey))
-          .reduce((sum, pm) => sum + pm.amount, 0) || 0;
+        if (matchingItem) {
+          events.push({
+            id: `cal_credit_${acc.id}_p_${p.id}_${monthKey}`,
+            eventType: 'credit',
+            sourceId: acc.id,
+            title: `${acc.name} — ${p.name}`,
+            subtitle: `Installment ${matchingItem.installmentIndex} of ${matchingItem.totalInstallments} • ${acc.name}`,
+            category: 'Credit Card',
+            dueDate: matchingItem.dueDate,
+            dueDay: matchingItem.dueDay,
+            monthKey,
+            amount: matchingItem.amountDue,
+            amountPaid: matchingItem.amountPaid,
+            remainingAmount: matchingItem.remainingAmount,
+            status: matchingItem.status,
+            isCollection: false,
+            providerId: acc.providerId,
+            customColor: acc.customColor,
+            accountData: acc,
+            purchaseData: p,
+            installmentIndex: matchingItem.installmentIndex,
+            totalInstallments: matchingItem.totalInstallments,
+          });
+        } else if (isPastSchedule && isCurrentMonth && p.remainingBalance > 0) {
+          const overdueAmt = Math.min(p.monthlyPayment || p.remainingBalance, p.remainingBalance);
+          events.push({
+            id: `cal_credit_${acc.id}_p_${p.id}_overdue_${monthKey}`,
+            eventType: 'credit',
+            sourceId: acc.id,
+            title: `${acc.name} — ${p.name} (Overdue Balance)`,
+            subtitle: `Past schedule • Remaining balance due: ${formatPeso(p.remainingBalance)}`,
+            category: 'Credit Card',
+            dueDate: `${monthKey}-01`,
+            dueDay: 1,
+            monthKey,
+            amount: overdueAmt,
+            amountPaid: 0,
+            remainingAmount: overdueAmt,
+            status: 'overdue',
+            isCollection: false,
+            providerId: acc.providerId,
+            customColor: acc.customColor,
+            accountData: acc,
+            purchaseData: p,
+            installmentIndex: p.termMonths || 1,
+            totalInstallments: p.termMonths || 1,
+          });
+        }
+      }
+    } else if (
+      acc.creditInfo?.hasInstallmentPlan ||
+      (acc.creditInfo?.termMonths && acc.creditInfo.termMonths > 0)
+    ) {
+      // Case 2B: Single credit card with installment plan
+      const schedule = generateSingleCreditSchedule(acc, transactions);
+      const matchingItem = schedule.find((it) => it.monthKey === monthKey);
+      const isCurrentMonth = monthKey === currentMonthKey;
+      const lastItem = schedule[schedule.length - 1];
+      const isPastSchedule = lastItem && monthKey > lastItem.monthKey;
 
-        const remainingAmt = Math.max(0, subPHP(installmentAmt, monthPaid));
-        const status = determineEventStatus(dueDateStr, installmentAmt, monthPaid);
-
+      if (matchingItem) {
         events.push({
-          id: `cal_credit_${acc.id}_p_${p.id}_${monthKey}`,
+          id: `cal_credit_${acc.id}_${monthKey}`,
           eventType: 'credit',
           sourceId: acc.id,
-          title: `${acc.name} — ${p.name}`,
-          subtitle: `Installment Due • ${acc.name}`,
+          title: acc.name,
+          subtitle: `Installment ${matchingItem.installmentIndex} of ${matchingItem.totalInstallments} • ${acc.name}`,
+          category: 'Credit Card',
+          dueDate: matchingItem.dueDate,
+          dueDay: matchingItem.dueDay,
+          monthKey,
+          amount: matchingItem.amountDue,
+          amountPaid: matchingItem.amountPaid,
+          remainingAmount: matchingItem.remainingAmount,
+          status: matchingItem.status,
+          isCollection: false,
+          providerId: acc.providerId,
+          customColor: acc.customColor,
+          accountData: acc,
+          installmentIndex: matchingItem.installmentIndex,
+          totalInstallments: matchingItem.totalInstallments,
+        });
+      } else if (isPastSchedule && isCurrentMonth && acc.currentBalance > 0) {
+        const terms = acc.creditInfo?.termMonths || 12;
+        const totalRepay = acc.creditInfo?.totalRepayment ?? acc.totalRepayment ?? acc.currentBalance;
+        const baseMonthly = acc.creditInfo?.customMonthlyPayment || roundPHP(totalRepay / terms);
+        const overdueAmt = Math.min(baseMonthly, acc.currentBalance);
+        events.push({
+          id: `cal_credit_${acc.id}_overdue_${monthKey}`,
+          eventType: 'credit',
+          sourceId: acc.id,
+          title: `${acc.name} (Overdue Balance)`,
+          subtitle: `Past schedule • Remaining balance due: ${formatPeso(acc.currentBalance)}`,
+          category: 'Credit Card',
+          dueDate: `${monthKey}-01`,
+          dueDay: 1,
+          monthKey,
+          amount: overdueAmt,
+          amountPaid: 0,
+          remainingAmount: overdueAmt,
+          status: 'overdue',
+          isCollection: false,
+          providerId: acc.providerId,
+          customColor: acc.customColor,
+          accountData: acc,
+          installmentIndex: terms,
+          totalInstallments: terms,
+        });
+      }
+    } else {
+      // Case 2C: Standard revolving credit card statement cycle
+      const dueDay = acc.creditInfo?.dueDay || 15;
+      const validDueDay = Math.min(Math.max(1, dueDay), daysInMonth);
+      const dueDateStr = `${monthKey}-${String(validDueDay).padStart(2, '0')}`;
+
+      // Check payments made to this account for this month
+      const monthPayments = getAccountPayments(acc.id, transactions, monthKey);
+      const monthPaid = monthPayments.reduce((sum, tx) => sum + tx.amount, 0);
+
+      const dueAmount =
+        acc.creditInfo?.customMonthlyPayment ||
+        acc.creditInfo?.monthlyInstallmentEstimate ||
+        (acc.currentBalance > 0 ? acc.currentBalance : 0);
+
+      // Only display if there was a balance or a payment was made
+      if (acc.currentBalance > 0 || monthPaid > 0) {
+        const effectiveDue = dueAmount > 0 ? dueAmount : monthPaid;
+        let status: CalendarEventStatus = 'unpaid';
+        let remainingAmt = Math.max(0, subPHP(effectiveDue, monthPaid));
+
+        if (acc.currentBalance <= 0 && monthPaid > 0) {
+          status = 'paid';
+          remainingAmt = 0;
+        } else if (monthPaid >= effectiveDue && effectiveDue > 0) {
+          status = 'paid';
+          remainingAmt = 0;
+        } else if (monthPaid > 0) {
+          status = determineEventStatus(dueDateStr, effectiveDue, monthPaid);
+        } else {
+          status = determineEventStatus(dueDateStr, effectiveDue, 0);
+        }
+
+        events.push({
+          id: `cal_credit_${acc.id}_${monthKey}`,
+          eventType: 'credit',
+          sourceId: acc.id,
+          title: acc.name,
+          subtitle: `Credit Bill Due (Statement day: ${acc.creditInfo?.statementDay || dueDay})`,
           category: 'Credit Card',
           dueDate: dueDateStr,
           dueDay: validDueDay,
           monthKey,
-          amount: installmentAmt,
+          amount: effectiveDue,
           amountPaid: monthPaid,
           remainingAmount: remainingAmt,
           status,
@@ -217,123 +392,219 @@ export function getCalendarEventsForMonth(
           accountData: acc,
         });
       }
-    } else {
-      const dueDay = acc.creditInfo?.dueDay || 15;
-      const validDueDay = Math.min(Math.max(1, dueDay), daysInMonth);
-      const dueDateStr = `${monthKey}-${String(validDueDay).padStart(2, '0')}`;
-
-      // Calculate amount due (monthly installment estimate or card balance)
-      const dueAmount = acc.creditInfo?.monthlyInstallmentEstimate ||
-        acc.creditInfo?.customMonthlyPayment ||
-        acc.currentBalance;
-
-      // Check payments made to this credit account in this month
-      const monthPaid = transactions
-        .filter((tx) => tx.type === 'transfer' && tx.destinationAccountId === acc.id && tx.dateTime.startsWith(monthKey))
-        .reduce((sum, tx) => sum + tx.amount, 0);
-
-      const remainingAmt = Math.max(0, subPHP(dueAmount, monthPaid));
-      const status = determineEventStatus(dueDateStr, dueAmount, monthPaid);
-
-      events.push({
-        id: `cal_credit_${acc.id}_${monthKey}`,
-        eventType: 'credit',
-        sourceId: acc.id,
-        title: acc.name,
-        subtitle: `Credit Bill Due (Statement day: ${acc.creditInfo?.statementDay || dueDay})`,
-        category: 'Credit Card',
-        dueDate: dueDateStr,
-        dueDay: validDueDay,
-        monthKey,
-        amount: dueAmount,
-        amountPaid: monthPaid,
-        remainingAmount: remainingAmt,
-        status,
-        isCollection: false,
-        providerId: acc.providerId,
-        customColor: acc.customColor,
-        accountData: acc,
-      });
     }
   }
 
   // 3. LOAN INSTALLMENTS
   const loanAccounts = reconciledAccounts.filter((a) => !a.archived && a.category === 'Loans');
   for (const acc of loanAccounts) {
-    if (acc.currentBalance <= 0) continue;
-
+    // Case 3A: Multiple Drawdowns / Borrowings on this loan facility
     if (
       acc.loanInfo?.enableMultipleInstallments &&
       acc.loanInfo.drawdowns &&
       acc.loanInfo.drawdowns.length > 0
     ) {
       for (const d of acc.loanInfo.drawdowns) {
-        if (d.remainingBalance <= 0) continue;
-        const dueDay = d.dueDay || acc.loanInfo.dueDay || 15;
-        const validDueDay = Math.min(Math.max(1, dueDay), daysInMonth);
-        const dueDateStr = `${monthKey}-${String(validDueDay).padStart(2, '0')}`;
-        const installmentAmt = d.customMonthlyPayment || d.monthlyPayment || roundPHP(d.remainingBalance / Math.max(1, d.termMonths || 12));
+        const terms = Math.max(1, d.termMonths || 1);
+        const totalRepay = d.totalRepayment > 0 ? d.totalRepayment : d.principal;
+        const baseMonthly = d.monthlyPayment > 0 ? d.monthlyPayment : roundPHP(totalRepay / terms);
+        const startBase =
+          d.firstPaymentDate || d.startDate || d.createdAt?.slice(0, 10) || `${monthKey}-01`;
+        const dueDay =
+          d.dueDay >= 1 && d.dueDay <= 31 ? d.dueDay : (acc.loanInfo?.dueDay || 15);
 
-        const monthPaid = d.payments
-          ?.filter((pm) => pm.date.startsWith(monthKey))
-          .reduce((sum, pm) => sum + pm.amount, 0) || 0;
+        let matchingInstallmentIndex: number | null = null;
+        for (let i = 0; i < terms; i++) {
+          const rawDate = addMonthsToDate(startBase, i);
+          if (rawDate.slice(0, 7) === monthKey) {
+            matchingInstallmentIndex = i;
+            break;
+          }
+        }
 
-        const remainingAmt = Math.max(0, subPHP(installmentAmt, monthPaid));
-        const status = determineEventStatus(dueDateStr, installmentAmt, monthPaid);
+        const isCurrentMonth = monthKey === currentMonthKey;
+        const lastInstallmentDate = addMonthsToDate(startBase, terms - 1);
+        const isPastSchedule = monthKey > lastInstallmentDate.slice(0, 7);
+
+        if (matchingInstallmentIndex === null && !(isPastSchedule && isCurrentMonth && d.remainingBalance > 0)) {
+          continue;
+        }
+
+        const i = matchingInstallmentIndex !== null ? matchingInstallmentIndex : terms - 1;
+        const isLast = i === terms - 1;
+        const installmentAmt =
+          isPastSchedule && d.remainingBalance > 0
+            ? Math.min(baseMonthly, d.remainingBalance)
+            : isLast
+            ? roundPHP(totalRepay - baseMonthly * (terms - 1))
+            : baseMonthly;
+
+        const cumulativeDue = isLast ? totalRepay : roundPHP(baseMonthly * (i + 1));
+        const prevCumulativeDue = roundPHP(cumulativeDue - installmentAmt);
+
+        const clampedDay = Math.min(daysInMonth, dueDay);
+        const dueDateStr = `${monthKey}-${String(clampedDay).padStart(2, '0')}`;
+
+        // Shared settlement calculation matching Loans tab
+        let status: CalendarEventStatus = 'unpaid';
+        let amountPaid = 0;
+        let remainingAmt = installmentAmt;
+
+        if (d.remainingBalance <= 0 || d.status === 'completed') {
+          status = 'paid';
+          amountPaid = installmentAmt;
+          remainingAmt = 0;
+        } else if (d.totalPaid >= cumulativeDue - 0.009) {
+          status = 'paid';
+          amountPaid = installmentAmt;
+          remainingAmt = 0;
+        } else if (d.totalPaid > prevCumulativeDue) {
+          amountPaid = roundPHP(d.totalPaid - prevCumulativeDue);
+          remainingAmt = Math.max(0, roundPHP(installmentAmt - amountPaid));
+          status = determineEventStatus(dueDateStr, installmentAmt, amountPaid);
+        } else {
+          amountPaid = 0;
+          remainingAmt = installmentAmt;
+          status = determineEventStatus(dueDateStr, installmentAmt, 0);
+        }
 
         events.push({
           id: `cal_loan_${acc.id}_d_${d.id}_${monthKey}`,
           eventType: 'loan',
           sourceId: acc.id,
           title: `${acc.name} — ${d.name}`,
-          subtitle: `Loan Installment Due`,
+          subtitle: `Installment ${i + 1} of ${terms} • ${acc.name}`,
           category: 'Personal Loan',
           dueDate: dueDateStr,
-          dueDay: validDueDay,
+          dueDay: clampedDay,
           monthKey,
           amount: installmentAmt,
-          amountPaid: monthPaid,
+          amountPaid,
           remainingAmount: remainingAmt,
           status,
           isCollection: false,
           providerId: acc.providerId,
           customColor: acc.customColor,
           accountData: acc,
+          purchaseData: d,
+          installmentIndex: i + 1,
+          totalInstallments: terms,
         });
       }
     } else {
-      const dueDay = acc.loanInfo?.dueDay || 15;
-      const validDueDay = Math.min(Math.max(1, dueDay), daysInMonth);
-      const dueDateStr = `${monthKey}-${String(validDueDay).padStart(2, '0')}`;
-      const installmentAmt = acc.loanInfo?.monthlyInstallmentEstimate ||
-        acc.loanInfo?.customMonthlyPayment ||
+      // Case 3B: Single loan account
+      const terms = Math.max(1, acc.loanInfo?.termMonths || 12);
+      const principal =
+        acc.loanInfo?.originalPrincipal ||
+        acc.startingBalance ||
         acc.currentBalance;
+      const totalRepay = acc.loanInfo?.totalRepayment ?? acc.totalRepayment ?? principal;
+      const baseMonthly =
+        acc.loanInfo?.customMonthlyPayment ||
+        acc.loanInfo?.monthlyInstallmentEstimate ||
+        roundPHP(totalRepay / terms);
+      const startBase =
+        acc.loanInfo?.startDate || acc.createdAt?.slice(0, 10) || `${monthKey}-01`;
+      const dueDay = acc.loanInfo?.dueDay || 15;
 
-      const monthPaid = transactions
-        .filter((tx) => tx.type === 'transfer' && tx.destinationAccountId === acc.id && tx.dateTime.startsWith(monthKey))
-        .reduce((sum, tx) => sum + tx.amount, 0);
+      let matchingInstallmentIndex: number | null = null;
+      for (let i = 0; i < terms; i++) {
+        const rawDate = addMonthsToDate(startBase, i);
+        if (rawDate.slice(0, 7) === monthKey) {
+          matchingInstallmentIndex = i;
+          break;
+        }
+      }
 
-      const remainingAmt = Math.max(0, subPHP(installmentAmt, monthPaid));
-      const status = determineEventStatus(dueDateStr, installmentAmt, monthPaid);
+      const isCurrentMonth = monthKey === currentMonthKey;
+      const lastInstallmentDate = addMonthsToDate(startBase, terms - 1);
+      const isPastSchedule = monthKey > lastInstallmentDate.slice(0, 7);
+
+      if (matchingInstallmentIndex === null && !(isPastSchedule && isCurrentMonth && acc.currentBalance > 0)) {
+        continue;
+      }
+
+      const i = matchingInstallmentIndex !== null ? matchingInstallmentIndex : terms - 1;
+      const isLast = i === terms - 1;
+      const installmentAmt =
+        isPastSchedule && acc.currentBalance > 0
+          ? Math.min(baseMonthly, acc.currentBalance)
+          : isLast
+          ? roundPHP(totalRepay - baseMonthly * (terms - 1))
+          : baseMonthly;
+
+      const cumulativeDue = isLast ? totalRepay : roundPHP(baseMonthly * (i + 1));
+      const prevCumulativeDue = roundPHP(cumulativeDue - installmentAmt);
+
+      const clampedDay = Math.min(daysInMonth, dueDay);
+      const dueDateStr = `${monthKey}-${String(clampedDay).padStart(2, '0')}`;
+
+      // Calculate total payments made on this loan
+      const allTxPayments = getAccountPayments(acc.id, transactions);
+      const totalTxPaid = allTxPayments.reduce((sum, tx) => sum + tx.amount, 0);
+      const totalPaid = Math.max(totalTxPaid, Math.max(0, subPHP(totalRepay, acc.currentBalance)));
+
+      const repayment = calculateRepaymentDetails(
+        {
+          principal,
+          totalRepayment: totalRepay,
+          termMonths: terms,
+          interestRate: acc.loanInfo?.interestRate ?? acc.loanInfo?.interestRateAnnual ?? 0,
+          interestRateType: acc.loanInfo?.interestRateType || 'annual',
+          repaymentModel: acc.loanInfo?.repaymentModel || 'flat_rate',
+          customMonthlyPayment: acc.loanInfo?.isManualPayment
+            ? acc.loanInfo.customMonthlyPayment
+            : undefined,
+          startDate: acc.loanInfo?.startDate,
+          dueDay: acc.loanInfo?.dueDay,
+        },
+        acc.currentBalance,
+        transactions,
+        acc.id
+      );
+
+      let status: CalendarEventStatus = 'unpaid';
+      let amountPaid = 0;
+      let remainingAmt = installmentAmt;
+
+      if (acc.currentBalance <= 0) {
+        status = 'paid';
+        amountPaid = installmentAmt;
+        remainingAmt = 0;
+      } else if (i + 1 <= repayment.paymentsMade || totalPaid >= cumulativeDue - 0.009) {
+        status = 'paid';
+        amountPaid = installmentAmt;
+        remainingAmt = 0;
+      } else if (totalPaid > prevCumulativeDue) {
+        amountPaid = roundPHP(totalPaid - prevCumulativeDue);
+        remainingAmt = Math.max(0, roundPHP(installmentAmt - amountPaid));
+        status = determineEventStatus(dueDateStr, installmentAmt, amountPaid);
+      } else {
+        amountPaid = 0;
+        remainingAmt = installmentAmt;
+        status = determineEventStatus(dueDateStr, installmentAmt, 0);
+      }
 
       events.push({
         id: `cal_loan_${acc.id}_${monthKey}`,
         eventType: 'loan',
         sourceId: acc.id,
         title: acc.name,
-        subtitle: `Monthly Installment Due`,
+        subtitle: `Installment ${i + 1} of ${terms} • ${acc.name}`,
         category: 'Personal Loan',
         dueDate: dueDateStr,
-        dueDay: validDueDay,
+        dueDay: clampedDay,
         monthKey,
         amount: installmentAmt,
-        amountPaid: monthPaid,
+        amountPaid,
         remainingAmount: remainingAmt,
         status,
         isCollection: false,
         providerId: acc.providerId,
         customColor: acc.customColor,
         accountData: acc,
+        installmentIndex: i + 1,
+        totalInstallments: terms,
       });
     }
   }
@@ -422,38 +693,106 @@ export function getCalendarEventsForMonth(
     if (rec.startDate > `${monthKey}-31`) continue;
     if (rec.endDate && rec.endDate < `${monthKey}-01`) continue;
 
-    const dueDay = parseInt(rec.nextDueDate.slice(8, 10), 10) || 1;
-    const validDueDay = Math.min(Math.max(1, dueDay), daysInMonth);
-    const dueDateStr = `${monthKey}-${String(validDueDay).padStart(2, '0')}`;
+    // Calculate all occurrence days for this month
+    const [targetY, targetM] = monthKey.split('-').map(Number);
+    const monthStart = new Date(Date.UTC(targetY, targetM - 1, 1));
+    const monthEnd = new Date(Date.UTC(targetY, targetM - 1, daysInMonth));
+    const startDate = new Date((rec.startDate || `${monthKey}-01`) + 'T00:00:00Z');
+    const endDate = rec.endDate ? new Date(rec.endDate + 'T23:59:59Z') : null;
 
-    // Check if recorded this month
-    const isRecorded = transactions.some((t) =>
-      t.merchantOrTitle === rec.name &&
-      t.category === rec.category &&
-      t.dateTime.startsWith(monthKey)
-    );
+    const dueDaysForMonth: number[] = [];
 
-    const amountPaid = isRecorded ? rec.amount : 0;
-    const remainingAmount = isRecorded ? 0 : rec.amount;
-    const status = isRecorded ? 'paid' : determineEventStatus(dueDateStr, rec.amount, 0);
+    if (rec.frequency === 'weekly' || rec.frequency === 'biweekly') {
+      const stepDays = rec.frequency === 'weekly' ? 7 : 14;
+      let curr = new Date(startDate.getTime());
+      if (curr < monthStart) {
+        const diffMs = monthStart.getTime() - curr.getTime();
+        const diffDays = Math.floor(diffMs / 86400000);
+        const steps = Math.floor(diffDays / stepDays);
+        curr = new Date(curr.getTime() + steps * stepDays * 86400000);
+      }
+      while (curr <= monthEnd) {
+        if (curr >= monthStart && (!endDate || curr <= endDate)) {
+          dueDaysForMonth.push(curr.getUTCDate());
+        }
+        curr = new Date(curr.getTime() + stepDays * 86400000);
+      }
+    } else if (rec.frequency === 'semimonthly') {
+      // 15th and end of month (e.g. 15th and 30th/31st)
+      [15, daysInMonth].forEach((day) => {
+        const occDate = new Date(Date.UTC(targetY, targetM - 1, day));
+        if (occDate >= startDate && (!endDate || occDate <= endDate)) {
+          dueDaysForMonth.push(day);
+        }
+      });
+    } else if (rec.frequency === 'monthly') {
+      const rawDay = parseInt(rec.nextDueDate?.slice(8, 10) || rec.startDate?.slice(8, 10) || '1', 10);
+      const validDay = Math.min(Math.max(1, rawDay), daysInMonth);
+      const occDate = new Date(Date.UTC(targetY, targetM - 1, validDay));
+      if (occDate >= startDate && (!endDate || occDate <= endDate)) {
+        dueDaysForMonth.push(validDay);
+      }
+    } else {
+      const rawDay = parseInt(rec.nextDueDate?.slice(8, 10) || '1', 10);
+      dueDaysForMonth.push(Math.min(Math.max(1, rawDay), daysInMonth));
+    }
 
-    events.push({
-      id: `cal_rec_tx_${rec.id}_${monthKey}`,
-      eventType: 'recurring',
-      sourceId: rec.id,
-      title: rec.name,
-      subtitle: `Subscription • ${rec.category}`,
-      category: rec.category,
-      dueDate: dueDateStr,
-      dueDay: validDueDay,
-      monthKey,
-      amount: rec.amount,
-      amountPaid,
-      remainingAmount,
-      status,
-      isCollection: rec.type === 'income',
-      notes: rec.notes,
-      recurringData: rec,
+    // Deduplicate and sort
+    const uniqueDays = Array.from(new Set(dueDaysForMonth)).sort((a, b) => a - b);
+
+    // Matching transactions for this recurring rule in the month
+    const matchingTxs = transactions.filter((t) => {
+      if (!t.dateTime.startsWith(monthKey)) return false;
+      const titleMatch =
+        t.merchantOrTitle?.toLowerCase().trim() === rec.name.toLowerCase().trim() ||
+        (t.notes && t.notes.toLowerCase().includes(rec.name.toLowerCase()));
+      const categoryMatch =
+        t.category?.toLowerCase().trim() === rec.category.toLowerCase().trim();
+      return titleMatch || (categoryMatch && Math.abs(t.amount - rec.amount) < 0.01);
+    });
+
+    const isIncome = rec.type === 'income';
+    const subtitle = isIncome
+      ? `Recurring Income • ${rec.category}`
+      : `Recurring Bill • ${rec.category}`;
+
+    uniqueDays.forEach((validDueDay, idx) => {
+      const dueDateStr = `${monthKey}-${String(validDueDay).padStart(2, '0')}`;
+
+      // Check if a transaction exists around this due date
+      const txForThisOccurrence = matchingTxs.find((t) => {
+        const tDate = t.dateTime.slice(0, 10);
+        const dayDiff = Math.abs(
+          (new Date(tDate).getTime() - new Date(dueDateStr).getTime()) / 86400000
+        );
+        return dayDiff <= 3;
+      });
+
+      const amountPaid = txForThisOccurrence ? txForThisOccurrence.amount : 0;
+      const isRecorded = amountPaid >= rec.amount - 0.01 && rec.amount > 0;
+      const remainingAmount = Math.max(0, rec.amount - amountPaid);
+      const status = isRecorded
+        ? 'paid'
+        : determineEventStatus(dueDateStr, rec.amount, amountPaid);
+
+      events.push({
+        id: `cal_rec_tx_${rec.id}_${monthKey}_${validDueDay}`,
+        eventType: 'recurring',
+        sourceId: rec.id,
+        title: rec.name,
+        subtitle,
+        category: rec.category,
+        dueDate: dueDateStr,
+        dueDay: validDueDay,
+        monthKey,
+        amount: rec.amount,
+        amountPaid,
+        remainingAmount,
+        status,
+        isCollection: isIncome,
+        notes: rec.notes,
+        recurringData: rec,
+      });
     });
   }
 

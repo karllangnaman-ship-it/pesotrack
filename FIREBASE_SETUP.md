@@ -51,63 +51,135 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    function isValidId(id) {
-      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    function isVerifiedUser() {
+      return isSignedIn() && (
+        request.auth.token.email_verified == true ||
+        request.auth.token.firebase.sign_in_provider == 'google.com'
+      );
+    }
+
+    function isVerifiedOwner(userId) {
+      return isOwner(userId) && isVerifiedUser();
+    }
+
+    // Default-deny catch-all for any document
+    match /{document=**} {
+      allow read, write: if false;
     }
 
     // Isolated Per-User Workspace Scope
-    // Every user's accounts, transactions, bills, budgets, receivables, and settings are strictly isolated under /users/{userId}
+    // Only the authenticated and email-verified owner can read and write to their own workspace documents
     match /users/{userId} {
-      allow get, list, create, update, delete: if isOwner(userId);
+      allow read, write: if isVerifiedOwner(userId);
 
       // Financial Accounts Subcollection
       match /accounts/{accountId} {
-        allow get, list, create, update, delete: if isOwner(userId);
+        allow read, write: if isVerifiedOwner(userId);
       }
 
       // Transactions Subcollection
       match /transactions/{transactionId} {
-        allow get, list, create, update, delete: if isOwner(userId);
+        allow read, write: if isVerifiedOwner(userId);
       }
 
       // Bill Definitions Subcollection
       match /bills/{billId} {
-        allow get, list, create, update, delete: if isOwner(userId);
+        allow read, write: if isVerifiedOwner(userId);
       }
 
       // Monthly Bill Entries Subcollection
       match /monthlyBillEntries/{entryId} {
-        allow get, list, create, update, delete: if isOwner(userId);
+        allow read, write: if isVerifiedOwner(userId);
       }
 
-      // Receivables (Money Owed to Me) Subcollection
+      // Receivables Subcollection
       match /receivables/{receivableId} {
-        allow get, list, create, update, delete: if isOwner(userId);
+        allow read, write: if isVerifiedOwner(userId);
       }
 
       // Monthly Budgets Subcollection
       match /budgets/{budgetId} {
-        allow get, list, create, update, delete: if isOwner(userId);
+        allow read, write: if isVerifiedOwner(userId);
       }
 
-      // User Workspace Sync State and Settings
+      // Sync State & Health Check Subcollections
       match /sync/{syncId} {
-        allow get, list, create, update, delete: if isOwner(userId);
+        allow read, write: if isVerifiedOwner(userId);
       }
 
       match /sync_state/{syncId} {
-        allow get, list, create, update, delete: if isOwner(userId);
+        allow read, write: if isVerifiedOwner(userId);
       }
 
-      // Catch-all for any user-scoped subcollections
+      // Grocery Items Subcollection
+      match /groceries/{groceryId} {
+        allow read, write: if isVerifiedOwner(userId);
+      }
+
+      // Grocery Categories Subcollection
+      match /groceryCategories/{categoryId} {
+        allow read, write: if isVerifiedOwner(userId);
+      }
+
+      // User-scoped catch-all for any nested subcollections
       match /{allSubcollections=**} {
-        allow read, write: if isOwner(userId);
+        allow read, write: if isVerifiedOwner(userId);
       }
     }
 
-    // Global Safety Net: Default-deny catch-all for any documents outside /users
-    match /{document=**} {
-      allow read, write: if false;
+    // Collaborative Joint Workspaces Scope
+    // Only verified members of the joint workspace can access the workspace and its shared financial records
+    match /jointWorkspaces/{workspaceId} {
+      // Existing members can access. An invited user can read workspace metadata to accept an invitation if open slot exists (< 2 members)
+      allow get: if isVerifiedUser() && (
+        (request.auth.uid in resource.data.memberUids) ||
+        (resource.data.members.size() < 2)
+      );
+      allow list: if isVerifiedUser() && (request.auth.uid in resource.data.memberUids);
+      allow create: if isVerifiedUser() && (request.auth.uid in request.resource.data.memberUids);
+      // Existing members can update workspace settings. An invited partner can join as 2nd member adding their own UID
+      allow update: if isVerifiedUser() && (
+        (request.auth.uid in resource.data.memberUids) ||
+        (
+          resource.data.members.size() < 2 &&
+          request.resource.data.members.size() <= 2 &&
+          request.resource.data.ownerUid == resource.data.ownerUid &&
+          (request.auth.uid in request.resource.data.memberUids)
+        )
+      );
+      allow delete: if isVerifiedUser() && resource.data.ownerUid == request.auth.uid;
+
+      // Subcollections (accounts, transactions, bills, monthlyBillEntries, budgets, groceries, activity)
+      match /{allSubcollections=**} {
+        allow read, write: if isVerifiedUser() && (
+          request.auth.uid in get(/databases/$(database)/documents/jointWorkspaces/$(workspaceId)).data.memberUids
+        );
+      }
+    }
+
+    // Collaborative Joint Invitations Scope
+    // Only the inviter or the intended recipient (matching verified email) can access and respond to invitations
+    match /jointInvitations/{invitationId} {
+      allow get: if isVerifiedUser() && (
+        resource.data.inviterUid == request.auth.uid ||
+        (resource.data.inviteeEmail is string && request.auth.token.email is string &&
+         (resource.data.inviteeEmail == request.auth.token.email ||
+          resource.data.inviteeEmail.lower() == request.auth.token.email.lower()))
+      );
+      allow list: if isVerifiedUser() && (
+        resource.data.inviterUid == request.auth.uid ||
+        (resource.data.inviteeEmail is string && request.auth.token.email is string &&
+         (resource.data.inviteeEmail == request.auth.token.email ||
+          resource.data.inviteeEmail.lower() == request.auth.token.email.lower()))
+      );
+      allow create: if isVerifiedUser() && request.resource.data.inviterUid == request.auth.uid;
+      allow update: if isVerifiedUser() && (
+        resource.data.inviterUid == request.auth.uid ||
+        (resource.data.inviteeEmail is string && request.auth.token.email is string &&
+         (resource.data.inviteeEmail == request.auth.token.email ||
+          resource.data.inviteeEmail.lower() == request.auth.token.email.lower()))
+      );
+      allow delete: if isVerifiedUser() && resource.data.inviterUid == request.auth.uid;
     }
   }
 }

@@ -9,6 +9,7 @@ import {
   Plus,
   Target,
   Trash2,
+  RotateCcw,
   X,
 } from 'lucide-react';
 import { useFinance } from '../context/FinanceContext';
@@ -53,6 +54,7 @@ export const AccountDetailModal: React.FC<AccountDetailModalProps> = ({
     state,
     deleteAccount,
     toggleArchiveAccount,
+    revertAccountPayment,
     enableMultipleTransactionsForAccount,
   } = useFinance();
 
@@ -523,15 +525,30 @@ export const AccountDetailModal: React.FC<AccountDetailModalProps> = ({
                             Installment Repayment Summary
                           </h3>
                         </div>
-                        {creditRepayment.isManualPayment ? (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-900/50">
-                            Fixed by Bank
-                          </span>
-                        ) : (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-neutral-100 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300">
-                            Estimated
-                          </span>
-                        )}
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          {creditRepayment.paymentsMade > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                revertAccountPayment(account.id);
+                              }}
+                              className="px-2.5 py-1 rounded-full text-[10px] font-bold border border-red-500/30 text-red-600 dark:text-red-400 hover:bg-red-500/10 active:scale-95 transition-all flex items-center gap-1 cursor-pointer"
+                              title="Undo last repayment"
+                            >
+                              <RotateCcw className="w-3 h-3" />
+                              <span>Undo Repayment</span>
+                            </button>
+                          )}
+                          {creditRepayment.isManualPayment ? (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-900/50">
+                              Fixed by Bank
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-neutral-100 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300">
+                              Estimated
+                            </span>
+                          )}
+                        </div>
                       </div>
 
                       <div className="grid grid-cols-2 gap-2 sm:gap-2.5 text-[11px] sm:text-xs">
@@ -739,15 +756,30 @@ export const AccountDetailModal: React.FC<AccountDetailModalProps> = ({
                         Repayment Summary
                       </h3>
                     </div>
-                    {loanRepayment.isManualPayment ? (
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-900/50">
-                        Fixed by Lender
-                      </span>
-                    ) : (
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-neutral-100 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300">
-                        Estimated
-                      </span>
-                    )}
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {loanRepayment.paymentsMade > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            revertAccountPayment(account.id);
+                          }}
+                          className="px-2.5 py-1 rounded-full text-[10px] font-bold border border-red-500/30 text-red-600 dark:text-red-400 hover:bg-red-500/10 active:scale-95 transition-all flex items-center gap-1 cursor-pointer"
+                          title="Undo last repayment"
+                        >
+                          <RotateCcw className="w-3 h-3" />
+                          <span>Undo Repayment</span>
+                        </button>
+                      )}
+                      {loanRepayment.isManualPayment ? (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-900/50">
+                          Fixed by Lender
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-neutral-100 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300">
+                          Estimated
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   {/* 2-column key metrics grid */}
@@ -902,14 +934,22 @@ export const AccountDetailModal: React.FC<AccountDetailModalProps> = ({
                         tx.adjustmentSign === 'negative');
 
                   return (
-                    <button
+                    <div
                       key={tx.id}
-                      type="button"
+                      role="button"
+                      tabIndex={0}
                       onClick={() => {
                         onClose();
                         onSelectTransaction(tx);
                       }}
-                      className="w-full py-2.5 text-left flex items-center justify-between gap-2 sm:gap-3 hover:bg-neutral-50 dark:hover:bg-neutral-700/40 rounded-lg px-1 transition-colors"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          onClose();
+                          onSelectTransaction(tx);
+                        }
+                      }}
+                      className="w-full py-2.5 text-left flex items-center justify-between gap-2 sm:gap-3 hover:bg-neutral-50 dark:hover:bg-neutral-700/40 rounded-lg px-1 transition-colors cursor-pointer select-none"
                     >
                       <div className="min-w-0 flex-1">
                         <div className="text-[10px] sm:text-[11px] text-neutral-500 dark:text-neutral-400">
@@ -919,17 +959,37 @@ export const AccountDetailModal: React.FC<AccountDetailModalProps> = ({
                           {tx.merchantOrTitle}
                         </div>
                       </div>
-                      <div
-                        className={`text-xs sm:text-sm font-semibold tabular-nums shrink-0 ${
-                          isPositiveForThisAccount
-                            ? 'text-[#2E9E6B]'
-                            : 'text-[#DC2626]'
-                        }`}
-                      >
-                        {isPositiveForThisAccount ? '+' : '-'}
-                        {formatPeso(tx.amount, { hide })}
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <div
+                          className={`text-xs sm:text-sm font-semibold tabular-nums ${
+                            isPositiveForThisAccount
+                              ? 'text-[#2E9E6B]'
+                              : 'text-[#DC2626]'
+                          }`}
+                        >
+                          {isPositiveForThisAccount ? '+' : '-'}
+                          {formatPeso(tx.amount, { hide })}
+                        </div>
+
+                        {account.isLiability &&
+                          (isIncomingTransfer ||
+                            tx.category === 'Loan Payment' ||
+                            tx.category === 'Credit Payment' ||
+                            tx.category === 'Credit Card Payment') && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                revertAccountPayment(account.id, tx.id);
+                              }}
+                              className="p-1 rounded-md text-neutral-400 hover:text-red-500 hover:bg-red-500/10 active:scale-90 transition-all cursor-pointer"
+                              title="Undo repayment / Ibalik sa unsettled"
+                            >
+                              <RotateCcw className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                       </div>
-                    </button>
+                    </div>
                   );
                 })}
               </div>
