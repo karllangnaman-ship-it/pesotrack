@@ -29,6 +29,49 @@ export function getWorkspaceMemberLimit(relationship?: string): number {
   return 10;
 }
 
+function jointErrorResponse(err: any) {
+  const rawMessage =
+    typeof err?.message === 'string'
+      ? err.message
+      : typeof err?.error?.message === 'string'
+      ? err.error.message
+      : typeof err === 'string'
+      ? err
+      : 'Internal Server Error';
+  const isPermissionError =
+    rawMessage.includes('Missing or insufficient permissions') ||
+    rawMessage.includes('permission-denied') ||
+    err?.code === 'permission-denied';
+  const isAdminConfigurationError = err?.code === 'admin-credentials-missing';
+
+  if (isAdminConfigurationError) {
+    return {
+      statusCode: 503,
+      errorCode: 'JOINT_BACKEND_NOT_CONFIGURED',
+      message: 'Joint Finances is temporarily unavailable because its secure server configuration is incomplete.',
+    };
+  }
+  if (isPermissionError) {
+    return {
+      statusCode: 403,
+      errorCode: 'JOINT_FIRESTORE_PERMISSION_DENIED',
+      message: 'You do not have permission to access this Joint Finance workspace.',
+    };
+  }
+  if (err?.code === 'not-found') {
+    return {
+      statusCode: 404,
+      errorCode: 'JOINT_WORKSPACE_NOT_FOUND',
+      message: 'The requested Joint Finance workspace was not found.',
+    };
+  }
+  return {
+    statusCode: err?.statusCode || 500,
+    errorCode: 'JOINT_OPERATION_FAILED',
+    message: 'Joint Finances could not complete this request. Please retry or contact support with the request ID.',
+  };
+}
+
 export default async function handler(req: any, res: any) {
   const requestId = req.headers['x-vercel-id'] || `joint_${Date.now().toString(36)}`;
   if (handleCors(req, res)) return;
@@ -48,7 +91,10 @@ export default async function handler(req: any, res: any) {
   } catch (err: any) {
     return res.status(err.statusCode || 401).json({
       ok: false,
-      error: err.message || 'Unauthorized.',
+      error: 'Your session could not be verified. Please sign in again.',
+      errorCode: 'JOINT_UNAUTHENTICATED',
+      operation: 'authenticate',
+      requestId,
     });
   }
 
@@ -1519,29 +1565,20 @@ export default async function handler(req: any, res: any) {
       error: `Unknown action: "${action}"`,
     });
   } catch (err: any) {
-    console.error('[API /api/joint] Error handling action:', { requestId, action, uid, code: err?.code, message: err?.message });
-    const rawErrorMessage =
-      typeof err?.message === 'string'
-        ? err.message
-        : typeof err?.error?.message === 'string'
-        ? err.error.message
-        : typeof err === 'string'
-        ? err
-        : 'Internal Server Error';
-    const isPermissionError =
-      rawErrorMessage.includes('Missing or insufficient permissions') ||
-      rawErrorMessage.includes('permission-denied') ||
-      err?.code === 'permission-denied';
-
-    const errorMessage = isPermissionError
-      ? 'Firestore permission denied: Please publish the updated security rules from FIREBASE_SETUP.md in your Firebase Console (Build > Firestore Database > Rules).'
-      : rawErrorMessage;
-
-    const statusCode = err?.statusCode || (isPermissionError ? 403 : 500);
-    return res.status(statusCode).json({
+    // Keep diagnostics in Vercel logs without logging tokens, request payloads,
+    // email addresses, UIDs, or financial records.
+    console.error('[API /api/joint] Operation failed:', {
+      requestId,
+      operation: action || (req.method === 'GET' ? 'get-my-workspaces' : 'unknown'),
+      code: err?.code,
+      message: err?.message,
+    });
+    const safeError = jointErrorResponse(err);
+    return res.status(safeError.statusCode).json({
       ok: false,
-      error: errorMessage,
-      isRulesPermissionError: isPermissionError,
+      error: safeError.message,
+      errorCode: safeError.errorCode,
+      operation: action || (req.method === 'GET' ? 'get-my-workspaces' : 'unknown'),
       requestId,
     });
   }
