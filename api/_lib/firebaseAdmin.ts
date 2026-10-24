@@ -18,22 +18,6 @@ export function hasAdminCredentials(): boolean {
   );
 }
 
-/**
- * Joint workspace operations require Admin credentials. They validate the
- * caller first, then perform protected membership updates.
- * Falling back to client rules here would require exposing workspace metadata
- * to non-members, which is not acceptable for financial data.
- */
-export function requireAdminCredentials(): void {
-  if (hasAdminCredentials()) return;
-  const error: any = new Error(
-    'Joint Accounts are not configured on the server. Set FIREBASE_CLIENT_EMAIL and FIREBASE_PRIVATE_KEY (or FIREBASE_SERVICE_ACCOUNT_KEY) in Vercel, then redeploy.'
-  );
-  error.code = 'admin-credentials-missing';
-  error.statusCode = 503;
-  throw error;
-}
-
 export function getFirebaseAdminApp(): App {
   if (adminApp) return adminApp;
 

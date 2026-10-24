@@ -1,5 +1,5 @@
 import { handleCors } from './_lib/cors.ts';
-import { authenticateRequest, requireAdminCredentials } from './_lib/firebaseAdmin.ts';
+import { authenticateRequest } from './_lib/firebaseAdmin.ts';
 import {
   getDoc,
   setDoc,
@@ -29,51 +29,7 @@ export function getWorkspaceMemberLimit(relationship?: string): number {
   return 10;
 }
 
-function jointErrorResponse(err: any) {
-  const rawMessage =
-    typeof err?.message === 'string'
-      ? err.message
-      : typeof err?.error?.message === 'string'
-      ? err.error.message
-      : typeof err === 'string'
-      ? err
-      : 'Internal Server Error';
-  const isPermissionError =
-    rawMessage.includes('Missing or insufficient permissions') ||
-    rawMessage.includes('permission-denied') ||
-    err?.code === 'permission-denied';
-  const isAdminConfigurationError = err?.code === 'admin-credentials-missing';
-
-  if (isAdminConfigurationError) {
-    return {
-      statusCode: 503,
-      errorCode: 'JOINT_BACKEND_NOT_CONFIGURED',
-      message: 'Joint Finances is temporarily unavailable because its secure server configuration is incomplete.',
-    };
-  }
-  if (isPermissionError) {
-    return {
-      statusCode: 403,
-      errorCode: 'JOINT_FIRESTORE_PERMISSION_DENIED',
-      message: 'You do not have permission to access this Joint Finance workspace.',
-    };
-  }
-  if (err?.code === 'not-found') {
-    return {
-      statusCode: 404,
-      errorCode: 'JOINT_WORKSPACE_NOT_FOUND',
-      message: 'The requested Joint Finance workspace was not found.',
-    };
-  }
-  return {
-    statusCode: err?.statusCode || 500,
-    errorCode: 'JOINT_OPERATION_FAILED',
-    message: 'Joint Finances could not complete this request. Please retry or contact support with the request ID.',
-  };
-}
-
 export default async function handler(req: any, res: any) {
-  const requestId = req.headers['x-vercel-id'] || `joint_${Date.now().toString(36)}`;
   if (handleCors(req, res)) return;
 
   if (req.method !== 'POST' && req.method !== 'GET') {
@@ -91,10 +47,7 @@ export default async function handler(req: any, res: any) {
   } catch (err: any) {
     return res.status(err.statusCode || 401).json({
       ok: false,
-      error: 'Your session could not be verified. Please sign in again.',
-      errorCode: 'JOINT_UNAUTHENTICATED',
-      operation: 'authenticate',
-      requestId,
+      error: err.message || 'Unauthorized.',
     });
   }
 
@@ -115,9 +68,6 @@ export default async function handler(req: any, res: any) {
   const action = req.body?.action || (req.query?.action as string);
 
   try {
-    // All workspace and invitation reads/writes run through Admin SDK after
-    // authentication. This preserves private workspace membership metadata.
-    requireAdminCredentials();
     // -------------------------------------------------------------------------
     // ACTION: GET MY WORKSPACES
     // -------------------------------------------------------------------------
@@ -205,19 +155,6 @@ export default async function handler(req: any, res: any) {
         return res.status(400).json({ ok: false, error: 'Joint account name is required.' });
       }
 
-      // Validate optional invite data before any durable write. Previously a
-      // self-invitation created the workspace and then returned an error,
-      // making a successful creation look like a server failure to the client.
-      const normalizedInviteeEmail = typeof inviteeEmail === 'string'
-        ? inviteeEmail.toLowerCase().trim()
-        : '';
-      if (normalizedInviteeEmail && normalizedInviteeEmail === userEmailNormalized) {
-        return res.status(400).json({
-          ok: false,
-          error: 'You cannot invite yourself to a joint account.',
-        });
-      }
-
       const workspaceId = `jw_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 
       const initialMember = {
@@ -265,11 +202,17 @@ export default async function handler(req: any, res: any) {
       ).catch(() => {});
 
       let invitationData: any = null;
-      let invitationWarning: string | undefined;
 
       // 3. Handle partner invitation if provided
-      if (normalizedInviteeEmail) {
-        const targetEmail = normalizedInviteeEmail;
+      if (inviteeEmail && typeof inviteeEmail === 'string') {
+        const targetEmail = inviteeEmail.toLowerCase().trim();
+        if (targetEmail === userEmailNormalized) {
+          return res.status(400).json({
+            ok: false,
+            error: 'You cannot invite yourself to a joint account.',
+            workspace: workspaceData,
+          });
+        }
 
         const inviteId = `inv_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
         invitationData = {
@@ -306,14 +249,9 @@ export default async function handler(req: any, res: any) {
             token
           ).catch(() => {});
         } catch (inviteErr: any) {
-          // The workspace itself was created successfully. Keep it available to
-          // the owner and report that only the optional invitation failed.
-          invitationWarning = `Joint account was created, but the invitation could not be sent: ${inviteErr?.message || 'unknown error'}`;
-          console.warn('[API /api/joint] Invitation creation failed after workspace creation:', {
-            requestId,
-            workspaceId,
-            message: inviteErr?.message,
-          });
+          // Compensating action: Delete workspace if invitation creation failed
+          await deleteDoc('jointWorkspaces', workspaceId, token).catch(() => {});
+          throw new Error(`Failed creating invitation: ${inviteErr?.message || inviteErr}`);
         }
       }
 
@@ -321,7 +259,6 @@ export default async function handler(req: any, res: any) {
         ok: true,
         workspace: workspaceData,
         invitation: invitationData,
-        invitationWarning,
       });
     }
 
@@ -1565,21 +1502,20 @@ export default async function handler(req: any, res: any) {
       error: `Unknown action: "${action}"`,
     });
   } catch (err: any) {
-    // Keep diagnostics in Vercel logs without logging tokens, request payloads,
-    // email addresses, UIDs, or financial records.
-    console.error('[API /api/joint] Operation failed:', {
-      requestId,
-      operation: action || (req.method === 'GET' ? 'get-my-workspaces' : 'unknown'),
-      code: err?.code,
-      message: err?.message,
-    });
-    const safeError = jointErrorResponse(err);
-    return res.status(safeError.statusCode).json({
+    console.error('[API /api/joint] Error handling action:', action, err);
+    const isPermissionError =
+      err?.message?.includes('Missing or insufficient permissions') ||
+      err?.message?.includes('permission-denied') ||
+      err?.code === 'permission-denied';
+
+    const errorMessage = isPermissionError
+      ? 'Firestore permission denied: Please publish the updated security rules from FIREBASE_SETUP.md in your Firebase Console (Build > Firestore Database > Rules).'
+      : err?.message || 'Internal Server Error';
+
+    return res.status(isPermissionError ? 403 : 500).json({
       ok: false,
-      error: safeError.message,
-      errorCode: safeError.errorCode,
-      operation: action || (req.method === 'GET' ? 'get-my-workspaces' : 'unknown'),
-      requestId,
+      error: errorMessage,
+      isRulesPermissionError: isPermissionError,
     });
   }
 }

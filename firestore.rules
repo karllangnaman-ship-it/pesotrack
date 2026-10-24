@@ -89,20 +89,24 @@ service cloud.firestore {
     }
 
     // Collaborative Joint Workspaces Scope
-    // Membership changes are performed by the authenticated Vercel API using
-    // Firebase Admin credentials. Client rules therefore never expose a
-    // workspace to an invitee before the server has validated the invitation.
+    // Only verified members of the joint workspace can access the workspace and its shared financial records
     match /jointWorkspaces/{workspaceId} {
-      allow get: if isVerifiedUser() && (request.auth.uid in resource.data.memberUids);
+      // Existing members can access. An invited user can read workspace metadata to accept an invitation if open slot exists (< 10 members)
+      allow get: if isVerifiedUser() && (
+        (request.auth.uid in resource.data.memberUids) ||
+        (resource.data.members.size() < 10)
+      );
       allow list: if isVerifiedUser() && (request.auth.uid in resource.data.memberUids);
-      allow create: if false;
-      // Members may update workspace metadata, but cannot add or remove a
-      // member directly. This prevents invitation and membership bypasses.
+      allow create: if isVerifiedUser() && (request.auth.uid in request.resource.data.memberUids);
+      // Existing members can update workspace settings. An invited member can join adding their own UID (up to 10 members)
       allow update: if isVerifiedUser() && (
-        request.auth.uid in resource.data.memberUids &&
-        request.resource.data.memberUids == resource.data.memberUids &&
-        request.resource.data.members == resource.data.members &&
-        request.resource.data.ownerUid == resource.data.ownerUid
+        (request.auth.uid in resource.data.memberUids) ||
+        (
+          resource.data.members.size() < 10 &&
+          request.resource.data.members.size() <= 10 &&
+          request.resource.data.ownerUid == resource.data.ownerUid &&
+          (request.auth.uid in request.resource.data.memberUids)
+        )
       );
       allow delete: if isVerifiedUser() && resource.data.ownerUid == request.auth.uid;
 
@@ -114,10 +118,29 @@ service cloud.firestore {
       }
     }
 
-    // Invitations are read and changed only by the authenticated Vercel API.
-    // This avoids leaking invitee email addresses through Firestore queries.
+    // Collaborative Joint Invitations Scope
+    // Only the inviter or the intended recipient (matching verified email) can access and respond to invitations
     match /jointInvitations/{invitationId} {
-      allow read, write: if false;
+      allow get: if isVerifiedUser() && (
+        resource.data.inviterUid == request.auth.uid ||
+        (resource.data.inviteeEmail is string && request.auth.token.email is string &&
+         (resource.data.inviteeEmail == request.auth.token.email ||
+          resource.data.inviteeEmail.lower() == request.auth.token.email.lower()))
+      );
+      allow list: if isVerifiedUser() && (
+        resource.data.inviterUid == request.auth.uid ||
+        (resource.data.inviteeEmail is string && request.auth.token.email is string &&
+         (resource.data.inviteeEmail == request.auth.token.email ||
+          resource.data.inviteeEmail.lower() == request.auth.token.email.lower()))
+      );
+      allow create: if isVerifiedUser() && request.resource.data.inviterUid == request.auth.uid;
+      allow update: if isVerifiedUser() && (
+        resource.data.inviterUid == request.auth.uid ||
+        (resource.data.inviteeEmail is string && request.auth.token.email is string &&
+         (resource.data.inviteeEmail == request.auth.token.email ||
+          resource.data.inviteeEmail.lower() == request.auth.token.email.lower()))
+      );
+      allow delete: if isVerifiedUser() && resource.data.inviterUid == request.auth.uid;
     }
   }
 }

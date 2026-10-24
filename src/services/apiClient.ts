@@ -37,22 +37,6 @@ export interface BackendHealthResult {
   data?: any;
 }
 
-/** Convert API error payloads into a safe, user-readable message. */
-function getApiErrorMessage(payload: unknown, fallback: string): string {
-  if (typeof payload === 'string' && payload.trim()) return payload;
-  if (payload && typeof payload === 'object') {
-    const value = payload as { message?: unknown; error?: unknown; detail?: unknown };
-    if (typeof value.message === 'string' && value.message.trim()) return value.message;
-    if (typeof value.error === 'string' && value.error.trim()) return value.error;
-    if (value.error && typeof value.error === 'object') {
-      const nested = value.error as { message?: unknown };
-      if (typeof nested.message === 'string' && nested.message.trim()) return nested.message;
-    }
-    if (typeof value.detail === 'string' && value.detail.trim()) return value.detail;
-  }
-  return fallback;
-}
-
 /**
  * Check backend availability without exposing secrets.
  * Distinguishes device offline from an unreachable backend.
@@ -166,7 +150,7 @@ export async function sendSyncToBackend(payload: {
     if (!res.ok) {
       return {
         ok: false,
-        error: getApiErrorMessage(data, `Server returned HTTP ${res.status}`),
+        error: data?.error || `Server returned HTTP ${res.status}`,
         detail: data?.detail,
       };
     }
@@ -237,7 +221,7 @@ export async function fetchRestoreFromBackend(): Promise<BackendRestoreResponse>
     if (!res.ok) {
       return {
         ok: false,
-        error: getApiErrorMessage(body, `Server returned HTTP ${res.status}`),
+        error: body?.error || `Server returned HTTP ${res.status}`,
         detail: body?.detail,
       };
     }
@@ -318,7 +302,7 @@ export async function fetchMyJointWorkspaces(): Promise<{ ok: boolean; workspace
       method: 'GET',
     });
     const body = await res.json().catch(() => null);
-    if (!res.ok) return { ok: false, error: getApiErrorMessage(body, `HTTP ${res.status}`) };
+    if (!res.ok) return { ok: false, error: body?.error || `HTTP ${res.status}` };
     return { ok: true, workspaces: body?.workspaces || [] };
   } catch (err: any) {
     return { ok: false, error: err?.message || 'Network error' };
@@ -336,7 +320,7 @@ export async function fetchJointInvitations(): Promise<{
       method: 'GET',
     });
     const body = await res.json().catch(() => null);
-    if (!res.ok) return { ok: false, error: getApiErrorMessage(body, `HTTP ${res.status}`) };
+    if (!res.ok) return { ok: false, error: body?.error || `HTTP ${res.status}` };
     return {
       ok: true,
       invitations: body?.invitations || [],
@@ -353,7 +337,7 @@ export async function createJointWorkspaceApi(payload: {
   inviteeEmail?: string;
   invitationMessage?: string;
   displayName?: string;
-}): Promise<{ ok: boolean; workspace?: any; invitation?: any; invitationWarning?: string; error?: string }> {
+}): Promise<{ ok: boolean; workspace?: any; invitation?: any; error?: string }> {
   try {
     const res = await authorizedFetch('/api/joint', {
       method: 'POST',
@@ -361,13 +345,8 @@ export async function createJointWorkspaceApi(payload: {
       body: JSON.stringify({ action: 'create-workspace', ...payload }),
     });
     const body = await res.json().catch(() => null);
-    if (!res.ok) return { ok: false, error: getApiErrorMessage(body, `HTTP ${res.status}`), workspace: body?.workspace };
-    return {
-      ok: true,
-      workspace: body?.workspace,
-      invitation: body?.invitation,
-      invitationWarning: typeof body?.invitationWarning === 'string' ? body.invitationWarning : undefined,
-    };
+    if (!res.ok) return { ok: false, error: body?.error || `HTTP ${res.status}`, workspace: body?.workspace };
+    return { ok: true, workspace: body?.workspace, invitation: body?.invitation };
   } catch (err: any) {
     return { ok: false, error: err?.message || 'Network error' };
   }

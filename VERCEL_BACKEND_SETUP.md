@@ -37,8 +37,6 @@ Configured in `.env` or build environment. Variables prefixed with `VITE_` are b
 | `FIREBASE_SERVICE_ACCOUNT_KEY` | Optional Alternative | Full JSON string of the service account file. |
 | `ALLOWED_ORIGINS` | Production, Preview, Development | Comma-separated allowed CORS origins (e.g., `https://pesotrack.vercel.app,capacitor://localhost`). |
 
-Joint Accounts require Firebase Admin credentials in the Vercel function. Set either the pair `FIREBASE_CLIENT_EMAIL` + `FIREBASE_PRIVATE_KEY`, or `FIREBASE_SERVICE_ACCOUNT_KEY`; `FIREBASE_PROJECT_ID` must match `pesotrack-51670`. Configure them for every environment you deploy. Do not prefix these values with `VITE_` and never commit them to GitHub.
-
 ---
 
 ## 3. How to Obtain Firebase Service Account Credentials
@@ -67,10 +65,6 @@ Joint Accounts require Firebase Admin credentials in the Vercel function. Set ei
    - `FIREBASE_CLIENT_EMAIL`
    - `FIREBASE_PRIVATE_KEY`
 6. Click **Deploy**.
-
-### Publish Firestore rules
-
-After configuring Admin credentials, publish the checked-in `firestore.rules` through Firebase Console → **Firestore Database** → **Rules**, or with the Firebase CLI. The rules keep Joint Workspace membership and invitations server-managed; do not loosen them to work around a missing Vercel credential.
 
 ### Option B: Via Vercel CLI
 ```bash

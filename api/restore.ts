@@ -46,7 +46,6 @@ export default async function handler(req: any, res: any) {
       recSnap,
       grocSnap,
       catSnap,
-      recurringSnap,
       syncDocSnap,
     ] = await Promise.all([
       firestore.collection('users').doc(uid).collection('accounts').get(),
@@ -57,7 +56,6 @@ export default async function handler(req: any, res: any) {
       firestore.collection('users').doc(uid).collection('receivables').get(),
       firestore.collection('users').doc(uid).collection('groceries').get(),
       firestore.collection('users').doc(uid).collection('groceryCategories').get(),
-      firestore.collection('users').doc(uid).collection('recurringTransactions').get(),
       firestore.collection('users').doc(uid).collection('sync').doc('state').get(),
     ]);
 
@@ -112,12 +110,6 @@ export default async function handler(req: any, res: any) {
       if (!data.isDeleted) groceryCategories.push(data);
     });
 
-    const recurringTransactions: any[] = [];
-    recurringSnap.forEach((doc: any) => {
-      const data = doc.data();
-      if (!data.isDeleted) recurringTransactions.push(data);
-    });
-
     const syncData = syncDocSnap.exists ? syncDocSnap.data() : null;
 
     const hasCloudData =
@@ -126,10 +118,6 @@ export default async function handler(req: any, res: any) {
       bills.length > 0 ||
       receivables.length > 0 ||
       groceryItems.length > 0 ||
-      groceryCategories.length > 0 ||
-      recurringTransactions.length > 0 ||
-      Object.keys(monthlyBillEntries).length > 0 ||
-      Object.keys(budgets).length > 0 ||
       Boolean(syncData);
 
     if (!hasCloudData) {
@@ -161,7 +149,7 @@ export default async function handler(req: any, res: any) {
       budgets,
       groceryItems,
       groceryCategories,
-      recurringTransactions,
+      recurringTransactions: [],
       customBillNames: syncData?.customBillNames || [],
       customCategories: syncData?.customCategories || {
         expense: [],
@@ -184,7 +172,7 @@ export default async function handler(req: any, res: any) {
       accountsCount: accounts.length,
       transactionsCount: transactions.length,
       budgetsCount: Object.keys(budgets).length,
-      recurringCount: recurringTransactions.length,
+      recurringCount: 0,
       customCategoriesCount:
         (restoredState.customCategories.expense?.length || 0) +
         (restoredState.customCategories.income?.length || 0),
