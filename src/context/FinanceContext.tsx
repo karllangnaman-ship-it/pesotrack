@@ -648,6 +648,11 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
     }
     return createInitialPesoTrackState();
   });
+  const stateRef = React.useRef(state);
+
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [syncError, setSyncError] = useState<string | null>(null);
@@ -745,8 +750,11 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
       setSyncStatus('offline');
       return;
     }
-    // Only attempt cloud sync if authenticated and email is verified
-    if (!currentUser || !currentUser.emailVerified) {
+    // This may be called by the Firebase auth observer before React has applied
+    // setCurrentUser, so use Firebase's live session instead of a stale render.
+    const activeUser = auth.currentUser;
+    const isGoogle = activeUser?.providerData?.some((p) => p.providerId === 'google.com');
+    if (!activeUser || activeUser.uid !== uid || !(activeUser.emailVerified || isGoogle)) {
       setSyncStatus('offline');
       return;
     }
@@ -754,7 +762,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({
     setSyncStatus('syncing');
     setSyncError(null);
     try {
-      const res = await performFullSync(uid, state);
+      const res = await performFullSync(uid, stateRef.current);
       if (res.error) {
         const parsed = parseSyncError(res.error);
         if (parsed.isPermissionDenied) {

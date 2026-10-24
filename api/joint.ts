@@ -1503,14 +1503,22 @@ export default async function handler(req: any, res: any) {
     });
   } catch (err: any) {
     console.error('[API /api/joint] Error handling action:', action, err);
+    const rawErrorMessage =
+      typeof err?.message === 'string'
+        ? err.message
+        : typeof err?.error?.message === 'string'
+        ? err.error.message
+        : typeof err === 'string'
+        ? err
+        : 'Internal Server Error';
     const isPermissionError =
-      err?.message?.includes('Missing or insufficient permissions') ||
-      err?.message?.includes('permission-denied') ||
+      rawErrorMessage.includes('Missing or insufficient permissions') ||
+      rawErrorMessage.includes('permission-denied') ||
       err?.code === 'permission-denied';
 
     const errorMessage = isPermissionError
       ? 'Firestore permission denied: Please publish the updated security rules from FIREBASE_SETUP.md in your Firebase Console (Build > Firestore Database > Rules).'
-      : err?.message || 'Internal Server Error';
+      : rawErrorMessage;
 
     return res.status(isPermissionError ? 403 : 500).json({
       ok: false,
